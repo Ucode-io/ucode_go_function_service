@@ -1,0 +1,55 @@
+syntax="proto3";
+
+package document_service;
+option go_package="genproto/document_service";
+
+import "google/protobuf/empty.proto";
+
+service CountryService {
+  rpc Create(CreateCountry) returns (Country) {}
+  rpc GetList(GetListCountriesRequest) returns (GetListCountriesResponse) {}
+  rpc Get(CountryId) returns (Country) {}
+  rpc Reload(ReloadCountriesListRequest) returns (google.protobuf.Empty) {}
+  rpc Delete(DeleteCountryRequest) returns (DeleteCountry) {}
+}
+
+message CreateCountry {
+  string countryId = 1;
+  string name = 2;
+  string lang = 3;
+}
+
+message Country {
+  string countryId = 1;
+  string name = 2;
+  string lang = 3;
+}
+
+message GetListCountriesRequest {
+  int32 limit = 1;
+  int32 offset = 2;
+  string lang = 3;
+}
+
+message GetListCountriesResponse {
+  repeated Country countries = 1;
+  int32 total = 2;
+}
+
+message CountryId {
+  string countryId = 1;
+}
+
+message ReloadCountriesListRequest {
+  repeated Country countries = 1;
+  string lang = 2;
+}
+
+message DeleteCountryRequest {
+  string countryId = 1;
+  string lang = 2;
+}
+
+message DeleteCountry {
+  int64 rowAffect = 1;
+}

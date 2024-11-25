@@ -1,0 +1,70 @@
+syntax="proto3";
+
+package scenario_service;
+
+option go_package = "genproto/scenario_service";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+import "common.proto";
+
+service CategoryService {
+    rpc Create (CreateCategoryRequest) returns (Category) {}
+    rpc Update (Category) returns (Category) {}
+    rpc Get (GetCategoryRequest) returns (Category) {}
+    rpc GetList (GetListCategoryRequest) returns (GetListCategoryResponse) {}
+    rpc Delete (DeleteCategoryRequest) returns (google.protobuf.Empty) {}
+}
+
+message CreateCategoryRequest {
+    string name = 1;
+    string base_url = 2;
+    google.protobuf.Struct attributes = 3; 
+    string project_id = 4;
+    string commit_id = 5;
+    string version_id = 6;
+    string environment_id = 7;
+    string parent_id = 8;
+}
+
+message Category {
+    string guid = 1;
+    string name = 2;
+    string base_url = 3;
+    google.protobuf.Struct attributes = 4;
+    string project_id = 5;
+    string commit_id = 6;
+    string version_id = 7;
+    string created_at = 8;
+    string updated_at = 9;
+    string parent_id = 10;
+}
+
+message GetCategoryRequest {
+    string guid = 1;
+    string commit_id = 2;
+    string version_id = 3;
+    string project_id = 4;
+    string environment_id = 5;
+}
+
+message GetListCategoryRequest {
+    Filters filter = 1;
+    string project_id = 2;
+    string commit_id = 3;
+    string version_id = 4;
+    string environment_id = 5;
+}
+
+message GetListCategoryResponse {
+    int64 count = 1;
+    repeated Category categories = 2;
+}
+
+message DeleteCategoryRequest {
+    string guid = 1;
+    string commit_id = 2;
+    string version_id = 3;
+    string project_id = 4;
+    string environment_id = 5;
+}

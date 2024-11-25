@@ -1,0 +1,124 @@
+syntax="proto3";
+
+package mongo_document_service;
+option go_package="genproto/mongo_document_service";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+import "mongo.proto";
+import "bCalculationTable.proto";
+
+service BuildingFacturaService {
+    rpc Upsert(BuildingFactura) returns (google.protobuf.Empty) {}
+    rpc Get(ById) returns (BuildingFactura) {}
+    rpc Delete(ById) returns (google.protobuf.Empty) {}
+    rpc UpdateStatus(UpdateStatusReq) returns (google.protobuf.Empty) {}
+}
+message BFactura {
+    string BuildingFacturaId = 1;
+    string GeneralContractorTinOrPinfl = 2;
+    string CustomerTinOrPinfl = 3;
+    Client GeneralContractor = 4;
+    Client Customer = 5;
+    string TechnicalManagerFullName = 6;
+    string TechnicalManagerPinfl = 7;
+    repeated SubcontractorBuildingFacturas SubcontractorBuildingFacturas = 8;
+    BuildingFacturaDoc BuildingFacturaDoc = 9;
+    ContractDoc ContractDoc = 10;
+    ReportingPeriodDoc ReportingPeriodDoc = 11;
+    BuildingObjectDoc BuildingObjectDoc = 12;
+    WorkingDesign WorkingDesign = 13;
+    WorkingDesign ConstructionWork = 14;
+    WorkingDesign Equipment = 15;
+    Total Total = 16;
+    int32 TotalPrice = 17;
+}
+message BuildingFactura {
+    BFactura BuildingFactura = 1;
+    string Status = 2;
+    string Sign = 3;
+    string PageStatus = 4; 
+    string ContractPdfUz = 5;
+    string ContractPdfRu = 6;
+    string CreatedAt = 7;
+    string UpdatedAt = 8;
+    string HtmlUz = 9;
+    string HtmlRu = 10;
+}
+message Client {
+    string Name = 1;
+    string Account = 2;
+    string BankId = 3;
+    string Address = 4;
+    string Mobile = 5;
+    string WorkPhone = 6;
+    string Oked = 7;
+    string DistrictId = 8;
+    string Director = 9;
+    string Accountant = 10;
+    string VatRegCode = 11;
+    google.protobuf.Int32Value VatRegStatus = 12;
+    string BranchCode = 13;
+    string BranchName = 14;
+    google.protobuf.FloatValue TaxGap = 15;
+}
+message SubcontractorBuildingFacturas {
+    string BuildingFacturaId = 1;
+    string BuildingFacturaNo = 2;
+    string BuildingFacturaDate = 3;
+}
+
+message ReportingPeriodDoc {
+    string ReportingPeriodFrom = 1;
+    string ReportingPeriodTo = 2;
+}
+
+message BuildingObjectDoc {
+    string ObjectId = 1;
+    string ObjectName = 2;
+    string ObjectAddress = 3;
+}
+message WorkingDesign {
+    repeated Works Works = 1;
+    SummaryB Summary = 2;
+}
+message Works {
+    float WorkloadTotal = 1;
+    int32 WorkloadCurrentYear = 2;
+    float PriceTotal = 3;
+    int32 PriceCurrentYear = 4;
+    Report FromStartOfConstruction = 5;
+    Report FromBeginningOfYear = 6;
+    Report ForReportingMonth = 7;
+    int32 OrdNo = 8;
+    string NormativeNumber = 9;
+    string Name = 10;
+    int32 MeasureId = 11;
+    string MeasureName = 12;
+}
+message Report {
+    float Physical = 1;
+    float Percentage = 2;
+    float Price = 3;
+}
+message SummaryB {
+    Total Total = 1;
+    Vat Vat = 2;
+    Vat TotalVat = 3;
+}
+message Total {
+    float WorkloadTotal = 1;
+    float WorkloadCurrentYear = 2;
+    float PriceTotal = 3;
+    float PriceCurrentYear = 4;
+    Report FromStartOfConstruction = 5;
+    Report FromBeginningOfYear = 6;
+    Report ForReportingMonth = 7;
+}
+message Vat {
+    float PriceTotal = 1;
+    float PriceCurrentYear = 2;
+    float FromStartOfConstruction = 3;
+    float FromBeginningOfYear = 4;
+    float ForReportingMonth = 5;
+}

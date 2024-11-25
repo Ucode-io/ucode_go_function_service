@@ -1,0 +1,67 @@
+syntax="proto3";
+
+package document_service;
+option go_package="genproto/document_service";
+
+import "google/protobuf/empty.proto";
+
+service DistrictService {
+  rpc Create(CreateDistrict) returns (DistrictGet) {}
+  rpc GetList(GetListDistrictsRequest) returns (GetListDistrictsResponse) {}
+  rpc Get(DistrictId) returns (DistrictGet) {}
+  rpc Reload(ReloadDistrictsListRequest) returns (google.protobuf.Empty) {}
+  rpc Delete(DeleteDistrictRequest) returns (DeleteDistrict) {}
+}
+
+message CreateDistrict {
+  string districtId = 1;
+  string name = 2;
+  string lang = 3;
+  int32 districtCode = 4;
+  string regionId = 5;
+}
+
+message District {
+  string districtId = 1;
+  string name = 2;
+  string lang = 3;
+  int32 districtCode = 4;
+  int64 regionId = 5;
+}
+
+message DistrictGet {
+  string districtId = 1;
+  string name = 2;
+  string lang = 3;
+  int32 districtCode = 4;
+  string regionId = 5;
+}
+
+message GetListDistrictsRequest {
+  int32 limit = 1;
+  int32 offset = 2;
+  string lang = 3;
+}
+
+message GetListDistrictsResponse {
+  repeated District districts = 1;
+  int32 total = 2;
+}
+
+message DistrictId {
+  string districtId = 1;
+}
+
+message ReloadDistrictsListRequest {
+  repeated District districts = 1;
+  string lang = 2;
+}
+
+message DeleteDistrictRequest {
+  string districtId = 1;
+  string lang = 2;
+}
+
+message DeleteDistrict {
+  int64 rowAffect = 1;
+}

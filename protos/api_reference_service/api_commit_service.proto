@@ -1,0 +1,104 @@
+syntax="proto3";
+
+package api_reference_service;
+option go_package="genproto/api_reference_service";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+
+service CommitService {
+    rpc Create(CreateCommitRequest) returns (CommitWithRelease) {}
+    rpc GetByID(CommitPrimaryKey) returns (CommitWithRelease) {}
+    rpc Update(CommitWithRelease) returns (CommitWithRelease) {}
+    rpc GetList(GetCommitListRequest) returns (GetCommitListResponse) {}
+    rpc Restore(RestoreCommitRequest) returns (google.protobuf.Empty) {}
+    rpc Insert(CreateCommitRequest) returns (InsertCommitResponse) {}
+    rpc GetMultipleCommitInfo(GetMultipleCommitInfoRequest) returns (GetMultipleCommitInfoResponse) {}
+}
+
+message CommitWithRelease {
+    message Release {
+        repeated string ids = 1;
+        string version = 2;
+        bool is_current = 3;
+    }
+    string id = 1;
+    string project_id = 2;
+    string environment_id = 3;
+    string author_id = 4;
+    string name = 5;
+    string created_at = 6;
+    Release release_info = 7;
+    string commit_type = 8;
+}
+
+message CreateCommitRequest {
+    string project_id = 1;
+    string environment_id = 2;
+    string author_id = 3;
+    string name = 4;
+    string commit_type = 5;
+    repeated string version_ids = 6;
+}
+
+message CommitPrimaryKey {
+    string id = 1;
+}
+
+message GetCommitListRequest {
+    int32 limit = 1;
+    int32 offset = 2;
+    string search = 3;
+    string project_id = 4;
+    string environment_id = 5;
+    string created_at = 6;
+    string commit_type = 7;
+}
+
+message GetCommitListResponse {
+    int32 count = 1;
+    repeated CommitWithRelease commits = 2;
+}
+
+message RestoreCommitRequest {
+    string project_id = 1;
+    string environment_id = 2;
+    string id = 3;
+}
+
+message InsertCommitResponse {
+    string commit_id = 1;
+    string version_id = 2;
+}
+
+message GetMultipleCommitInfoRequest {
+    repeated string commit_ids = 1;
+    string project_id = 2;
+}
+
+message CommitInfo {
+    string guid = 1;
+    repeated string version_ids = 2;
+    string project_id = 3;
+    string author_id = 4;
+    string name = 5;
+    string commit_type = 6;
+    string created_at = 7;
+    string updated_at = 8;
+    repeated VersionInfo version_infos = 9;
+}
+
+message VersionInfo {
+    string author_id = 3;
+    string created_at = 4;
+    string updated_at = 5;
+    string desc = 6;
+    bool is_current = 7;
+    string version = 8;
+    string version_id = 9;
+}
+
+message GetMultipleCommitInfoResponse {
+    map<string, CommitInfo> commits = 1;
+    int64 count = 2;
+}

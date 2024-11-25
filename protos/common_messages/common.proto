@@ -1,0 +1,34 @@
+syntax="proto3";
+
+package common_messages;
+option go_package="genproto/common_messages";
+
+message ClickhouseCredentials {
+    string host = 1;
+    string port = 2;
+    string username = 3;
+    string password = 4;
+    string database = 5;
+    int32 max_connections = 6;
+    int32 max_conn_idle_time_in_min = 7;
+}
+
+message MongodbCredentials {
+    string host = 1;
+    string port = 2;
+    string username = 3;
+    string password = 4;
+    string database = 5;
+    int32 max_connections = 6;
+    int32 max_conn_idle_time_in_min = 7;
+}
+
+message PostgresSqlCredentials {
+    string host = 1;
+    string port = 2;
+    string username = 3;
+    string password = 4;
+    string database = 5;
+    int32 max_connections = 6;
+    int32 max_conn_idle_time_in_min = 7;
+}

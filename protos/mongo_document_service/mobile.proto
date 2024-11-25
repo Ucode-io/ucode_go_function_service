@@ -1,0 +1,36 @@
+syntax="proto3";
+
+package mongo_document_service;
+option go_package="genproto/mongo_document_service";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+import "mongo.proto";
+
+service MobileService {
+    rpc Create(Mobile) returns (google.protobuf.Empty) {}
+    rpc Get(ById) returns (Mobile) {}
+    rpc GetAll(ListMobileReq) returns(ListMobileResp) {}
+    rpc Delete(ById) returns (google.protobuf.Empty) {}
+    rpc Update(Mobile) returns (google.protobuf.Empty) {}
+}
+
+message Mobile {
+    string documentId = 1;
+    int32 status = 2;
+    google.protobuf.StringValue message = 3;
+    string challange = 4;
+    string sign = 5;
+    string createdAt = 6;
+    string updatedAt = 7;
+}
+
+message ListMobileReq {
+    int32 page = 1;
+    int32 limit = 2;
+}
+
+message ListMobileResp {
+    repeated Mobile mobiles = 1;
+    int32 count = 2;
+}

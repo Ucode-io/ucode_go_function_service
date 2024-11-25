@@ -1,0 +1,110 @@
+syntax="proto3";
+
+package mongo_document_service;
+option go_package="genproto/mongo_document_service";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+import "mongo.proto";
+service WaybillService {
+    rpc Upsert(Waybill) returns (google.protobuf.Empty) {}
+    rpc Get(ById) returns (Waybill) {}
+    rpc Delete(ById) returns (google.protobuf.Empty) {}
+    rpc UpdateStatus(UpdateStatusReq) returns (google.protobuf.Empty) {}
+}
+message WaybillMongo {
+    string WaybillId = 1;
+    string CarrierTin = 2;
+    string CarrierName = 3;
+    string CarrierBranchCode = 4;
+    string CarrierBranchName = 5;
+    string CustomerTin = 6;
+    string CustomerName = 7;
+    string CustomerBranchCode = 8;
+    string CustomerBranchName = 9;
+    WaybillDoc WaybillDoc = 10;
+    int32 DeliveryType = 11;
+    ContractDoc ContractDoc = 12;
+    TripTicketDoc TripTicketDoc = 13;
+    TruckDoc TruckDoc = 14;
+    TrailerDoc TrailerDoc = 15;
+    string DriverFio = 16;
+    string SellerTin = 17;
+    string SellerName = 18;
+    string BuyerTin = 19;
+    string BuyerName = 20;
+    repeated PointDocs PointDocs = 21;
+    string PointOfRedirectName = 22;
+    string PointOfRedirectAddress = 23;
+    string SpecialNotes = 24;
+    string GiverFio = 25;
+    string GiverDriverFio = 26;
+    string TakerFio = 27;
+    string TakerDriverFio = 28;
+    DeliveryDistanceDoc DeliveryDistanceDoc = 29;
+    WaybillProductList ProductList = 30;
+    string WaybillProductId = 31;
+}
+message Waybill {
+    WaybillMongo Waybill = 1;
+    string Status = 2;
+    string Sign = 3;
+    string PdfUrlUz = 4;
+    string PdfUrlRu = 5;
+    string PageStatus = 6;
+    string CreatedAt = 7;
+    string UpdatedAt = 8;
+    string HtmlUz = 9;
+    string HtmlRu = 10;
+}
+
+message WaybillDoc {
+    string WaybillNo = 1;
+    string WaybillDate = 2;
+}
+message TripTicketDoc {
+    string TripTicketNo = 1;
+    string TripTicketDate= 2;
+}
+message TruckDoc {
+    string TruckRegNo = 1;
+    string TruckModel = 2;
+}
+message TrailerDoc {
+    int32 TrailerType = 1;
+    string TrailerRegNo = 2;
+    string TrailerModel = 3;
+}
+message PointDocs {
+    string PointOfLoading = 1;
+    string PointOfUnloading = 2;
+    int32 Index = 3;
+}
+message DeliveryDistanceDoc {
+    int32 DeliveryDistance = 1;
+    int32 DeliveryDistanceInCity = 2;
+}
+message WaybillProductList {
+    string WaybillProductId = 1;
+    string Tin = 2;
+    string TotalProductSumma = 3;
+    repeated WaybillProducts Products = 4;
+}
+message WaybillProducts {
+    int32 OrdNo = 1;
+    string Name = 2;
+    string MeasureId = 3;
+    float Summa = 4;
+    int32 Count = 5;
+    float TotalSum = 6;
+    string RoadHaulageCost = 7;
+    string FollowDocuments = 8;
+    string MethodDefineWeight = 9;
+    string LoadClass = 10;
+    string WeightBrutto = 11;
+    string WeightNetto = 12;
+    string CatalogCode = 13;
+    string CatalogName = 14;
+    google.protobuf.StringValue BarCode = 15;
+    string MeasureName = 16;
+}

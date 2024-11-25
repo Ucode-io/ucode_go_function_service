@@ -1,0 +1,7 @@
+syntax="proto3";
+
+package convert_template_service;
+option go_package="genproto/convert_template";
+
+import "convert_template.proto";
+import "convert_template_ping_service.proto";

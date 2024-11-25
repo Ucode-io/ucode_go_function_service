@@ -1,0 +1,170 @@
+syntax="proto3";
+
+package document_service;
+option go_package="genproto/document_service";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+service ProductService {
+  rpc Create(ProductRequest) returns (ProductId) {}
+  rpc GetAll(GetAllProductRequest) returns (GetAllProductResponse) {}
+  rpc Delete(ProductDetails) returns (google.protobuf.Empty) {}
+  rpc Reload(ReloadProductReq) returns (google.protobuf.Empty) {}
+}
+
+message ProductDetails {
+  string tin = 1;
+  string pinfl = 2;
+  string id = 3;
+  string lang = 4;
+  string mxikCode = 5;
+}
+
+message ProductId {
+  string id = 1;
+}
+
+message GetAllProductRequest {
+  int32 limit = 1;
+  int32 offset = 2;
+  string search = 3;
+  string tin = 4; 
+  string lang = 5;
+}
+
+message GetAllProductResponse {
+  int64 count = 1;
+  repeated ProductsList products = 2;
+}
+
+message GetAllProducts {
+  repeated ProductRequest data = 1;
+}
+
+message ProductsList {
+  string id = 1;
+  string className = 2;
+  int64 commonUnitCode = 3;
+  string commonUnitName = 4;
+  string groupName = 5;
+  int64 isActive = 6;
+  int64 label = 7;
+  string mxikCode = 8;
+  string pkey = 9;
+  string positionName = 10;
+  string subPositionName = 11;
+  repeated PackageNames packageNames = 12;
+  string tin = 13;
+  int64 unitCode = 14;
+  string unitName = 15;
+  string unitValue = 16;
+  string usePackage = 17;
+  repeated Units units = 18;
+  string pinfl = 19;
+  google.protobuf.StringValue internationalCode = 20;
+  google.protobuf.StringValue brandName = 21;
+  google.protobuf.StringValue attributeName = 22;
+}
+
+message ReloadProductReq {
+  string lang = 1;
+  repeated ReloadData data = 2;
+}
+
+message ReloadData {
+  string id = 1;
+  string className = 2;
+  int64 commonUnitCode = 3;
+  string commonUnitName = 4;
+  string groupName = 5;
+  int64 isActive = 6;
+  int64 label = 7;
+  string mxikCode = 8;
+  string pkey = 9;
+  string positionName = 10;
+  string subPositionName = 11;
+  repeated PackageNames packageNames = 12;
+  string tin = 13;
+  int64 unitCode = 14;
+  string unitName = 15;
+  string unitValue = 16;
+  string usePackage = 17;
+  repeated Units units = 18;
+  string pinfl = 19;
+  google.protobuf.StringValue internationalCode = 20;
+  google.protobuf.StringValue brandName = 21;
+  google.protobuf.StringValue attributeName = 22;
+  string mxikFullname = 23;
+  string usePackage2 = 24;
+  string lang = 25;
+}
+
+message ProductRequest {
+  string className = 1;
+  int64 commonUnitCode = 2;
+  string commonUnitName = 3;
+  string groupName = 4;
+  int64 isActive = 5;
+  int64 label = 6;
+  string mxikCode = 7;
+  string pkey = 8;
+  string positionName = 9;
+  string subPositionName = 10;
+  repeated CreatePackageNames packageNames = 11;
+  string tin = 12;
+  int64 unitCode = 13;
+  string unitName = 14;
+  string unitValue = 15;
+  string usePackage = 16;
+  repeated CreateUnit units = 17;
+  string pinfl = 18;
+  string lang = 19;
+  google.protobuf.StringValue internationalCode = 20;
+  google.protobuf.StringValue brand_name = 21;
+  google.protobuf.StringValue attribute_name = 22;
+}
+
+message Units {
+  int64 commonUnitsId = 1;
+  string description = 2;
+  string difference = 3;
+  string id = 4;
+  string name = 5;
+  string nameLatin = 6;
+  string nameRu = 7;
+  string nameUz = 8;
+  string unit = 9;
+  string productId = 10;
+}
+
+message CreateUnit {
+  int64 commonUnitsId = 1;
+  string description = 2;
+  string difference = 3;
+  string name = 4;
+  string nameLatin = 5;
+  string nameRu = 6;
+  string nameUz = 7;
+  string unit = 8;
+}
+
+message PackageNames {
+  int64 code = 1;
+  string mxikCode = 2;
+  string nameLat = 3;
+  string nameRu = 4;
+  string nameUz = 5;
+  string packageType = 6;
+  string id = 7;
+  string product_id = 8;
+}
+
+message CreatePackageNames {
+  int32 code = 1;
+  string mxikCode = 2;
+  string nameLat = 3;
+  string nameRu = 4;
+  string nameUz = 5;
+  string packageType = 6;
+}

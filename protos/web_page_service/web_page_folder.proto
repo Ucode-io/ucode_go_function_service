@@ -1,0 +1,71 @@
+syntax="proto3";
+
+package web_page_service;
+option go_package="genproto/web_page_service";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+
+
+service FolderService {
+  rpc CreateFolder(CreateFolderReq) returns (Folder) {}
+  rpc GetListFolder(GetListFolderReq) returns (GetListFolderRes) {}
+  rpc GetSingleFolder(GetSingleFolderReq) returns (Folder) {}
+  rpc UpdateFolder(UpdateFolderReq) returns (Folder) {}
+  rpc DeleteFolder(DeleteFolderReq) returns (google.protobuf.Empty) {}
+}
+
+message Folder {
+  string id = 1;
+  string project_id = 2;
+  string title = 3;
+  string environment_id = 4;
+  string resource_id = 5;
+}
+
+message CreateFolderReq {
+  string project_id = 1;
+  string title = 2;
+  string environment_id = 3;
+  string resource_id = 4;
+}
+
+message GetListFolderReq {
+  string project_id = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+  string environment_id = 4;
+  string resource_id = 5;
+}
+
+message GetListFolderRes {
+  repeated Folder folders = 1;
+  int32 count = 2;
+}
+
+message GetSingleFolderReq {
+  string id = 1;
+  string project_id = 2;
+  string environment_id = 3;
+  string resource_id = 4;
+}
+
+message GetSingleFolderRes {
+  repeated Folder folders = 1;
+  int32 count = 2;
+}
+
+message UpdateFolderReq {
+  string id = 1;
+  string project_id = 2;
+  string title = 3;
+  string resource_id = 4;
+  string environment_id = 5;
+}
+
+message DeleteFolderReq {
+  string id = 1;
+  string project_id = 2;
+  string environment_id = 3;
+  string resource_id = 4;
+}

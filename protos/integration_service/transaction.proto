@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+package integration_service_v2;
+option go_package="genproto/integration_service_v2";
+import "google/protobuf/empty.proto";
+
+service TransactionService {
+    rpc Insert (Transaction) returns (TransactionResponse) {};
+    rpc SaveCard (SaveCardTransaction) returns (TransactionResponse) {};
+    rpc GetAll (GetAllTransactionRequest) returns (GetAllTransactionResponse) {};
+    rpc UpdateStatus (UpdateTransactionStatusRequest) returns (google.protobuf.Empty) {};
+    rpc Get (GetTransactionRequest) returns (Transaction) {};
+}
+
+message Transaction {
+    string id = 1;
+    string order_id = 2;
+    int32 status = 3;
+    string transaction_id = 4;
+    int32 action = 5;
+    string currency = 6;
+    float price = 7;
+    string created_date = 8;
+    string created_at = 9;
+    string updated_at = 10;
+    string deleted_at = 11;
+    string data = 12;
+    string product_id = 13;
+    int32 amount = 14;
+    string resp_id = 15;
+    string project_id = 16;
+    string environment = 17;
+}
+message SaveCardTransaction {
+    string id = 1;
+    string order_id = 2;
+    int32 status = 3;
+    string transaction_id = 4;
+    int32 action = 5;
+    string currency = 6;
+    float price = 7;
+    string created_date = 8;
+    string created_at = 9;
+    string updated_at = 10;
+    string deleted_at = 11;
+    string data = 12;
+    string product_id = 13;
+    int32 amount = 14;
+    string resp_id = 15;
+    string card_id = 16;
+}
+
+
+message GetAllTransactionResponse {
+   repeated Transaction transactions = 1;
+   int32 count = 2;
+}
+
+message TransactionResponse {
+    string id = 1;
+}
+
+message GetTransactionRequest {
+    string id = 1;
+}
+
+message UpdateTransactionStatusRequest {
+    string id = 1;
+    int32 status = 2;
+}
+
+message GetAllTransactionRequest {
+    int32 offset = 1;
+    int32 limit = 2;
+    string search = 3;
+    string project_id = 4;
+    string environment = 5;
+    int32 status = 6;
+}

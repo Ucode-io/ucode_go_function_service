@@ -1,0 +1,139 @@
+syntax="proto3";
+
+package web_page_service;
+option go_package="genproto/web_page_service";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+import "web_page_commit.proto";
+
+
+service WebPageService {
+  rpc CreateWebPage(CreateWebPageReq) returns (WebPage) {}
+  rpc GetListWebPage(GetListWebPageReq) returns (GetListWebPageRes) {}
+  rpc GetSingleWebPage(GetSingleWebPageReq) returns (WebPage) {}
+  rpc UpdateWebPage(WebPage) returns (WebPage) {}
+  rpc DeleteWebPage(DeleteWebPageReq) returns (google.protobuf.Empty) {}
+  rpc RevertWebPage (RevertWebPageReq) returns (WebPage) {}
+  rpc CreateManyWebPage(ManyVersions) returns (google.protobuf.Empty) {}
+  rpc GetWebPageChanges(GetWebPageHistoryReq) returns (GetWebPageHistoryRes) {}
+}
+
+message WebPage {
+  string id = 1;
+  string title = 2;
+  string project_id = 3;
+  string environment_id = 4;
+  string folder_id = 5;
+  string resource_id = 6;
+  google.protobuf.Struct components = 7;
+  string commit_id = 8;
+  CommitInfo commit_info = 9;
+  string version_id = 10;
+  string icon = 11;
+  string app_id = 12;
+}
+
+message CreateWebPageReq {
+  string title = 1;
+  string project_id = 2;
+  string resource_id = 3;
+  string environment_id = 4;
+  string folder_id = 5;
+  string commit_id = 6;
+  google.protobuf.Struct components = 7;
+  CommitInfo commit_info = 8;
+  string version_id = 9;
+  string icon = 10;
+  string app_id = 11;
+}
+
+message GetListWebPageReq {
+  string project_id = 1;
+  string folder_id = 2;
+  string environment_id = 3;
+  string commit_id = 4;
+  int32 limit = 5;
+  int32 offset = 6;
+  string resource_id = 7;
+  string app_id = 8;
+}
+
+message GetListWebPageRes {
+  repeated WebPage web_pages = 1;
+  int32 count = 2;
+}
+
+message GetSingleWebPageReq {
+  string project_id = 1;
+  string id = 2;
+  string version_id = 3;
+  string commit_id = 4;
+  string environment_id = 5;
+  string resource_id = 6;
+}
+
+message DeleteWebPageReq {
+  string project_id = 1;
+  string id = 2;
+  string version_id = 3;
+  string environment_id = 4;
+  string resource_id = 5;
+  string folder_id = 6;
+  string app_id = 7;
+}
+
+message GetWebPageHistoryReq {
+  string id = 1;
+  string project_id = 2;
+  int64 limit = 3;
+  int64 offset = 4;
+  string environment_id = 5;
+  string resource_id = 6;
+}
+
+message GetWebPageHistoryRes {
+  int32 count = 1;
+  string id = 2;
+  message WebPageHistory {
+    CommitInfo commit_info = 1;
+    map<string, VersionInfo> version_infos = 2;
+    string created_at = 7;
+    string updated_at = 8;
+  }
+  repeated WebPageHistory web_pages = 3;
+}
+
+message RevertWebPageReq {
+  string new_commit_id = 1;
+  string version_id = 2;
+  string id = 3;
+  string old_commit_id = 4;
+  string project_id = 5;
+  string environment_id = 6;
+  string resource_id = 7;
+  CommitInfo commit_info = 8;
+}
+
+message RevertWebPagesRequest {
+  string commit_id =1;
+  string project_id = 2;
+}
+
+message ManyVersions {
+  repeated string version_ids = 1;
+  string new_commit_id = 2;
+  string project_id = 3;
+  string environment_id = 4;
+  string id = 5;
+  string old_commit_id = 6;
+  CommitInfo commit_info = 7;
+  string version_id = 8;
+  string resource_id = 9;
+}
+
+message WebPageManyVersions {
+  repeated string version_ids = 1;
+  string project_id = 2;
+  string oldcommit_id = 3;
+}

@@ -1,0 +1,76 @@
+syntax="proto3";
+
+package project_service;
+option go_package="genproto/project_service";
+
+import "google/protobuf/empty.proto";
+
+service ProjectService {
+    rpc Create(CreateProjectRequest) returns (CreateProjectResponse) {}
+    rpc GetByID(ProjectPrimaryKey) returns (Project) {}
+    rpc GetAll(GetAllProjectsRequest) returns (GetAllProjectsResponse) {}
+    rpc Update(UpdateProjectRequest) returns (google.protobuf.Empty) {}
+    rpc Delete(ProjectPrimaryKey) returns (google.protobuf.Empty) {}
+}
+
+message CreateProjectRequest {
+    string name = 1;
+    string namespace = 2;
+    string object_builder_service_host = 3;
+    string object_builder_service_port = 4;
+    string auth_service_host = 5;
+    string auth_service_port = 6;
+    string analytics_service_host = 7;
+    string analytics_service_port = 8;
+}
+
+message CreateProjectResponse {
+    string id = 1;
+    string name = 2;
+    string namespace = 3;
+    string object_builder_service_host = 4;
+    string object_builder_service_port = 5;
+    string auth_service_host = 6;
+    string auth_service_port = 7;
+    string analytics_service_host = 8;
+    string analytics_service_port = 9;
+}
+
+message Project {
+    string id = 1;
+    string name = 2;
+    string namespace = 3;
+    string object_builder_service_host = 4;
+    string object_builder_service_port = 5;
+    string auth_service_host = 6;
+    string auth_service_port = 7;
+    string analytics_service_host = 8;
+    string analytics_service_port = 9;
+}
+
+message UpdateProjectRequest {
+    string id = 1;
+    string name = 2;
+    string namespace = 3;
+    string object_builder_service_host = 4;
+    string object_builder_service_port = 5;
+    string auth_service_host = 6;
+    string auth_service_port = 7;
+    string analytics_service_host = 8;
+    string analytics_service_port = 9;
+}
+
+message GetAllProjectsResponse {
+    repeated Project projects = 1;
+    int32 count = 2;
+}
+
+message ProjectPrimaryKey {
+    string id = 1;
+}
+
+message GetAllProjectsRequest {
+    int32 offset = 1;
+    int32 limit = 2;
+    string search = 3;
+}

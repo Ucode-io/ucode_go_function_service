@@ -1,0 +1,111 @@
+syntax="proto3";
+
+package postgres_object_builder_service;
+option go_package="genproto/postgres_object_builder_service";
+
+import "google/protobuf/empty.proto";
+import "postgres_field.proto";
+import "postgres_section.proto";
+
+service TableService {
+    rpc Create(CreateTableRequest) returns (CreateTableResponse) {}
+    rpc GetByID(TablePrimaryKey) returns (Table) {}
+    rpc GetAll(GetAllTablesRequest) returns (GetAllTablesResponse) {}
+    rpc Update(Table) returns (google.protobuf.Empty) {}
+    rpc Delete(TablePrimaryKey) returns (google.protobuf.Empty) {}
+
+    rpc GetListTableHistory(GetTableHistoryRequest) returns (GetTableHistoryResponse) {}
+    rpc GetTableHistoryById(TableHistoryPrimaryKey) returns (TableHistory) {}
+    rpc RevertTableHistory(TableHistoryPrimaryKey) returns (TableHistory) {}
+    rpc InsertVersionsToCommit(InsertVersionsToCommitRequest) returns (TableHistory) {}
+}
+
+message InsertVersionsToCommitRequest {
+    string id = 1;
+    repeated string version_ids = 2;
+}
+
+message GetTableHistoryRequest {
+    string table_id = 1;
+}
+
+message TableHistoryPrimaryKey {
+    string id = 1;
+}
+
+message TableHistory {
+    string id = 1;
+    string created_at = 2;
+    repeated string version_ids = 3;
+}
+
+message GetTableHistoryResponse {
+    repeated TableHistory items = 1;
+}
+
+message CreateTableRequest {
+    string label = 1;
+    string description = 2;
+    string slug = 3;
+    repeated CreateFieldsRequest fields = 4;
+    bool show_in_menu = 5;
+    string icon = 6;
+    string subtitle_field_slug = 7;
+    repeated Section sections = 8;
+    string app_id = 9;
+    IncrementID increment_id = 10;
+    string project_id = 11;
+    string commit_id = 12;
+    string version_id = 13;
+}
+
+message IncrementID {
+    bool with_increment_id = 1;
+    int32 digit_number = 2;
+    string prefix = 3;
+}
+
+message CreateTableResponse {
+    string id = 1;
+    string label = 2;
+    string description = 3;
+    string slug = 4;
+    repeated Field fields = 5;
+    bool show_in_menu = 6;
+    string icon = 7;
+    string subtitle_field_slug = 8;
+    repeated Section sections = 9;
+    IncrementID increment_id = 10;
+}
+
+message Table {
+    string id = 1;
+    string label = 2;
+    string description = 3;
+    string slug = 4;
+    bool show_in_menu = 5;
+    string icon = 6;
+    string subtitle_field_slug = 7;
+    bool is_visible = 8;
+    bool is_own_table = 9;
+    IncrementID increment_id = 10;
+    string project_id = 11;
+}
+
+message GetAllTablesResponse {
+    repeated Table tables = 1;
+    int32 count = 2;
+}
+
+message TablePrimaryKey {
+    string id = 1;
+    string project_id = 2;
+    string version_id = 3;
+}
+
+message GetAllTablesRequest {
+    int32 offset = 1;
+    int32 limit = 2;
+    string search = 3;
+    string project_id = 4;
+}

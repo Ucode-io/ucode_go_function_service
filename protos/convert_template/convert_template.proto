@@ -1,0 +1,21 @@
+syntax="proto3";
+
+package convert_template_service;
+option go_package="genproto/convert_template";
+
+import "google/protobuf/struct.proto";
+
+
+service ConvertTemplateService {
+    rpc WkHtmlToPdf(WkHtmlToPdfRequest) returns (WkHtmlToPdfResponse) {}
+}
+
+message WkHtmlToPdfRequest {
+    string template_name = 1;
+    google.protobuf.Struct data = 2;
+}
+
+message WkHtmlToPdfResponse {
+    string filename = 1;
+    string hash = 2;
+}

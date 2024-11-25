@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package  scenario_service;
+
+option go_package = "genproto/scenario_service";
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/empty.proto";
+import "common.proto";
+import "dag_dag_steps.proto";
+import "scenario_commit.proto";
+
+service DAGService {
+    rpc Create(CreateDAGRequest) returns (DAG);
+    rpc Get(GetDAGRequest) returns (DAG);
+    rpc GetAll(GetAllDAGRequest) returns (DAGList);
+    rpc Delete(DeleteDAGRequest) returns (google.protobuf.Empty);
+    rpc Update(CreateScenarioRequest) returns (DAG);
+    rpc CreateScenario(CreateScenarioRequest) returns (DAG);
+    rpc GetScenarioHistory(GetScenarioHistoryRequest) returns (GetScenarioHistoryResponse);
+    rpc SelectManyScenarioVersions(CommitWithRelease) returns (CommitWithRelease);
+    rpc RevertScenario(RevertScenarioRequest) returns (RevertScenarioResponse);
+}
+

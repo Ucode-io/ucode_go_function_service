@@ -1,0 +1,18 @@
+syntax="proto3";
+
+package convert_template_service;
+option go_package="genproto/convert_template";
+
+
+
+service ConvertPingService {
+    rpc Ping (PingRequest) returns (PingResponse) {}
+}
+
+message PingResponse {
+    string message = 1;
+}
+
+message PingRequest {
+    string message = 1;
+}

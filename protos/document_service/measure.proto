@@ -1,0 +1,48 @@
+syntax="proto3";
+
+package document_service;
+option go_package="genproto/document_service";
+
+import "google/protobuf/empty.proto";
+
+service MeasureService {
+  rpc Create(MeasureRequest) returns (MeasureId) {}
+  rpc GetAll(GetAllMeasureRequest) returns (GetMeasuresList) {}
+  rpc GetById(MeasureId) returns (Measure) {}
+  rpc Update(MeasureRequest) returns (google.protobuf.Empty) {}
+  rpc Delete(MeasureId) returns (google.protobuf.Empty) {}
+  rpc UpdateMeasures(MeasuresList) returns (google.protobuf.Empty) {}
+}
+
+message MeasureRequest {
+  string id = 1;
+  string name = 2;
+}
+
+message Measure {
+  string id = 1;
+  string name = 2;
+}
+
+message GetAllMeasureRequest {
+  int32 limit = 1;
+  int32 offset = 2;
+  string lang = 3;
+}
+
+message GetMeasuresList {
+  int32 count = 1;
+  repeated Measure measures = 2;
+}
+
+message MeasureId {
+  string id = 1;
+}
+message UpdateMeasuresReq {
+  string measureId = 1;
+  string name = 2;
+}
+message MeasuresList {
+  repeated UpdateMeasuresReq measures = 1;
+  string lang = 2;
+}

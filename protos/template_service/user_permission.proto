@@ -1,0 +1,80 @@
+syntax="proto3";
+
+package user_permission_service;
+option go_package="genproto/template_service";
+
+import "google/protobuf/empty.proto";
+// import "google/protobuf/struct.proto";
+
+
+service UserPermissionService {
+    // user permission rpc methods
+    rpc CreateUserPermission(CreateUserPermissionReq) returns (UserPermission) {}
+    rpc GetListUserPermission(GetListUserPermissionReq) returns (GetListUserPermissionRes) {}
+    rpc GetSingleUserPermission(GetSingleUserPermissionReq) returns (UserPermission) {}
+    rpc UpdateUserPermission(UpdateUserPermissionReq) returns (UserPermission) {}
+    rpc DeleteUserPermission(DeleteUserPermissionReq) returns (google.protobuf.Empty) {}
+}
+
+message UserPermission {
+    string id = 1;
+    string object_id = 2;
+    string email = 3;
+    string username = 4;
+    string user_id = 5;
+    string photo_url = 6;
+    string type = 7;
+    string role = 8;
+    bool is_deleted = 9;
+    string project_id = 10;
+}
+
+message CreateUserPermissionReq {
+    string object_id = 1;
+    string email = 2;
+    string username = 3;
+    string user_id = 4;
+    string photo_url = 5;
+    string type = 6;
+    string role = 7;
+    bool is_deleted = 8;
+    string project_id = 9;
+    string resource_id = 10;
+}
+
+message GetListUserPermissionReq {
+    string object_id = 1;
+    string project_id = 2;
+    string resource_id = 3;
+}
+
+message GetListUserPermissionRes {
+    repeated UserPermission users = 1;
+    int32 count = 2;
+}
+
+message GetSingleUserPermissionReq {
+    string id = 1;
+    string project_id = 2;
+    string resource_id = 3;
+}
+
+message UpdateUserPermissionReq {
+    string id = 1;
+    string object_id = 2;
+    string email = 3;
+    string username = 4;
+    string user_id = 5;
+    string photo_url = 6;
+    string type = 7;
+    string role = 8;
+    bool is_deleted = 9;
+    string project_id = 10;
+    string resource_id = 11;
+}
+
+message DeleteUserPermissionReq {
+    string id = 1;
+    string project_id = 2;
+    string resource_id = 3;
+}

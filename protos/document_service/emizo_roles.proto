@@ -1,0 +1,36 @@
+syntax="proto3";
+
+package document_service;
+option go_package="genproto/document_service";
+
+import "google/protobuf/empty.proto";
+
+service EimzoRoles {
+    rpc Create(CreateRoleReq) returns (google.protobuf.Empty) {}
+    rpc Get(RoleGetReq) returns (RoleGetRes) {}
+    rpc Reload(ReloadReq) returns (google.protobuf.Empty) {}
+} 
+
+message CreateRoleReq {
+    int32 code = 1;
+    string name = 2;
+    string lang = 3;
+}
+
+message RoleGetReq {
+    string lang = 1;
+}
+
+message RoleGetRes {
+    repeated CodeName roles = 1;
+}
+
+message ReloadReq {
+    string lang = 1;
+    repeated CodeName codeName = 2;
+}
+
+message CodeName {
+    int32 code = 1;
+    string name = 2;
+}

@@ -1,0 +1,213 @@
+syntax = "proto3";
+
+option go_package = "genproto/chat_service";
+import "google/protobuf/empty.proto";
+
+// The service definition
+service ChatService {
+    rpc CreateChat (CreateChatRequest) returns (CreateChatResponse) {}
+    rpc GetChatByChatId (GetChatByChatIdRequest) returns (GetChatByChatIdResponse) {}
+    rpc GetChatByUserId (GetChatByUserIdRequest) returns (GetChatByUserIdResponse) {}
+
+    rpc GetChatList (GetChatListRequest) returns (GetChatListResponse) {}
+    rpc CreateMessage(CreateMessageRequest) returns (google.protobuf.Empty) {}
+    rpc UpdateChat(UpdateChatRequest) returns (google.protobuf.Empty) {}
+    rpc UpdateChatProfielPhotoUrl(UpdateProfilePhotoUrlRequest) returns (google.protobuf.Empty) {}
+    rpc UpdateChatMessage(UpdateChatMessageRequest) returns (google.protobuf.Empty) {}
+    rpc UpdateChatMessageCount(UpdateChatMessageCountRequest) returns (google.protobuf.Empty) {}
+  
+    rpc CreateBot (CreateBotRequest) returns (CreateBotResponse) {}
+    rpc UpdateBotStatus(UpdateBotStatusRequest) returns (google.protobuf.Empty) {}
+    rpc UpdateBotToken(UpdateBotTokenRequest) returns (google.protobuf.Empty) {}
+    rpc GetBotTokenList (GetBotTokenListRequest) returns (GetBotTokenListResponse) {}
+    rpc GetBotTokenByBotId (GetBotByBotIdRequest) returns (GetBotByBotIdResponse) {}
+    rpc GetBotStatusByBotToken (GetBotStatusRequest) returns (GetBotStatusResponse) {}
+    rpc GetBotIDByChatId (GetBotIDByChatIDRequest) returns (GetBotIDByChatIDResponse) {}
+    rpc DeleteBotToken(DeleteBotTokenRequest) returns (google.protobuf.Empty) {}
+}
+
+message Bot{
+    string bot_id =1;
+    string bot_token = 2;
+    string environment_id = 3;
+    string created_at = 4;
+    string updated_at = 5;
+    string status=6;
+}
+
+message CreateBotRequest{
+    string bot_token = 1;
+    string environment_id = 2;
+}
+
+message CreateBotResponse{
+    string bot_id = 1;
+}
+
+message DeleteBotTokenRequest{
+    string bot_id = 1;
+}
+
+message UpdateBotStatusRequest{
+    string bot_token = 1;
+    string status = 2;
+}
+
+message UpdateBotTokenRequest{
+    string bot_id = 1;
+    string bot_token = 2;
+}
+
+message GetBotByBotIdRequest{
+    string bot_id = 1;
+}
+
+message GetBotStatusRequest{
+    string bot_token = 1;
+}
+
+message GetBotStatusResponse{
+    string status = 1;
+}
+
+message GetBotTokenListResponse{
+    repeated Bot bottokenlist = 1;
+}
+
+message GetBotTokenListRequest{
+    string environment_id = 1;
+}
+
+message GetBotByBotIdResponse{
+    string bot_token =1;
+}
+
+message DeleteBotToken{
+    string bot_id = 1;
+}
+
+// Chat ...
+message Chat { 
+    string phone_number = 1;
+    string sender_name = 2;
+    string message = 3;
+    string platform_type = 4;
+    string environment_id = 5;
+    string created_at = 6;
+    bool check=7;
+}
+
+message CreateChatRequest{
+    string user_id = 1;
+    string bot_id = 2;
+    Chat chat = 3;
+    string user_profile_photo_url=4;
+}
+
+message CreateChatResponse{
+    string chat_id = 1;
+}
+
+message UserMessage {
+    string sender_name = 1;
+    string message = 2;
+    string created_at = 3;
+    string user_id = 4;
+    string platform_type = 5;
+    bool check=6;
+    string message_id=7;
+    string bot_id = 8;
+    string message_type = 9;
+}
+
+message GetChatByChatIdRequest {
+    string chat_id = 1;
+}
+
+message GetChatByUserIdRequest {
+    string user_id = 1;
+    string bot_id = 2;
+}
+
+message GetBotIDByChatIDRequest {
+    string chat_id = 1;
+}
+
+message UpdateProfilePhotoUrlRequest {
+    string user_id = 1;
+    string user_profile_photo_url=2;
+}
+
+message GetBotIDByChatIDResponse{
+    string bot_id = 1;
+}
+
+
+message GetChatByChatIdResponse {
+    string chat_id = 1;
+    repeated UserMessage messages = 2;
+    string platform_type = 3;
+    string user_id = 4;
+    string bot_id = 5;
+    string user_profile_photo_url=6;
+    int32 unread_message_count = 7;
+}
+
+message GetChatByUserIdResponse {
+    string user_id = 1;
+    string chat_id = 2;
+    string bot_id = 3;
+    string user_profile_photo_url=4;
+}
+
+message GetChatListRequest {
+    string environment_id = 1;
+    string search = 2;
+}
+
+message ChatWithLastMessageData {
+    string chat_id = 1;
+    string sender_name = 2;
+    UserMessage message = 3;
+    string environment_id = 4;
+    bool check = 5;
+    string created_at = 6;
+    string platform_type = 7;
+    string user_id = 8;
+    string bot_id=9;
+    string message_type = 10;
+    string user_profile_photo_url=11;
+    int32 unread_message_count = 12;
+
+}
+
+message GetChatListResponse {
+    string environment_id = 1;
+    repeated ChatWithLastMessageData chats = 2;
+}
+
+message CreateMessageRequest {
+    string chat_id = 1;
+    UserMessage message = 2;
+}
+
+message GetSelfChatContent {
+    string chat_id = 1;
+    string environment_id = 2;
+}
+
+message GetSelfChatContentResponse {
+    ChatWithLastMessageData message = 1;
+}
+
+message UpdateChatRequest {
+    string chat_id = 1;
+}
+
+message UpdateChatMessageRequest {
+    string message_id = 1;
+}
+
+message UpdateChatMessageCountRequest {
+    string chat_id = 1;
+}

@@ -1,0 +1,28 @@
+syntax="proto3";
+
+package postgres_object_builder_service;
+option go_package="genproto/postgres_object_builder_service";
+
+
+service BarcodeService {
+    rpc Generate(BarcodeGenerateReq) returns (BarcodeGenerateRes) {}
+    rpc GenerateCodeWithPrefix(CodeGenerateReq) returns (CodeGenerateRes) {}
+}
+
+message BarcodeGenerateReq {
+    string table_slug = 1;
+    string project_id = 2;
+}
+message BarcodeGenerateRes {
+    string number = 1;
+}
+
+message CodeGenerateReq {
+    string table_slug = 1;
+    string project_id = 2;
+    string field_id = 3;
+}
+
+message CodeGenerateRes {
+    string code = 1;
+}

@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package postgres_object_builder_service;
+
+option go_package="genproto/postgres_object_builder_service";
+
+import "postgres_app.proto";
+import "postgres_barcode.proto";
+import "postgres_builder_project.proto";
+import "postgres_cascading.proto";
+import "postgres_dashboard.proto";
+import "postgres_excel.proto";
+import "postgres_field.proto";
+import "postgres_fields_and_relations.proto";
+import "postgres_login.proto";
+import "postgres_object_builder.proto";
+import "postgres_panel.proto";
+import "postgres_permission.proto";
+import "postgres_ping_service.proto";
+import "postgres_relation.proto";
+import "postgres_section.proto";
+import "postgres_setting.proto";
+import "postgres_table_helpers.proto";
+import "postgres_table.proto";
+import "postgres_variable.proto";
+import "postgres_view.proto";
+import "postgres_custom_event.proto";

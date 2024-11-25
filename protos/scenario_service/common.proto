@@ -1,0 +1,14 @@
+syntax="proto3";
+
+package scenario_service;
+
+option go_package = "genproto/scenario_service";
+
+message Filters {
+    int64 limit = 1;
+    int64 offset = 2;
+    string sort = 3;
+    string order = 4;
+    string search = 5;
+    int64 page = 6;
+}

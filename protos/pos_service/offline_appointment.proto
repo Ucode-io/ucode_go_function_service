@@ -1,0 +1,84 @@
+syntax="proto3";
+
+package pos_service;
+option go_package="genproto/pos_service";
+
+import "google/protobuf/empty.proto";
+import "booked_appointment.proto";
+
+
+service OfflineAppointmentService {
+    rpc GetList(GetAllOfflineAppointmentsRequest) returns (GetAllOfflineAppointmentsResponse) {}
+    rpc GetSingle(OfflineAppointmentPrimaryKey) returns (GetSingleOfflineAppointmentResponse) {}
+    rpc UpdatePaymentStatus(UpdatePaymentStatusBody) returns (google.protobuf.Empty) {}
+    rpc GetCloseCashboxInfo(CashboxRequestBody) returns (CashboxResponse) {}
+    rpc GetOpenCashboxInfo (CashboxRequestBody) returns (CashboxResponse) {}
+    rpc CreateCashboxTransaction (CreateCashboxTransactionRequest) returns (google.protobuf.Empty);
+}
+
+message CreateCashboxTransactionRequest {
+    string cashbox_id = 1;
+    string comment = 2;
+    string status  = 3;
+    int32 amount_of_money = 4;
+}
+
+message CashboxRequestBody {
+    string cashbox_id = 1;
+}
+
+message CashboxResponse {
+    repeated OverallPayment overall_payments = 1;
+}
+
+message OverallPayment {
+    string type = 1;
+    int32 amount = 2;
+}
+
+message OfflineAppointment {
+    string date = 1;
+    string patient_full_name = 2;
+    int32 overall_price = 3;
+    string payment_status = 4;
+    string registrator_name = 5;
+    string id = 6;
+}
+
+message UpdatePaymentStatusBody {
+    string id = 1;
+    repeated string service_ids = 2;
+    repeated Payment payments = 3;
+    string appointment_type = 4;
+    string cashbox_id = 5;
+}
+
+message Payment {
+    string payment_type = 1;
+    int64 amount = 2;
+}
+
+message GetSingleOfflineAppointmentResponse {
+    repeated Service services = 1;
+    repeated PaymentResponse payments = 2; 
+}
+
+message GetAllOfflineAppointmentsResponse {
+    repeated OfflineAppointment offline_appointments = 1;
+    int32 count = 2;
+}
+
+message GetAllOfflineAppointmentsRequest {
+    string search = 1;
+    string branch_id = 2;
+    string date = 3;
+    string patient_id = 4;
+    int32 limit = 5;
+    int32 offset = 6;
+    string payment_status = 7;
+    string cashbox_id = 8;
+}
+
+message OfflineAppointmentPrimaryKey {
+    string id = 1;
+}

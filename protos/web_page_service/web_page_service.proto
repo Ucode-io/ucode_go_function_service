@@ -1,0 +1,9 @@
+syntax="proto3";
+
+package web_page_service;
+option go_package="genproto/web_page_service";
+
+import "web_page.proto";
+import "web_page_folder.proto";
+import "web_page_commit.proto";
+import "web_page_app.proto";

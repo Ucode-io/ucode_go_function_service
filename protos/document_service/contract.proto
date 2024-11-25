@@ -1,0 +1,62 @@
+syntax="proto3";
+
+package document_service;
+option go_package="genproto/document_service";
+
+import "google/protobuf/empty.proto";
+
+service ContractService {
+  rpc Create(Contract) returns (Contract) {};
+  rpc UpdateClientStatus(ClientStatus) returns (google.protobuf.Empty) {}
+  rpc UpdateRead(UpdateReadStatusReq) returns (google.protobuf.Empty) {}
+}
+
+message ClientStatus {
+  string tin = 1;
+  string contractId = 2;
+}
+
+message UpdateReadStatusReq {
+  string id = 1;
+  bool  isRead = 2;
+  string type = 3;
+}
+
+message ContractDocs {
+  string contractName = 1;
+  string contractNo = 2;
+  string contractDate = 3;
+  string contractExpireDate = 4;
+  string contractPlace = 5;
+}
+
+message Contract {
+  string contractId = 1;
+  bool hasVat = 2;
+  ContractDocs contractDoc = 3;
+  ContractPerson owner = 4;
+  repeated ContractPerson clients = 5;
+  string status = 8;
+  string sign = 9;
+  string pageStatus = 10;
+  string totalSum = 11;
+  string deliverySum = 12;
+  string vatSum = 13;
+  string deliverySumWithVat = 14;
+  string createdAt = 15;
+  string contractPdfUz = 16;
+  string contractPdfRu = 17;
+  string contractJson = 18;
+  string updatedAt = 19;
+  string htmlUz = 20;
+  string htmlRu = 21;
+}
+
+message ContractPerson {
+  string tin = 1;
+  string name = 2;
+  string branchCode = 3;
+  string docId = 4;
+  bool status = 5;
+  bool isRead = 6;
+}

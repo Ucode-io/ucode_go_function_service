@@ -1,0 +1,71 @@
+syntax="proto3";
+
+package integration_service_v2;
+option go_package="genproto/integration_service_v2";
+
+service OrderService {
+    rpc Create (CreatePurchaseRequest) returns (CreatePurchaseResponse) {};
+    rpc Get (GetPurchaseRequest) returns (GetPurchaseResponse) {};
+    rpc GetList (GetPurchaseListRequest) returns (GetPurchaseListResponse) {};
+    rpc CheckHasAccess (CheckHasAccessRequest) returns (CheckHasAccessResponse) {};
+}
+
+message GetPurchaseListRequest{
+    string user_id = 1;
+    string order_id = 2;
+    string status = 3;
+    int32 limit = 4;
+    int32 offset = 5;
+}
+
+message GetPurchaseListResponse{
+    repeated Purchase orders = 1;
+    int32 count = 2;
+}
+
+message GetPurchaseRequest{
+    string id = 1;
+    string user_id = 2;
+}
+
+message GetPurchaseResponse{
+    Purchase purchase = 1;
+}
+
+message Purchase{
+    string id = 1;
+    string user_id = 2;
+    string product_id = 3;
+    string product_type = 4;
+    string product_name = 5;
+    string status = 6;
+    int32 price = 7;
+    string created_at = 8;
+    string updated_at = 9;
+}
+
+message CreatePurchaseRequest {
+    string user_id = 1;
+    string product_id = 2;
+    int32 price = 3;
+    string product_type = 4;
+    string status = 5;
+    string product_name = 6;
+}
+
+message CreatePurchaseResponse {
+    string user_id = 1;
+    string product_id = 2;
+    string id = 3;
+}
+
+message CheckHasAccessRequest {
+    string product_id = 1;
+    string user_id = 2;
+    string product_type = 3;
+}
+
+
+message CheckHasAccessResponse {
+    bool has_access = 1;
+}

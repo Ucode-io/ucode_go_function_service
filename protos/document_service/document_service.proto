@@ -1,0 +1,137 @@
+syntax="proto3";
+
+package document_service;
+option go_package="genproto/document_service";
+import "google/protobuf/empty.proto";
+
+service DocumentService {
+    rpc Upsert(Document) returns (google.protobuf.Empty) {}
+    rpc GetAll(ListDocumentReq) returns (ListDocumentResp) {}
+    rpc UpdateRead (UpdateReadReq) returns (google.protobuf.Empty);
+    rpc Update(Ids) returns (google.protobuf.Empty){}
+    rpc Delete(ById) returns (google.protobuf.Empty) {}
+    rpc Get(ById) returns (DocumentData);
+}
+
+message DocumentData {
+    string id = 1;
+    string document_json = 2;
+    string html_uz = 3;
+    string html_ru = 4;
+    string pdf_url_uz = 5;
+    string pdf_url_ru = 6;
+    string created_at = 7;
+    string updated_at = 8;
+    string status = 9;
+    string page_status = 10;
+}
+message UpdateStatusReq {
+    string status = 1;
+    string id = 2;
+    string sign = 3;
+}
+
+message Ids {
+    int32 isArchive = 1;
+    repeated string ids = 2;
+}
+
+message ById {
+    string id = 1;
+}
+
+message UpdateReadReq {
+    string id = 1;
+    int32 IsRead = 2;
+    int32 IsReadAgent = 3;
+}
+
+message ListDocumentReq {
+    int32 page = 1;
+    int32 limit = 2;
+    string docType = 3;
+    string ownerTin = 4;
+    string partnerTin = 5;
+    string agentTin = 6;
+    string search = 7;
+    string fromDate = 8;
+    string toDate = 9;
+    string ownerName = 10;
+    string partnerName = 11;
+    string agentName = 12;
+    string docStatus = 13;
+    bool commission = 14;
+    bool unilateral = 15;
+    bool marked = 16;
+    bool hasbenefit = 17;
+    string isSave = 18;
+    string totalSum = 19;
+    string agentPinfl = 20;
+    string partnerPinfl = 21;
+    string all = 22;
+    repeated string branchCodes = 23;
+    int32 facturaType = 24;
+}
+
+message ListDocumentResp {
+    repeated Document documents = 1;
+    int32 count = 2;
+    CountDocument countDocuments = 3;
+}
+
+message CountDocument {
+    int32 act = 1;
+    int32 factura = 2;
+    int32 bFactura = 3;
+    int32 empowerment = 4;
+    int32 calculationTable = 5;
+    int32 verificationAct = 6;
+    int32 waybill = 7;
+    int32 inbox = 8;
+    int32 sends = 9;
+    int32 agent = 10;
+    int32 contract = 11;
+}
+
+message Document {
+    string docId = 1;
+    string docDate  = 2;
+    string docNo = 3;
+    string docType = 4;
+    string docStatus = 5;
+    string contractDocNo = 6;
+    string contractDocDate = 7;
+    float totalDeliverySum = 8;
+    float totalDeliverySumWithVat = 9;
+    float totalSum = 10;
+    float totalVatSum = 11;
+    string ownerTin = 12;
+    string ownerName = 13;
+    string ownerBranchCode = 14;
+    string partnerTin = 15;
+    string partnerName = 16;
+    string partnerBranchCode = 17;
+    string agentTin = 18;
+    string agentName = 19;
+    string agentBranchCode = 20;
+    string isSave = 21;
+    string createdAt = 22;
+    string updatedAt = 23;
+    bool commission = 24;
+    bool unilateral = 25;
+    bool marked = 26;
+    bool hasbenefit = 27;
+    int32 isRead = 28;
+    int32 isReadAgent = 29;
+    repeated Client clients = 30;
+    int32 facturaType = 31;
+}
+
+message Client {
+    string tin = 1;
+    string name = 2;
+    string branchCode = 3;
+    string docId = 5;
+    bool status = 6;
+    bool isRead = 7;
+}
