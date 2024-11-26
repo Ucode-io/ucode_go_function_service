@@ -10,13 +10,13 @@ import (
 )
 
 type BuilderServiceI interface {
-	Function() object_builder_service.FunctionServiceClient
+	Function() object_builder_service.FunctionServiceV2Client
 	CustomEvent() object_builder_service.CustomEventServiceClient
 }
 
 type builderServiceClient struct {
 	customEventService object_builder_service.CustomEventServiceClient
-	functionService    object_builder_service.FunctionServiceClient
+	functionService    object_builder_service.FunctionServiceV2Client
 }
 
 func NewBuilderServiceClient(ctx context.Context, cfg config.Config) (BuilderServiceI, error) {
@@ -31,7 +31,7 @@ func NewBuilderServiceClient(ctx context.Context, cfg config.Config) (BuilderSer
 
 	return &builderServiceClient{
 		customEventService: object_builder_service.NewCustomEventServiceClient(connObjectBuilderService),
-		functionService:    object_builder_service.NewFunctionServiceClient(connObjectBuilderService),
+		functionService:    object_builder_service.NewFunctionServiceV2Client(connObjectBuilderService),
 	}, nil
 }
 
@@ -39,6 +39,6 @@ func (g *builderServiceClient) CustomEvent() object_builder_service.CustomEventS
 	return g.customEventService
 }
 
-func (g *builderServiceClient) Function() object_builder_service.FunctionServiceClient {
+func (g *builderServiceClient) Function() object_builder_service.FunctionServiceV2Client {
 	return g.functionService
 }

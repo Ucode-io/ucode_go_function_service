@@ -21,6 +21,6 @@ func NewHighBuilderServiceClient(ctx context.Context, cfg config.Config) (Builde
 
 	return &builderServiceClient{
 		customEventService: object_builder_service.NewCustomEventServiceClient(connObjectBuilderService),
-		functionService:    object_builder_service.NewFunctionServiceClient(connObjectBuilderService),
+		functionService:    object_builder_service.NewFunctionServiceV2Client(connObjectBuilderService),
 	}, nil
 }

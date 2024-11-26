@@ -11,6 +11,7 @@ type ServiceManagerI interface {
 	GetBuilderServiceByType(nodeType string) BuilderServiceI
 	GoObjectBuilderService() GoBuilderServiceI
 	CompanyService() CompanyServiceI
+	AuthService() AuthServiceI
 }
 
 type grpcClients struct {
@@ -18,6 +19,7 @@ type grpcClients struct {
 	highBuilderService     BuilderServiceI
 	goObjectBuilderService GoBuilderServiceI
 	companyService         CompanyServiceI
+	authService            AuthServiceI
 }
 
 func NewGrpcClients(ctx context.Context, cfg config.Config) (ServiceManagerI, error) {
@@ -41,11 +43,17 @@ func NewGrpcClients(ctx context.Context, cfg config.Config) (ServiceManagerI, er
 		return nil, err
 	}
 
+	authServiceClient, err := NewAuthServiceClient(ctx, cfg)
+	if err != nil {
+		return nil, err
+	}
+
 	return grpcClients{
 		builderService:         builderServiceClient,
 		highBuilderService:     highBuilderServiceClient,
 		goObjectBuilderService: goObjectBuilderServiceClient,
 		companyService:         companyServiceClient,
+		authService:            authServiceClient,
 	}, nil
 }
 
@@ -58,6 +66,10 @@ func (g grpcClients) GetBuilderServiceByType(nodeType string) BuilderServiceI {
 	}
 
 	return g.builderService
+}
+
+func (g grpcClients) AuthService() AuthServiceI {
+	return g.authService
 }
 
 func (g grpcClients) BuilderService() BuilderServiceI {
