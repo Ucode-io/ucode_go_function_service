@@ -12,11 +12,13 @@ import (
 type GoBuilderServiceI interface {
 	Function() nb.FunctionServiceV2Client
 	CustomEvent() nb.CustomEventServiceClient
+	VersionHistory() nb.VersionHistoryServiceClient
 }
 
 type goBuilderServiceClient struct {
-	functionService    nb.FunctionServiceV2Client
-	customEventService nb.CustomEventServiceClient
+	functionService       nb.FunctionServiceV2Client
+	customEventService    nb.CustomEventServiceClient
+	versionHistoryService nb.VersionHistoryServiceClient
 }
 
 func NewGoBuilderServiceClient(ctx context.Context, cfg config.Config) (GoBuilderServiceI, error) {
@@ -30,8 +32,9 @@ func NewGoBuilderServiceClient(ctx context.Context, cfg config.Config) (GoBuilde
 	}
 
 	return &goBuilderServiceClient{
-		functionService:    nb.NewFunctionServiceV2Client(connGoBuilderService),
-		customEventService: nb.NewCustomEventServiceClient(connGoBuilderService),
+		functionService:       nb.NewFunctionServiceV2Client(connGoBuilderService),
+		customEventService:    nb.NewCustomEventServiceClient(connGoBuilderService),
+		versionHistoryService: nb.NewVersionHistoryServiceClient(connGoBuilderService),
 	}, nil
 }
 
@@ -41,4 +44,8 @@ func (g *goBuilderServiceClient) Function() nb.FunctionServiceV2Client {
 
 func (g *goBuilderServiceClient) CustomEvent() nb.CustomEventServiceClient {
 	return g.customEventService
+}
+
+func (g *goBuilderServiceClient) VersionHistory() nb.VersionHistoryServiceClient {
+	return g.versionHistoryService
 }

@@ -16,6 +16,7 @@ type AuthServiceI interface {
 	Integration() auth_service.IntegrationServiceClient
 	ApiKey() auth_service.ApiKeysClient
 	ApiKeyUsage() auth_service.ApiKeyUsageServiceClient
+	User() auth_service.UserServiceClient
 }
 
 type authServiceClient struct {
@@ -24,6 +25,7 @@ type authServiceClient struct {
 	sessionServiceAuth auth_service.SessionServiceClient
 	apiKeyService      auth_service.ApiKeysClient
 	apiKeyUsageService auth_service.ApiKeyUsageServiceClient
+	userService        auth_service.UserServiceClient
 }
 
 func NewAuthServiceClient(ctx context.Context, cfg config.Config) (AuthServiceI, error) {
@@ -59,6 +61,7 @@ func NewAuthServiceClient(ctx context.Context, cfg config.Config) (AuthServiceI,
 		integrationService: auth_service.NewIntegrationServiceClient(connAuthService),
 		apiKeyService:      auth_service.NewApiKeysClient(connAuthService),
 		apiKeyUsageService: auth_service.NewApiKeyUsageServiceClient(connAuthService),
+		userService:        auth_service.NewUserServiceClient(connAuthService),
 	}, nil
 }
 
@@ -82,4 +85,8 @@ func (g *authServiceClient) ApiKey() auth_service.ApiKeysClient {
 
 func (g *authServiceClient) ApiKeyUsage() auth_service.ApiKeyUsageServiceClient {
 	return g.apiKeyUsageService
+}
+
+func (g *authServiceClient) User() auth_service.UserServiceClient {
+	return g.userService
 }

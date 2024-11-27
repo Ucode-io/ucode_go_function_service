@@ -3,20 +3,22 @@ package services
 import (
 	"context"
 	"ucode/ucode_go_function_service/config"
-	"ucode/ucode_go_function_service/genproto/object_builder_service"
+	obs "ucode/ucode_go_function_service/genproto/object_builder_service"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
 type BuilderServiceI interface {
-	Function() object_builder_service.FunctionServiceV2Client
-	CustomEvent() object_builder_service.CustomEventServiceClient
+	Function() obs.FunctionServiceV2Client
+	CustomEvent() obs.CustomEventServiceClient
+	VersionHistory() obs.VersionHistoryServiceClient
 }
 
 type builderServiceClient struct {
-	customEventService object_builder_service.CustomEventServiceClient
-	functionService    object_builder_service.FunctionServiceV2Client
+	customEventService    obs.CustomEventServiceClient
+	functionService       obs.FunctionServiceV2Client
+	versionHistoryService obs.VersionHistoryServiceClient
 }
 
 func NewBuilderServiceClient(ctx context.Context, cfg config.Config) (BuilderServiceI, error) {
@@ -30,15 +32,20 @@ func NewBuilderServiceClient(ctx context.Context, cfg config.Config) (BuilderSer
 	}
 
 	return &builderServiceClient{
-		customEventService: object_builder_service.NewCustomEventServiceClient(connObjectBuilderService),
-		functionService:    object_builder_service.NewFunctionServiceV2Client(connObjectBuilderService),
+		customEventService:    obs.NewCustomEventServiceClient(connObjectBuilderService),
+		functionService:       obs.NewFunctionServiceV2Client(connObjectBuilderService),
+		versionHistoryService: obs.NewVersionHistoryServiceClient(connObjectBuilderService),
 	}, nil
 }
 
-func (g *builderServiceClient) CustomEvent() object_builder_service.CustomEventServiceClient {
+func (g *builderServiceClient) CustomEvent() obs.CustomEventServiceClient {
 	return g.customEventService
 }
 
-func (g *builderServiceClient) Function() object_builder_service.FunctionServiceV2Client {
+func (g *builderServiceClient) Function() obs.FunctionServiceV2Client {
 	return g.functionService
+}
+
+func (g *builderServiceClient) VersionHistory() obs.VersionHistoryServiceClient {
+	return g.versionHistoryService
 }

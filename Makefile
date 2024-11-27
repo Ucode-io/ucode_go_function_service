@@ -20,3 +20,13 @@ copy-proto-module:
 gen-proto-module:
 	sudo rm -rf ${CURRENT_DIR}/genproto
 	./scripts/gen_proto.sh ${CURRENT_DIR}
+
+
+swag-init:
+	swag init -g api/api.go -o api/docs --parseDependency
+
+run:
+	go run cmd/main.go
+
+linter:
+	golangci-lint run

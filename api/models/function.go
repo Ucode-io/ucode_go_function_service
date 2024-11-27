@@ -18,3 +18,21 @@ type Function struct {
 	Description      string `json:"description"`
 	FuncitonFolderId string `json:"function_folder_id"`
 }
+
+type InvokeFunctionResponse struct {
+	Status      string                 `json:"status"`
+	Data        map[string]interface{} `json:"data"`
+	Attributes  map[string]interface{} `json:"attributes"`
+	ServerError string                 `json:"server_error"`
+}
+
+type NewInvokeFunctionRequest struct {
+	Data map[string]interface{} `json:"data"`
+}
+
+type InvokeFunctionRequest struct {
+	FunctionID string   `json:"function_id"`
+	ObjectIDs  []string `json:"object_ids"`
+	Attributes map[string]interface{}
+	TableSlug  string `json:"table_slug"`
+}

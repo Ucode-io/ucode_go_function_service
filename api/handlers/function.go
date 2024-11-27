@@ -3,13 +3,15 @@ package handlers
 import (
 	"context"
 	"errors"
+	"net/http"
 	"strings"
 	"ucode/ucode_go_function_service/api/models"
-	"ucode/ucode_go_function_service/api/status_http"
+	status "ucode/ucode_go_function_service/api/status_http"
 	"ucode/ucode_go_function_service/config"
+	as "ucode/ucode_go_function_service/genproto/auth_service"
 	pb "ucode/ucode_go_function_service/genproto/company_service"
 	nb "ucode/ucode_go_function_service/genproto/new_object_builder_service"
-	"ucode/ucode_go_function_service/genproto/object_builder_service"
+	obs "ucode/ucode_go_function_service/genproto/object_builder_service"
 
 	"ucode/ucode_go_function_service/pkg/helper"
 
@@ -25,16 +27,16 @@ import (
 // CreateNewFunction godoc
 // @Security ApiKeyAuth
 // @ID create_new_function
-// @Router /v2/function [POST]
+// @Router /v1/function [POST]
 // @Summary Create New Function
 // @Description Create New Function
 // @Tags Function
 // @Accept json
 // @Produce json
 // @Param Function body models.CreateFunctionRequest true "CreateFunctionRequestBody"
-// @Success 201 {object} status_http.Response{data=fc.Function} "Function data"
-// @Response 400 {object} status_http.Response{data=string} "Bad Request"
-// @Failure 500 {object} status_http.Response{data=string} "Server Error"
+// @Success 204
+// @Response 400 {object} status.Response{data=string} "Bad Request"
+// @Failure 500 {object} status.Response{data=string} "Server Error"
 func (h *Handler) CreateFunction(c *gin.Context) {
 	var function models.CreateFunctionRequest
 
@@ -42,19 +44,19 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 	defer cancel()
 
 	if err := c.ShouldBindJSON(&function); err != nil {
-		h.handleResponse(c, status_http.BadRequest, err.Error())
+		h.handleResponse(c, status.BadRequest, err.Error())
 		return
 	}
 
 	projectId, ok := c.Get("project_id")
 	if !ok || !util.IsValidUUID(projectId.(string)) {
-		h.handleResponse(c, status_http.InvalidArgument, "project id is an invalid uuid")
+		h.handleResponse(c, status.InvalidArgument, "project id is an invalid uuid")
 		return
 	}
 
 	environmentId, ok := c.Get("environment_id")
 	if !ok || !util.IsValidUUID(environmentId.(string)) {
-		h.handleResponse(c, status_http.BadRequest, "error getting environment id | not valid")
+		h.handleResponse(c, status.BadRequest, "error getting environment id | not valid")
 		return
 	}
 
@@ -69,15 +71,15 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 		},
 	)
 	if err != nil {
-		h.handleResponse(c, status_http.GRPCError, err.Error())
+		h.handleResponse(c, status.GRPCError, err.Error())
 		return
 	}
 
-	environment, err := h.services.CompanyService().Environment().GetById(ctx, &pb.EnvironmentPrimaryKey{
-		Id: environmentId.(string),
-	})
+	environment, err := h.services.CompanyService().Environment().GetById(ctx,
+		&pb.EnvironmentPrimaryKey{Id: environmentId.(string)},
+	)
 	if err != nil {
-		h.handleResponse(c, status_http.GRPCError, err.Error())
+		h.handleResponse(c, status.GRPCError, err.Error())
 		return
 	}
 
@@ -85,12 +87,12 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 		ProjectId: environment.GetProjectId(),
 	})
 	if err != nil {
-		h.handleResponse(c, status_http.InternalServerError, err.Error())
+		h.handleResponse(c, status.InternalServerError, err.Error())
 		return
 	}
 
 	if project.GetTitle() == "" {
-		h.handleResponse(c, status_http.BadRequest, "error project name is required")
+		h.handleResponse(c, status.BadRequest, "error project name is required")
 		return
 	}
 
@@ -102,7 +104,7 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 		uuid         = uuid.NewRandom()
 		url          = "https://" + uuid.String() + ".u-code.io"
 
-		createFunction = &object_builder_service.CreateFunctionRequest{
+		createFunction = &obs.CreateFunctionRequest{
 			Path:             functionPath,
 			Name:             function.Name,
 			Description:      function.Description,
@@ -118,17 +120,14 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 			NodeType:     resource.NodeType,
 			ProjectId:    resource.ResourceEnvironmentId,
 			ActionSource: c.Request.URL.String(),
-			ActionType:   "CREATE",
-			UsedEnvironments: map[string]bool{
-				cast.ToString(environmentId): true,
-			},
-			UserInfo:  cast.ToString(userId),
-			Request:   createFunction,
-			TableSlug: "FUNCTION",
+			ActionType:   config.CREATE,
+			UserInfo:     cast.ToString(userId),
+			Request:      createFunction,
+			TableSlug:    config.FUNCTION,
 		}
 	)
 
-	// TODO CREATE FUNCTON ON GITHUB, GITLAB, BITBUCKET
+	// @TODO CREATE FUNCTON ON GITHUB, GITLAB, BITBUCKET
 
 	switch resource.ResourceType {
 	case pb.ResourceType_MONGODB:
@@ -138,30 +137,27 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 
 		if err != nil {
 			logReq.Response = err.Error()
-			h.handleResponse(c, status_http.GRPCError, err.Error())
+			h.handleResponse(c, status.GRPCError, err.Error())
 		} else {
 			logReq.Response = response
-			h.handleResponse(c, status_http.Created, response)
+			h.handleResponse(c, status.Created, response)
 		}
 		go h.versionHistory(logReq)
 	case pb.ResourceType_POSTGRESQL:
-		newCreateFunction := &nb.CreateFunctionRequest{}
+		var newCreateFunction = &nb.CreateFunctionRequest{}
 
 		if err = helper.MarshalToStruct(createFunction, &newCreateFunction); err != nil {
+			h.handleResponse(c, status.InternalServerError, err.Error())
 			return
 		}
 
-		response, err := h.services.GoObjectBuilderService().Function().Create(
-			ctx,
-			newCreateFunction,
-		)
-
+		response, err := h.services.GoObjectBuilderService().Function().Create(ctx, newCreateFunction)
 		if err != nil {
 			logReq.Response = err.Error()
-			h.handleResponse(c, status_http.GRPCError, err.Error())
+			h.handleResponse(c, status.GRPCError, err.Error())
 		} else {
 			logReq.Response = response
-			h.handleResponse(c, status_http.Created, response)
+			h.handleResponse(c, status.Created, response)
 		}
 		go h.versionHistoryGo(c, logReq)
 	}
@@ -170,36 +166,37 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 // GetNewFunctionByID godoc
 // @Security ApiKeyAuth
 // @ID get_new_function_by_id
-// @Router /v2/function/{function_id} [GET]
+// @Router /v1/function/{function_id} [GET]
 // @Summary Get Function by id
 // @Description Get Function by id
 // @Tags Function
 // @Accept json
 // @Produce json
 // @Param function_id path string true "function_id"
-// @Success 200 {object} status_http.Response{data=fc.Function} "FunctionBody"
-// @Response 400 {object} status_http.Response{data=string} "Invalid Argument"
-// @Failure 500 {object} status_http.Response{data=string} "Server Error"
+// @Success 200 {object} status.Response{data=obs.Function} "FunctionBody"
+// @Response 400 {object} status.Response{data=string} "Invalid Argument"
+// @Failure 500 {object} status.Response{data=string} "Server Error"
 func (h *Handler) GetFunctionByID(c *gin.Context) {
 	var functionID = c.Param("function_id")
+
 	ctx, cancel := context.WithCancel(c.Request.Context())
 	defer cancel()
 
 	if !util.IsValidUUID(functionID) {
-		h.handleResponse(c, status_http.InvalidArgument, "function id is an invalid uuid")
+		h.handleResponse(c, status.InvalidArgument, "function id is an invalid uuid")
 		return
 	}
 
 	projectId, ok := c.Get("project_id")
 	if !ok || !util.IsValidUUID(projectId.(string)) {
-		h.handleResponse(c, status_http.InvalidArgument, "project id is an invalid uuid")
+		h.handleResponse(c, status.InvalidArgument, "project id is an invalid uuid")
 		return
 	}
 
 	environmentId, ok := c.Get("environment_id")
 	if !ok || !util.IsValidUUID(environmentId.(string)) {
 		err := errors.New("error getting environment id | not valid")
-		h.handleResponse(c, status_http.BadRequest, err)
+		h.handleResponse(c, status.BadRequest, err)
 		return
 	}
 
@@ -212,35 +209,35 @@ func (h *Handler) GetFunctionByID(c *gin.Context) {
 		},
 	)
 	if err != nil {
-		h.handleResponse(c, status_http.GRPCError, err.Error())
+		h.handleResponse(c, status.GRPCError, err.Error())
 		return
 	}
 
-	var function = &object_builder_service.Function{}
+	var function = &obs.Function{}
 	switch resource.ResourceType {
 	case pb.ResourceType_MONGODB:
 		function, err = h.services.GetBuilderServiceByType(resource.NodeType).Function().GetSingle(
-			ctx,
-			&object_builder_service.FunctionPrimaryKey{
+			ctx, &obs.FunctionPrimaryKey{
 				Id:        functionID,
 				ProjectId: resource.ResourceEnvironmentId,
 			},
 		)
 		if err != nil {
-			h.handleResponse(c, status_http.GRPCError, err.Error())
+			h.handleResponse(c, status.GRPCError, err.Error())
 			return
 		}
 
+		// @TODO should be un commented this
 		if function.Url == "" {
 			// err = gitlab.CloneForkToPath(function.GetSshUrl(), h.baseConf)
 			// if err != nil {
-			// 	h.handleResponse(c, status_http.InvalidArgument, err.Error())
+			// 	h.handleResponse(c, status.InvalidArgument, err.Error())
 			// 	return
 			// }
 			// uuid, _ := uuid.NewRandom()
 			// password, err := code_server.CreateCodeServer(function.Path, h.baseConf, uuid.String())
 			// if err != nil {
-			// 	h.handleResponse(c, status_http.InvalidArgument, err.Error())
+			// 	h.handleResponse(c, status.InvalidArgument, err.Error())
 			// 	return
 			// }
 			// function.Url = "https://" + uuid.String() + ".u-code.io"
@@ -250,7 +247,7 @@ func (h *Handler) GetFunctionByID(c *gin.Context) {
 		function.ProjectId = resource.ResourceEnvironmentId
 		_, err = h.services.GetBuilderServiceByType(resource.NodeType).Function().Update(ctx, function)
 		if err != nil {
-			h.handleResponse(c, status_http.GRPCError, err.Error())
+			h.handleResponse(c, status.GRPCError, err.Error())
 			return
 		}
 	case pb.ResourceType_POSTGRESQL:
@@ -262,24 +259,23 @@ func (h *Handler) GetFunctionByID(c *gin.Context) {
 			},
 		)
 		if err != nil {
-			h.handleResponse(c, status_http.GRPCError, err.Error())
+			h.handleResponse(c, status.GRPCError, err.Error())
 			return
 		}
 
-		err = helper.MarshalToStruct(resp, &function)
-		if err != nil {
-			h.handleResponse(c, status_http.GRPCError, err.Error())
+		if err = helper.MarshalToStruct(resp, &function); err != nil {
+			h.handleResponse(c, status.GRPCError, err.Error())
 			return
 		}
 	}
 
-	h.handleResponse(c, status_http.OK, function)
+	h.handleResponse(c, status.OK, function)
 }
 
 // GetAllNewFunctions godoc
 // @Security ApiKeyAuth
 // @ID get_all_new_functions
-// @Router /v2/function [GET]
+// @Router /v1/function [GET]
 // @Summary Get all functions
 // @Description Get all functions
 // @Tags Function
@@ -288,34 +284,34 @@ func (h *Handler) GetFunctionByID(c *gin.Context) {
 // @Param limit query number false "limit"
 // @Param offset query number false "offset"
 // @Param search query string false "search"
-// @Success 200 {object} status_http.Response{data=string} "FunctionBody"
-// @Response 400 {object} status_http.Response{data=string} "Invalid Argument"
-// @Failure 500 {object} status_http.Response{data=string} "Server Error"
-func (h *Handler) GetAllFunction(c *gin.Context) {
+// @Success 200 {object} status.Response{data=obs.GetAllFunctionsResponse} "FunctionBody"
+// @Response 400 {object} status.Response{data=string} "Invalid Argument"
+// @Failure 500 {object} status.Response{data=string} "Server Error"
+func (h *Handler) GetAllFunctions(c *gin.Context) {
 	ctx, cancel := context.WithCancel(c.Request.Context())
 	defer cancel()
 
 	limit, err := h.getLimitParam(c)
 	if err != nil {
-		h.handleResponse(c, status_http.InvalidArgument, err.Error())
+		h.handleResponse(c, status.InvalidArgument, err.Error())
 		return
 	}
 
 	offset, err := h.getOffsetParam(c)
 	if err != nil {
-		h.handleResponse(c, status_http.InvalidArgument, err.Error())
+		h.handleResponse(c, status.InvalidArgument, err.Error())
 		return
 	}
 
 	projectId, ok := c.Get("project_id")
 	if !ok || !util.IsValidUUID(projectId.(string)) {
-		h.handleResponse(c, status_http.InvalidArgument, "project id is an invalid uuid")
+		h.handleResponse(c, status.InvalidArgument, "project id is an invalid uuid")
 		return
 	}
 
 	environmentId, ok := c.Get("environment_id")
 	if !ok || !util.IsValidUUID(environmentId.(string)) {
-		h.handleResponse(c, status_http.BadRequest, "error getting environment id | not valid")
+		h.handleResponse(c, status.BadRequest, "error getting environment id | not valid")
 		return
 	}
 
@@ -328,21 +324,20 @@ func (h *Handler) GetAllFunction(c *gin.Context) {
 		},
 	)
 	if err != nil {
-		h.handleResponse(c, status_http.GRPCError, err.Error())
+		h.handleResponse(c, status.GRPCError, err.Error())
 		return
 	}
 
 	environment, err := h.services.CompanyService().Environment().GetById(ctx, &pb.EnvironmentPrimaryKey{Id: environmentId.(string)})
 	if err != nil {
-		h.handleResponse(c, status_http.GRPCError, "error getting resource environment id")
+		h.handleResponse(c, status.GRPCError, "error getting resource environment id")
 		return
 	}
 
 	switch resource.ResourceType {
 	case pb.ResourceType_MONGODB:
 		resp, err := h.services.GetBuilderServiceByType(resource.NodeType).Function().GetList(
-			ctx,
-			&object_builder_service.GetAllFunctionsRequest{
+			ctx, &obs.GetAllFunctionsRequest{
 				Search:        c.DefaultQuery("search", ""),
 				Limit:         int32(limit),
 				Offset:        int32(offset),
@@ -352,45 +347,45 @@ func (h *Handler) GetAllFunction(c *gin.Context) {
 			},
 		)
 		if err != nil {
-			h.handleResponse(c, status_http.GRPCError, err.Error())
+			h.handleResponse(c, status.GRPCError, err.Error())
 			return
 		}
 
-		h.handleResponse(c, status_http.OK, resp)
+		h.handleResponse(c, status.OK, resp)
 	case pb.ResourceType_POSTGRESQL:
 		resp, err := h.services.GoObjectBuilderService().Function().GetList(
-			ctx,
-			&nb.GetAllFunctionsRequest{
-				Search:    c.DefaultQuery("search", ""),
-				Limit:     int32(limit),
-				Offset:    int32(offset),
-				ProjectId: resource.ResourceEnvironmentId,
-				Type:      config.FUNCTION,
+			ctx, &nb.GetAllFunctionsRequest{
+				Search:        c.DefaultQuery("search", ""),
+				Limit:         int32(limit),
+				Offset:        int32(offset),
+				ProjectId:     resource.ResourceEnvironmentId,
+				EnvironmentId: environment.GetId(),
+				Type:          config.FUNCTION,
 			},
 		)
 		if err != nil {
-			h.handleResponse(c, status_http.GRPCError, err.Error())
+			h.handleResponse(c, status.GRPCError, err.Error())
 			return
 		}
 
-		h.handleResponse(c, status_http.OK, resp)
+		h.handleResponse(c, status.OK, resp)
 	}
 }
 
 // UpdateNewFunction godoc
 // @Security ApiKeyAuth
 // @ID update_new_function
-// @Router /v2/function [PUT]
+// @Router /v1/function [PUT]
 // @Summary Update new function
 // @Description Update new function
 // @Tags Function
 // @Accept json
 // @Produce json
 // @Param Function body models.Function  true "UpdateFunctionRequestBody"
-// @Success 200 {object} status_http.Response{data=models.Function} "Function data"
-// @Response 400 {object} status_http.Response{data=string} "Bad Request"
-// @Failure 500 {object} status_http.Response{data=string} "Server Error"
-func (h *Handler) UpdateNewFunction(c *gin.Context) {
+// @Success 204
+// @Response 400 {object} status.Response{data=string} "Bad Request"
+// @Failure 500 {object} status.Response{data=string} "Server Error"
+func (h *Handler) UpdateFunction(c *gin.Context) {
 	var (
 		function models.Function
 		resp     = &empty.Empty{}
@@ -400,19 +395,19 @@ func (h *Handler) UpdateNewFunction(c *gin.Context) {
 	defer cancel()
 
 	if err := c.ShouldBindJSON(&function); err != nil {
-		h.handleResponse(c, status_http.BadRequest, err.Error())
+		h.handleResponse(c, status.BadRequest, err.Error())
 		return
 	}
 
 	projectId, ok := c.Get("project_id")
 	if !ok || !util.IsValidUUID(projectId.(string)) {
-		h.handleResponse(c, status_http.InvalidArgument, "project id is an invalid uuid")
+		h.handleResponse(c, status.InvalidArgument, "project id is an invalid uuid")
 		return
 	}
 
 	environmentId, ok := c.Get("environment_id")
 	if !ok || !util.IsValidUUID(environmentId.(string)) {
-		h.handleResponse(c, status_http.BadRequest, "error getting environment id | not valid")
+		h.handleResponse(c, status.BadRequest, "error getting environment id | not valid")
 		return
 	}
 
@@ -427,16 +422,18 @@ func (h *Handler) UpdateNewFunction(c *gin.Context) {
 		},
 	)
 	if err != nil {
-		h.handleResponse(c, status_http.GRPCError, err.Error())
+		h.handleResponse(c, status.GRPCError, err.Error())
 		return
 	}
 
-	environment, err := h.services.CompanyService().Environment().GetById(
-		ctx, &pb.EnvironmentPrimaryKey{Id: environmentId.(string)},
-	)
+	environment, err := h.services.CompanyService().Environment().GetById(ctx, &pb.EnvironmentPrimaryKey{Id: environmentId.(string)})
+	if err != nil {
+		h.handleResponse(c, status.GRPCError, err.Error())
+		return
+	}
 
 	var (
-		updateFunction = &object_builder_service.Function{
+		updateFunction = &obs.Function{
 			Id:               function.ID,
 			Description:      function.Description,
 			Name:             function.Name,
@@ -450,52 +447,57 @@ func (h *Handler) UpdateNewFunction(c *gin.Context) {
 			NodeType:     resource.NodeType,
 			ProjectId:    resource.ResourceEnvironmentId,
 			ActionSource: c.Request.URL.String(),
-			ActionType:   "UPDATE",
-			UsedEnvironments: map[string]bool{
-				cast.ToString(environmentId): true,
-			},
-			UserInfo:  cast.ToString(userId),
-			Request:   &updateFunction,
-			TableSlug: "FUNCTION",
+			ActionType:   config.UPDATE,
+			UserInfo:     cast.ToString(userId),
+			Request:      &updateFunction,
+			TableSlug:    config.FUNCTION,
 		}
 	)
 
 	defer func() {
 		if err != nil {
 			logReq.Response = err.Error()
-			h.handleResponse(c, status_http.GRPCError, err.Error())
+			h.handleResponse(c, status.GRPCError, err.Error())
 		} else {
-			h.handleResponse(c, status_http.OK, resp)
+			h.handleResponse(c, status.OK, resp)
 		}
-		go h.versionHistory(logReq)
+		switch resource.ResourceType {
+		case pb.ResourceType_MONGODB:
+			go h.versionHistory(logReq)
+		case pb.ResourceType_POSTGRESQL:
+			go h.versionHistoryGo(c, logReq)
+		}
 	}()
 
 	switch resource.ResourceType {
 	case pb.ResourceType_MONGODB:
-		resp, err = h.services.GetBuilderServiceByType(resource.NodeType).Function().Update(
-			ctx, updateFunction,
-		)
+		resp, err = h.services.GetBuilderServiceByType(resource.NodeType).Function().Update(ctx, updateFunction)
 		if err != nil {
+			h.handleResponse(c, status.GRPCError, err.Error())
 			return
 		}
 	case pb.ResourceType_POSTGRESQL:
 		updateFunction := &nb.Function{}
 
 		if err = helper.MarshalToStruct(updateFunction, &updateFunction); err != nil {
+			h.handleResponse(c, status.InternalServerError, err.Error())
 			return
 		}
 
-		resp, err = h.services.GoObjectBuilderService().Function().Update(
-			ctx, updateFunction,
-		)
+		resp, err = h.services.GoObjectBuilderService().Function().Update(ctx, updateFunction)
+		if err != nil {
+			h.handleResponse(c, status.GRPCError, err.Error())
+			return
+		}
 	}
 
+	h.handleResponse(c, status.NoContent, nil)
 }
 
 // DeleteNewFunction godoc
 // @Security ApiKeyAuth
 // @ID delete_new_function
-// @Router /v2/function/{function_id} [DELETE]
+// @Router /v1/function/{function_id} [DELETE]
 // @Summary Delete New Function
 // @Description Delete New Function
 // @Tags Function
@@ -503,32 +505,38 @@ func (h *Handler) UpdateNewFunction(c *gin.Context) {
 // @Produce json
 // @Param function_id path string true "function_id"
 // @Success 204
-// @Response 400 {object} status_http.Response{data=string} "Invalid Argument"
-// @Failure 500 {object} status_http.Response{data=string} "Server Error"
+// @Response 400 {object} status.Response{data=string} "Invalid Argument"
+// @Failure 500 {object} status.Response{data=string} "Server Error"
 func (h *Handler) DeleteFunction(c *gin.Context) {
-	var functionID = c.Param("function_id")
+	var (
+		functionID = c.Param("function_id")
+		resp       *obs.Function
+	)
+
+	ctx, cancel := context.WithCancel(c.Request.Context())
+	defer cancel()
 
 	if !util.IsValidUUID(functionID) {
-		h.handleResponse(c, status_http.InvalidArgument, "function id is an invalid uuid")
+		h.handleResponse(c, status.InvalidArgument, "function id is an invalid uuid")
 		return
 	}
 
 	projectId, ok := c.Get("project_id")
 	if !ok || !util.IsValidUUID(projectId.(string)) {
-		h.handleResponse(c, status_http.InvalidArgument, "project id is an invalid uuid")
+		h.handleResponse(c, status.InvalidArgument, "project id is an invalid uuid")
 		return
 	}
 
 	environmentId, ok := c.Get("environment_id")
 	if !ok || !util.IsValidUUID(environmentId.(string)) {
-		h.handleResponse(c, status_http.BadRequest, "error getting environment id | not valid")
+		h.handleResponse(c, status.BadRequest, "error getting environment id | not valid")
 		return
 	}
 
 	userId, _ := c.Get("user_id")
 
 	resource, err := h.services.CompanyService().ServiceResource().GetSingle(
-		c.Request.Context(),
+		ctx,
 		&pb.GetSingleServiceResourceReq{
 			ProjectId:     projectId.(string),
 			EnvironmentId: environmentId.(string),
@@ -536,63 +544,61 @@ func (h *Handler) DeleteFunction(c *gin.Context) {
 		},
 	)
 	if err != nil {
-		h.handleResponse(c, status_http.GRPCError, err.Error())
+		h.handleResponse(c, status.GRPCError, err.Error())
 		return
 	}
-	var resp *object_builder_service.Function
+
 	switch resource.ResourceType {
 	case pb.ResourceType_MONGODB:
 		resp, err = h.services.GetBuilderServiceByType(resource.NodeType).Function().GetSingle(
-			c.Request.Context(),
-			&object_builder_service.FunctionPrimaryKey{
+			ctx, &obs.FunctionPrimaryKey{
 				Id:        functionID,
 				ProjectId: environmentId.(string),
 			},
 		)
 
 		if err != nil {
-			h.handleResponse(c, status_http.GRPCError, err.Error())
+			h.handleResponse(c, status.GRPCError, err.Error())
 			return
 		}
 	case pb.ResourceType_POSTGRESQL:
 		goResp, err := h.services.GoObjectBuilderService().Function().GetSingle(
-			c.Request.Context(),
+			ctx,
 			&nb.FunctionPrimaryKey{
 				Id:        functionID,
 				ProjectId: environmentId.(string),
 			},
 		)
 		if err != nil {
-			h.handleResponse(c, status_http.GRPCError, err.Error())
+			h.handleResponse(c, status.GRPCError, err.Error())
 			return
 		}
 
-		err = helper.MarshalToStruct(goResp, &resp)
-		if err != nil {
-			h.handleResponse(c, status_http.GRPCError, err.Error())
+		if err = helper.MarshalToStruct(goResp, &resp); err != nil {
+			h.handleResponse(c, status.GRPCError, err.Error())
 			return
 		}
 	}
 
-	// Should Be Un commented
+	// @TODO::Should Be Un commented
 	// // delete code server
 	// err = code_server.DeleteCodeServerByPath(resp.Path, h.baseConf)
 	// if err != nil {
-	// 	h.handleResponse(c, status_http.GRPCError, err.Error())
+	// 	h.handleResponse(c, status.GRPCError, err.Error())
 	// 	return
 	// }
 
 	// // delete cloned repo
 	// err = gitlab.DeletedClonedRepoByPath(resp.Path, h.baseConf)
 	// if err != nil {
-	// 	h.handleResponse(c, status_http.GRPCError, err.Error())
+	// 	h.handleResponse(c, status.GRPCError, err.Error())
 	// 	return
 	// }
 
 	// // delete repo by path from gitlab
 	// _, err = gitlab.DeleteForkedProject(resp.Path, h.baseConf)
 	// if err != nil {
-	// 	h.handleResponse(c, status_http.GRPCError, err.Error())
+	// 	h.handleResponse(c, status.GRPCError, err.Error())
 	// 	return
 	// }
 
@@ -602,41 +608,386 @@ func (h *Handler) DeleteFunction(c *gin.Context) {
 			NodeType:     resource.NodeType,
 			ProjectId:    resource.ResourceEnvironmentId,
 			ActionSource: c.Request.URL.String(),
-			ActionType:   "DELETE",
+			ActionType:   config.DELETE,
 			UserInfo:     cast.ToString(userId),
-			TableSlug:    "FUNCTION",
+			TableSlug:    config.FUNCTION,
 		}
 	)
 
 	defer func() {
 		if err != nil {
 			logReq.Response = err.Error()
-			h.handleResponse(c, status_http.GRPCError, err.Error())
+			h.handleResponse(c, status.GRPCError, err.Error())
 		} else {
-			h.handleResponse(c, status_http.NoContent, resp)
+			h.handleResponse(c, status.NoContent, resp)
 		}
-		go h.versionHistory(logReq)
+		switch resource.ResourceType {
+		case pb.ResourceType_MONGODB:
+			go h.versionHistory(logReq)
+		case pb.ResourceType_POSTGRESQL:
+			go h.versionHistoryGo(c, logReq)
+		}
 	}()
 
 	switch resource.ResourceType {
 	case pb.ResourceType_MONGODB:
 		_, err = h.services.GetBuilderServiceByType(resource.NodeType).Function().Delete(
-			context.Background(),
-			&object_builder_service.FunctionPrimaryKey{
+			ctx, &obs.FunctionPrimaryKey{
 				Id:        functionID,
 				ProjectId: resource.ResourceEnvironmentId,
 			},
 		)
 		if err != nil {
+			h.handleResponse(c, status.NoContent, err.Error())
 			return
 		}
 	case pb.ResourceType_POSTGRESQL:
 		_, err = h.services.GoObjectBuilderService().Function().Delete(
-			context.Background(),
+			ctx,
 			&nb.FunctionPrimaryKey{
 				Id:        functionID,
 				ProjectId: resource.ResourceEnvironmentId,
 			},
 		)
+		if err != nil {
+			h.handleResponse(c, status.NoContent, err.Error())
+			return
+		}
 	}
+}
+
+// GetAllNewFunctionsForApp godoc
+// @Security ApiKeyAuth
+// @ID get_all_new_functions_for_app
+// @Router /v1/function-for-app [GET]
+// @Summary Get all functions
+// @Description Get all functions
+// @Tags Function
+// @Accept json
+// @Produce json
+// @Param limit query number false "limit"
+// @Param offset query number false "offset"
+// @Param search query string false "search"
+// @Success 200 {object} status.Response{data=obs.GetAllFunctionsResponse} "FunctionBody"
+// @Response 400 {object} status.Response{data=string} "Invalid Argument"
+// @Failure 500 {object} status.Response{data=string} "Server Error"
+func (h *Handler) GetAllFunctionsForApp(c *gin.Context) {
+	ctx, cancel := context.WithCancel(c.Request.Context())
+	defer cancel()
+
+	limit, err := h.getLimitParam(c)
+	if err != nil {
+		h.handleResponse(c, status.InvalidArgument, err.Error())
+		return
+	}
+
+	offset, err := h.getOffsetParam(c)
+	if err != nil {
+		h.handleResponse(c, status.InvalidArgument, err.Error())
+		return
+	}
+
+	projectId, ok := c.Get("project_id")
+	if !ok || !util.IsValidUUID(projectId.(string)) {
+		h.handleResponse(c, status.InvalidArgument, "project id is an invalid uuid")
+		return
+	}
+
+	environmentId, ok := c.Get("environment_id")
+	if !ok || !util.IsValidUUID(environmentId.(string)) {
+		h.handleResponse(c, status.BadRequest, "error getting environment id | not valid")
+		return
+	}
+
+	resource, err := h.services.CompanyService().ServiceResource().GetSingle(
+		ctx,
+		&pb.GetSingleServiceResourceReq{
+			ProjectId:     projectId.(string),
+			EnvironmentId: environmentId.(string),
+			ServiceType:   pb.ServiceType_FUNCTION_SERVICE,
+		},
+	)
+	if err != nil {
+		h.handleResponse(c, status.GRPCError, err.Error())
+		return
+	}
+
+	switch resource.ResourceType {
+	case pb.ResourceType_MONGODB:
+		resp, err := h.services.GetBuilderServiceByType(resource.NodeType).Function().GetList(
+			ctx, &obs.GetAllFunctionsRequest{
+				Search:    c.DefaultQuery("search", ""),
+				Limit:     int32(limit),
+				Offset:    int32(offset),
+				ProjectId: resource.ResourceEnvironmentId,
+				Type:      config.FUNCTION,
+			},
+		)
+		if err != nil {
+			h.handleResponse(c, status.GRPCError, err.Error())
+			return
+		}
+
+		h.handleResponse(c, status.OK, resp)
+	case pb.ResourceType_POSTGRESQL:
+		resp, err := h.services.GoObjectBuilderService().Function().GetList(
+			ctx,
+			&nb.GetAllFunctionsRequest{
+				Search:    c.DefaultQuery("search", ""),
+				Limit:     int32(limit),
+				Offset:    int32(offset),
+				ProjectId: resource.ResourceEnvironmentId,
+				Type:      config.FUNCTION,
+			},
+		)
+		if err != nil {
+			h.handleResponse(c, status.GRPCError, err.Error())
+			return
+		}
+
+		h.handleResponse(c, status.OK, resp)
+	}
+}
+
+// InvokeFunctionByPath godoc
+// @Security ApiKeyAuth
+// @Param function-path path string true "function-path"
+// @ID invoke_function_by_path
+// @Router /v1/invoke_function/{function-path} [POST]
+// @Summary Invoke Function By Path
+// @Description Invoke Function By Path
+// @Tags InvokeFunction
+// @Accept json
+// @Produce json
+// @Param InvokeFunctionByPathRequest body models.CommonMessage true "InvokeFunctionByPathRequest"
+// @Success 201 {object} status.Response{data=models.InvokeFunctionRequest} "Function data"
+// @Response 400 {object} status.Response{data=string} "Bad Request"
+// @Failure 500 {object} status.Response{data=string} "Server Error"
+func (h *Handler) InvokeFunctionByPath(c *gin.Context) {
+	var invokeFunction models.CommonMessage
+
+	if err := c.ShouldBindJSON(&invokeFunction); err != nil {
+		h.handleResponse(c, status.BadRequest, err.Error())
+		return
+	}
+
+	ctx, cancel := context.WithCancel(c.Request.Context())
+	defer cancel()
+
+	projectId, ok := c.Get("project_id")
+	if !ok || !util.IsValidUUID(projectId.(string)) {
+		h.handleResponse(c, status.InvalidArgument, "project id is an invalid uuid")
+		return
+	}
+
+	environmentId, ok := c.Get("environment_id")
+	if !ok || !util.IsValidUUID(environmentId.(string)) {
+		h.handleResponse(c, status.BadRequest, "error getting environment id | not valid")
+		return
+	}
+
+	resource, err := h.services.CompanyService().ServiceResource().GetSingle(
+		ctx, &pb.GetSingleServiceResourceReq{
+			ProjectId:     projectId.(string),
+			EnvironmentId: environmentId.(string),
+			ServiceType:   pb.ServiceType_FUNCTION_SERVICE,
+		},
+	)
+	if err != nil {
+		h.handleResponse(c, status.GRPCError, err.Error())
+		return
+	}
+
+	apiKeys, err := h.services.AuthService().ApiKey().GetList(ctx, &as.GetListReq{
+		EnvironmentId: environmentId.(string),
+		ProjectId:     resource.ProjectId,
+	})
+	if err != nil {
+		h.handleResponse(c, status.GRPCError, err.Error())
+		return
+	}
+
+	if len(apiKeys.Data) < 1 {
+		h.handleResponse(c, status.InvalidArgument, "Api key not found")
+		return
+	}
+	authInfo, _ := h.GetAuthInfo(c)
+
+	invokeFunction.Data["user_id"] = authInfo.GetUserId()
+	invokeFunction.Data["project_id"] = authInfo.GetProjectId()
+	invokeFunction.Data["environment_id"] = authInfo.GetEnvId()
+	invokeFunction.Data["app_id"] = apiKeys.GetData()[0].GetAppId()
+
+	resp, err := util.DoRequest(h.cfg.OpeFassBaseUrl+c.Param("function-path"), http.MethodPost,
+		models.NewInvokeFunctionRequest{Data: invokeFunction.Data},
+	)
+	if err != nil {
+		h.handleResponse(c, status.InvalidArgument, err.Error())
+		return
+	} else if resp.Status == "error" {
+		var errStr = resp.Status
+		if resp.Data != nil && resp.Data["message"] != nil {
+			errStr = resp.Data["message"].(string)
+		}
+		h.handleResponse(c, status.InvalidArgument, errStr)
+		return
+	}
+
+	h.handleResponse(c, status.Created, resp)
+}
+
+// InvokeFunction godoc
+// @Security ApiKeyAuth
+// @ID invoke_function
+// @Router /v1/invoke_function [POST]
+// @Summary Invoke Function
+// @Description Invoke Function
+// @Tags InvokeFunction
+// @Accept json
+// @Produce json
+// @Param InvokeFunctionRequest body models.InvokeFunctionRequest true "InvokeFunctionRequest"
+// @Success 201 {object} status.Response{data=models.InvokeFunctionRequest} "Function data"
+// @Response 400 {object} status.Response{data=string} "Bad Request"
+// @Failure 500 {object} status.Response{data=string} "Server Error"
+func (h *Handler) InvokeFunction(c *gin.Context) {
+	var invokeFunction models.InvokeFunctionRequest
+
+	if err := c.ShouldBindJSON(&invokeFunction); err != nil {
+		h.handleResponse(c, status.BadRequest, err.Error())
+		return
+	}
+
+	ctx, cancel := context.WithCancel(c.Request.Context())
+	defer cancel()
+
+	projectId, ok := c.Get("project_id")
+	if !ok || !util.IsValidUUID(projectId.(string)) {
+		h.handleResponse(c, status.InvalidArgument, "project id is an invalid uuid")
+		return
+	}
+
+	environmentId, ok := c.Get("environment_id")
+	if !ok || !util.IsValidUUID(environmentId.(string)) {
+		h.handleResponse(c, status.BadRequest, "error getting environment id | not valid")
+		return
+	}
+
+	resource, err := h.services.CompanyService().ServiceResource().GetSingle(
+		ctx, &pb.GetSingleServiceResourceReq{
+			ProjectId:     projectId.(string),
+			EnvironmentId: environmentId.(string),
+			ServiceType:   pb.ServiceType_BUILDER_SERVICE,
+		},
+	)
+	if err != nil {
+		h.handleResponse(c, status.GRPCError, err.Error())
+		return
+	}
+
+	var function = &obs.Function{}
+	switch resource.ResourceType {
+	case pb.ResourceType_MONGODB:
+		function, err = h.services.GetBuilderServiceByType(resource.NodeType).Function().GetSingle(
+			ctx, &obs.FunctionPrimaryKey{
+				Id:        invokeFunction.FunctionID,
+				ProjectId: resource.ResourceEnvironmentId,
+			},
+		)
+		if err != nil {
+			h.handleResponse(c, status.GRPCError, err.Error())
+			return
+		}
+	case pb.ResourceType_POSTGRESQL:
+		newFunction, err := h.services.GoObjectBuilderService().Function().GetSingle(
+			ctx, &nb.FunctionPrimaryKey{
+				Id:        invokeFunction.FunctionID,
+				ProjectId: resource.ResourceEnvironmentId,
+			},
+		)
+		if err != nil {
+			h.handleResponse(c, status.GRPCError, err.Error())
+			return
+		}
+
+		err = helper.MarshalToStruct(newFunction, &function)
+		if err != nil {
+			h.handleResponse(c, status.GRPCError, err.Error())
+			return
+		}
+	}
+
+	apiKeys, err := h.services.AuthService().ApiKey().GetList(context.Background(), &as.GetListReq{
+		EnvironmentId: environmentId.(string),
+		ProjectId:     resource.ProjectId,
+	})
+	if err != nil {
+		h.handleResponse(c, status.GRPCError, err.Error())
+		return
+	}
+
+	if len(apiKeys.Data) < 1 {
+		h.handleResponse(c, status.InvalidArgument, "Api key not found")
+		return
+	}
+
+	if invokeFunction.Attributes == nil {
+		invokeFunction.Attributes = make(map[string]interface{}, 0)
+	}
+
+	authInfo, _ := h.GetAuthInfo(c)
+
+	resp, err := util.DoRequest("https://ofs.u-code.io/function/"+function.Path, "POST", models.NewInvokeFunctionRequest{
+		Data: map[string]interface{}{
+			"object_ids":     invokeFunction.ObjectIDs,
+			"app_id":         apiKeys.GetData()[0].GetAppId(),
+			"attributes":     invokeFunction.Attributes,
+			"user_id":        authInfo.GetUserId(),
+			"project_id":     projectId,
+			"environment_id": environmentId,
+			"action_type":    "HTTP",
+			"table_slug":     invokeFunction.TableSlug,
+		},
+	})
+	if err != nil {
+		h.handleResponse(c, status.InvalidArgument, err.Error())
+		return
+	} else if resp.Status == "error" {
+		var errStr = resp.Status
+		if resp.Data != nil && resp.Data["message"] != nil {
+			errStr = resp.Data["message"].(string)
+		}
+		h.handleResponse(c, status.InvalidArgument, errStr)
+		return
+	}
+	if c.Query("form_input") != "true" && c.Query("use_no_limit") != "true" {
+		switch resource.ResourceType {
+		case pb.ResourceType_MONGODB:
+			_, err = h.services.GetBuilderServiceByType(resource.NodeType).CustomEvent().UpdateByFunctionId(
+				ctx, &obs.UpdateByFunctionIdRequest{
+					FunctionId: invokeFunction.FunctionID,
+					ObjectIds:  invokeFunction.ObjectIDs,
+					FieldSlug:  function.Path + "_disable",
+					ProjectId:  resource.ResourceEnvironmentId,
+				},
+			)
+			if err != nil {
+				h.handleResponse(c, status.GRPCError, err.Error())
+				return
+			}
+		case pb.ResourceType_POSTGRESQL:
+			_, err = h.services.GoObjectBuilderService().CustomEvent().UpdateByFunctionId(
+				ctx, &nb.UpdateByFunctionIdRequest{
+					FunctionId: invokeFunction.FunctionID,
+					ObjectIds:  invokeFunction.ObjectIDs,
+					FieldSlug:  function.Path + "_disable",
+					ProjectId:  resource.ResourceEnvironmentId,
+				},
+			)
+			if err != nil {
+				h.handleResponse(c, status.GRPCError, err.Error())
+				return
+			}
+		}
+	}
+	h.handleResponse(c, status.Created, resp)
 }

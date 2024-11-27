@@ -1,0 +1,1090 @@
+definitions:
+  github_com_golang_protobuf_ptypes_struct.Struct:
+    properties:
+      fields:
+        additionalProperties:
+          $ref: '#/definitions/google_golang_org_protobuf_types_known_structpb.Value'
+        description: Unordered map of dynamically typed values.
+        type: object
+    type: object
+  google_golang_org_protobuf_types_known_structpb.Value:
+    properties:
+      kind:
+        description: "The kind of value.\n\nTypes that are assignable to Kind:\n\n\t*Value_NullValue\n\t*Value_NumberValue\n\t*Value_StringValue\n\t*Value_BoolValue\n\t*Value_StructValue\n\t*Value_ListValue"
+    type: object
+  ucode_ucode_go_function_service_api_models.CommonMessage:
+    properties:
+      data:
+        additionalProperties: true
+        type: object
+      is_cached:
+        type: boolean
+    type: object
+  ucode_ucode_go_function_service_api_models.CreateFunctionRequest:
+    properties:
+      description:
+        type: string
+      framework_type:
+        type: string
+      function_folder_id:
+        type: string
+      name:
+        type: string
+      path:
+        type: string
+    type: object
+  ucode_ucode_go_function_service_api_models.CustomEvent:
+    properties:
+      action_type:
+        type: string
+      attributes:
+        additionalProperties: true
+        type: object
+      commit_guid:
+        type: string
+      commit_id:
+        type: string
+      disable:
+        type: boolean
+      event_path:
+        type: string
+      icon:
+        type: string
+      id:
+        type: string
+      label:
+        type: string
+      method:
+        type: string
+      table_slug:
+        type: string
+      url:
+        type: string
+    type: object
+  ucode_ucode_go_function_service_api_models.Function:
+    properties:
+      description:
+        type: string
+      function_folder_id:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      path:
+        type: string
+    type: object
+  ucode_ucode_go_function_service_api_models.InvokeFunctionRequest:
+    properties:
+      attributes:
+        additionalProperties: true
+        type: object
+      function_id:
+        type: string
+      object_ids:
+        items:
+          type: string
+        type: array
+      table_slug:
+        type: string
+    type: object
+  ucode_ucode_go_function_service_api_status_http.Response:
+    properties:
+      custom_message: {}
+      data: {}
+      description:
+        type: string
+      status:
+        type: string
+    type: object
+  ucode_ucode_go_function_service_genproto_object_builder_service.CreateCustomEventRequest:
+    properties:
+      action_type:
+        type: string
+      attributes:
+        $ref: '#/definitions/github_com_golang_protobuf_ptypes_struct.Struct'
+      commit_guid:
+        type: string
+      commit_id:
+        type: integer
+      disable:
+        type: boolean
+      env_id:
+        type: string
+      event_path:
+        type: string
+      icon:
+        type: string
+      label:
+        type: string
+      method:
+        type: string
+      project_id:
+        type: string
+      table_slug:
+        type: string
+      url:
+        type: string
+    type: object
+  ucode_ucode_go_function_service_genproto_object_builder_service.CustomEvent:
+    properties:
+      action_permission:
+        $ref: '#/definitions/github_com_golang_protobuf_ptypes_struct.Struct'
+      action_type:
+        type: string
+      attributes:
+        $ref: '#/definitions/github_com_golang_protobuf_ptypes_struct.Struct'
+      disable:
+        type: boolean
+      env_id:
+        type: string
+      event_path:
+        type: string
+      functions:
+        items:
+          $ref: '#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.Function'
+        type: array
+      icon:
+        type: string
+      id:
+        type: string
+      label:
+        type: string
+      method:
+        type: string
+      project_id:
+        type: string
+      table_slug:
+        type: string
+      url:
+        type: string
+    type: object
+  ucode_ucode_go_function_service_genproto_object_builder_service.Function:
+    properties:
+      branch:
+        type: string
+      description:
+        type: string
+      environment_id:
+        type: string
+      error_message:
+        type: string
+      framework_type:
+        type: string
+      function_folder_id:
+        type: string
+      gitlab_group_id:
+        type: string
+      gitlab_id:
+        type: string
+      id:
+        type: string
+      job_name:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      path:
+        type: string
+      pipeline_status:
+        type: string
+      project_id:
+        type: string
+      provided_name:
+        type: string
+      repo_id:
+        type: string
+      request_type:
+        type: string
+      resource:
+        type: string
+      source_url:
+        type: string
+      ssh_url:
+        type: string
+      type:
+        type: string
+      url:
+        type: string
+    type: object
+  ucode_ucode_go_function_service_genproto_object_builder_service.GetAllFunctionsResponse:
+    properties:
+      count:
+        type: integer
+      functions:
+        items:
+          $ref: '#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.Function'
+        type: array
+    type: object
+  ucode_ucode_go_function_service_genproto_object_builder_service.GetCustomEventsListResponse:
+    properties:
+      count:
+        type: integer
+      custom_events:
+        items:
+          $ref: '#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.CustomEvent'
+        type: array
+    type: object
+info:
+  contact: {}
+  termsOfService: https://u-code.io/
+paths:
+  /v1/collections/{collection}/automation:
+    get:
+      consumes:
+      - application/json
+      description: Get all automation
+      operationId: get_all_automation
+      parameters:
+      - description: collection
+        in: path
+        name: collection
+        required: true
+        type: string
+      - in: query
+        name: method
+        type: string
+      - in: query
+        name: project_id
+        type: string
+      - in: query
+        name: role_id
+        type: string
+      - in: query
+        name: table_slug
+        type: string
+      - in: query
+        name: version_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: AutomationBody
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.GetCustomEventsListResponse'
+              type: object
+        "400":
+          description: Invalid Argument
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get all automation
+      tags:
+      - Automation
+    post:
+      consumes:
+      - application/json
+      description: Create Automation
+      operationId: create_automation
+      parameters:
+      - description: collection
+        in: path
+        name: collection
+        required: true
+        type: string
+      - description: AutomationRequestBody
+        in: body
+        name: Automation
+        required: true
+        schema:
+          $ref: '#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.CreateCustomEventRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Automation data
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.CustomEvent'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Create Automation
+      tags:
+      - Automation
+    put:
+      consumes:
+      - application/json
+      description: Update automation
+      operationId: update_automation
+      parameters:
+      - description: collection
+        in: path
+        name: collection
+        required: true
+        type: string
+      - description: UpdateAutomationRequestBody
+        in: body
+        name: Customevent
+        required: true
+        schema:
+          $ref: '#/definitions/ucode_ucode_go_function_service_api_models.CustomEvent'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Update Automation
+      tags:
+      - Automation
+  /v1/collections/{collection}/automation/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete Automation
+      operationId: delete_automation
+      parameters:
+      - description: collection
+        in: path
+        name: collection
+        required: true
+        type: string
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Invalid Argument
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Delete Automation
+      tags:
+      - Automation
+    get:
+      consumes:
+      - application/json
+      description: Get Automation by id
+      operationId: get_automatio_by_id
+      parameters:
+      - description: collection
+        in: path
+        name: collection
+        required: true
+        type: string
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: AutomationBody
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.CustomEvent'
+              type: object
+        "400":
+          description: Invalid Argument
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get Automation by id
+      tags:
+      - Automation
+  /v1/function:
+    get:
+      consumes:
+      - application/json
+      description: Get all functions
+      operationId: get_all_new_functions
+      parameters:
+      - description: limit
+        in: query
+        name: limit
+        type: number
+      - description: offset
+        in: query
+        name: offset
+        type: number
+      - description: search
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: FunctionBody
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.GetAllFunctionsResponse'
+              type: object
+        "400":
+          description: Invalid Argument
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get all functions
+      tags:
+      - Function
+    post:
+      consumes:
+      - application/json
+      description: Create New Function
+      operationId: create_new_function
+      parameters:
+      - description: CreateFunctionRequestBody
+        in: body
+        name: Function
+        required: true
+        schema:
+          $ref: '#/definitions/ucode_ucode_go_function_service_api_models.CreateFunctionRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Create New Function
+      tags:
+      - Function
+    put:
+      consumes:
+      - application/json
+      description: Update new function
+      operationId: update_new_function
+      parameters:
+      - description: UpdateFunctionRequestBody
+        in: body
+        name: Function
+        required: true
+        schema:
+          $ref: '#/definitions/ucode_ucode_go_function_service_api_models.Function'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Update new function
+      tags:
+      - Function
+  /v1/function-for-app:
+    get:
+      consumes:
+      - application/json
+      description: Get all functions
+      operationId: get_all_new_functions_for_app
+      parameters:
+      - description: limit
+        in: query
+        name: limit
+        type: number
+      - description: offset
+        in: query
+        name: offset
+        type: number
+      - description: search
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: FunctionBody
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.GetAllFunctionsResponse'
+              type: object
+        "400":
+          description: Invalid Argument
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get all functions
+      tags:
+      - Function
+  /v1/function/{function_id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete New Function
+      operationId: delete_new_function
+      parameters:
+      - description: function_id
+        in: path
+        name: function_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Invalid Argument
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Delete New Function
+      tags:
+      - Function
+    get:
+      consumes:
+      - application/json
+      description: Get Function by id
+      operationId: get_new_function_by_id
+      parameters:
+      - description: function_id
+        in: path
+        name: function_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: FunctionBody
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.Function'
+              type: object
+        "400":
+          description: Invalid Argument
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get Function by id
+      tags:
+      - Function
+  /v1/functions/micro-frontend:
+    get:
+      consumes:
+      - application/json
+      description: Get All Micro Frontend
+      operationId: get_all_micro_frontend
+      parameters:
+      - description: limit
+        in: query
+        name: limit
+        type: number
+      - description: offset
+        in: query
+        name: offset
+        type: number
+      - description: search
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Data
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.GetAllFunctionsResponse'
+              type: object
+        "400":
+          description: Invalid Argument
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get All Micro Frontend
+      tags:
+      - MicroFrontend
+    post:
+      consumes:
+      - application/json
+      description: Create Micro Frontend
+      operationId: create_micro_frontend
+      parameters:
+      - description: MicroFrontend
+        in: body
+        name: MicroFrontend
+        required: true
+        schema:
+          $ref: '#/definitions/ucode_ucode_go_function_service_api_models.CreateFunctionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Data
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.Function'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Create Micro Frontend
+      tags:
+      - MicroFrontend
+    put:
+      consumes:
+      - application/json
+      description: Update Micro Frontend
+      operationId: update_micro_frontend
+      parameters:
+      - description: Data
+        in: body
+        name: Data
+        required: true
+        schema:
+          $ref: '#/definitions/ucode_ucode_go_function_service_api_models.Function'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Update Micro Frontend
+      tags:
+      - MicroFrontend
+  /v1/functions/micro-frontend/{micro-frontend-id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete Micro Frontend
+      operationId: delete_micro_frontend
+      parameters:
+      - description: micro-frontend-id
+        in: path
+        name: micro-frontend-id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Invalid Argument
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Delete Micro Frontend
+      tags:
+      - MicroFrontend
+    get:
+      consumes:
+      - application/json
+      description: Get Micro Frontend By Id
+      operationId: get_micro_frontend_by_id
+      parameters:
+      - description: micro-frontend-id
+        in: path
+        name: micro-frontend-id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Data
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.Function'
+              type: object
+        "400":
+          description: Invalid Argument
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get Micro Frontend By Id
+      tags:
+      - MicroFrontend
+  /v1/invoke_function:
+    post:
+      consumes:
+      - application/json
+      description: Invoke Function
+      operationId: invoke_function
+      parameters:
+      - description: InvokeFunctionRequest
+        in: body
+        name: InvokeFunctionRequest
+        required: true
+        schema:
+          $ref: '#/definitions/ucode_ucode_go_function_service_api_models.InvokeFunctionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Function data
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/ucode_ucode_go_function_service_api_models.InvokeFunctionRequest'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Invoke Function
+      tags:
+      - InvokeFunction
+  /v1/invoke_function/{function-path}:
+    post:
+      consumes:
+      - application/json
+      description: Invoke Function By Path
+      operationId: invoke_function_by_path
+      parameters:
+      - description: function-path
+        in: path
+        name: function-path
+        required: true
+        type: string
+      - description: InvokeFunctionByPathRequest
+        in: body
+        name: InvokeFunctionByPathRequest
+        required: true
+        schema:
+          $ref: '#/definitions/ucode_ucode_go_function_service_api_models.CommonMessage'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Function data
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/ucode_ucode_go_function_service_api_models.InvokeFunctionRequest'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Invoke Function By Path
+      tags:
+      - InvokeFunction
+swagger: "2.0"
