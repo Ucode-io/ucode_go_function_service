@@ -3,19 +3,8 @@ include:
 
 stages:
   - build
-  # - migrate
   - deploy
-  - performance
   - rollback
-
-build-dev:
-  stage: build
-  extends: .build_template
-  variables:
-    ENV_TAG: dev
-    DOCKERFILE: Dockerfile
-  only:
-    - dev
 
 build-test:
   stage: build
@@ -35,42 +24,6 @@ build-prod:
   only:
     - master
 
-# migrate-dev:
-#   stage: migrate
-#   extends: .migrate_template
-#   variables:
-#     PATH_MIGRATION: migrations/postgres
-#     POSTGRES_LINK: $UCODE_OBJECT_BUILDER_SERVICE_DEVDB
-#   only:
-#     - dev
-
-# migrate-test:
-#   stage: migrate
-#   extends: .migrate_template
-#   variables:
-#     PATH_MIGRATION: migrations/postgres
-#     POSTGRES_LINK: $UCODE_OBJECT_BUILDER_SERVICE_TESTDB
-#   only:
-#     - staging
-
-# migrate-prod:
-#   stage: migrate
-#   extends: .migrate_template
-#   variables:
-#     PATH_MIGRATION: migrations/postgres
-#     POSTGRES_LINK: $UCODE_OBJECT_BUILDER_SERVICE_PRODDB
-#   only:
-#     - master
-
-deploy-dev:
-  stage: deploy
-  extends: .deploy_template
-  variables:
-    NAMESPACE: ucode-dev
-    VALUES_FILE: .helm/values-dev.yml
-    K8SCONFIGJSON: $UCODE_HZN_KUBECONFIG
-  only:
-    - dev
 
 deploy-test:
   stage: deploy
@@ -93,13 +46,6 @@ deploy-prod:
     - master
 
 
-rollback-dev:
-  stage: rollback
-  extends: .rollback_template
-  variables:
-    NAMESPACE: ucode-dev
-    K8SCONFIGJSON: $UCODE_HZN_KUBECONFIG
-  when: manual
 
 rollback-test:
   stage: rollback
@@ -117,28 +63,3 @@ rollback-prod:
     K8SCONFIGJSON: $UCODE_KUBECONFIG
   when: manual
 
-load_performance_prod:
-  stage: performance
-  extends: .performance_template
-  variables:
-    OAUTH_GITLAB_TOKEN: $OAUTH_GITLAB_TOKEN
-    REPOSITORY_URL: gitlab.udevs.io/ucode/ucode_load_test.git
-    GIT_BRANCH: master
-    TEST_DIRECTORY: ucode_go_object_builder
-  tags:
-   - k6-runner
-  when: manual
-
-load_performance_test:
-  stage: performance
-  extends: .performance_template
-  variables:
-    OAUTH_GITLAB_TOKEN: $OAUTH_GITLAB_TOKEN
-    REPOSITORY_URL: gitlab.udevs.io/ucode/ucode_load_test.git
-    GIT_BRANCH: staging
-    TEST_DIRECTORY: ucode_go_object_builder
-  tags:
-   - k6-runner
-  when: manual
-
-  #
