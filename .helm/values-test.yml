@@ -55,11 +55,6 @@ podAnnotations:
     {{ $key }}: {{ $value }}
     {{- end }}
     {{ end -}}
-    {{- with secret "secret/data/k8s/ucode-test/go-object-builder-service" -}}
-    {{- range $key, $value := .Data.data }}
-    {{ $key }}: {{ $value }}
-    {{- end }}
-    {{ end -}}
 
 podLabels:
   app: go-function-service
@@ -114,7 +109,7 @@ ingress:
         kubernetes.io/ingress.class: nginx
       type: web
       hosts:
-        - host: "test-function.ucode.run"
+        - host: "function.ucode.run"
           path: /
           servicePort: 8080
     - annotations:
@@ -130,7 +125,7 @@ ingress:
         kubernetes.io/ingress.class: nginx
       type: auth
       hosts:
-        - host: "test-function.ucode.run"
+        - host: "function.ucode.run"
           path: /swagger
           servicePort: 8080
 
