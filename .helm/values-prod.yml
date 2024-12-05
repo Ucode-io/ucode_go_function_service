@@ -55,11 +55,6 @@ podAnnotations:
     {{ $key }}: {{ $value }}
     {{- end }}
     {{ end -}}
-    {{- with secret "secret/data/k8s/ucode-prod/go-object-builder-service" -}}
-    {{- range $key, $value := .Data.data }}
-    {{ $key }}: {{ $value }}
-    {{- end }}
-    {{ end -}}
     {{- with secret "secret/data/k8s/ucode-prod/jaeger" -}}
     {{- range $key, $value := .Data.data }}
     {{ $key }}: {{ $value }}
@@ -113,7 +108,7 @@ service:
       name: grpc
 
 ingress:
-  enabled: false
+  enabled: true
   rules:
     - annotations:
         nginx.ingress.kubernetes.io/proxy-body-size: "0"
