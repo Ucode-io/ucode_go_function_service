@@ -95,8 +95,8 @@ service:
   type: ClusterIP
   annotations: {}
   specs:
-    - port: 80
-      targetPort: 80
+    - port: 8080
+      targetPort: 8080
       name: http
 
 ingress:
