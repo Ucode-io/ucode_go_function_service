@@ -1,8 +1,8 @@
 FROM golang:1.21.0 as builder
 
 # 
-RUN mkdir -p $GOPATH/src/gitlab.udevs.io/ucode/ucode_go_admin_api_gateway 
-WORKDIR $GOPATH/src/gitlab.udevs.io/ucode/ucode_go_admin_api_gateway
+RUN mkdir -p $GOPATH/src/gitlab.udevs.io/ucode/ucode_go_function_service 
+WORKDIR $GOPATH/src/gitlab.udevs.io/ucode/ucode_go_function_service
 
 # Copy the local package files to the container's workspace.
 COPY . ./
