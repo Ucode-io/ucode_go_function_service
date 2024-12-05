@@ -98,6 +98,10 @@ service:
     - port: 8080
       targetPort: 8080
       name: http
+    - port: 80
+      targetPort: 80
+      name: grpc
+
 
 ingress:
   enabled: true
