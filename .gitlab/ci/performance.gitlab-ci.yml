@@ -1,0 +1,9 @@
+.performance_template:
+  stage: performance
+  image: gitlab.udevs.io:5050/docker/k6:latest
+  script: 
+    - git clone https://oauth2:${OAUTH_GITLAB_TOKEN}@${REPOSITORY_URL}
+    - WORKDIR=$(echo ${REPOSITORY_URL} | sed 's#.*/\([^/]*\)\.git#\1#')
+    - cd ${WORKDIR} && git checkout ${GIT_BRANCH}
+    - cd ${TEST_DIRECTORY} && bash run.sh
+

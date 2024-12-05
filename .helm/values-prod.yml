@@ -1,0 +1,179 @@
+# Default values for microservice. Hello!
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+global:
+  replicaCount: 1
+  environment: {}
+  # list of key: value
+  # GLOBAL1: value
+labels:
+  app: go-function-service
+replicaCount: 1
+
+image:
+  registry: gitlab.udevs.io:5050
+  repository: /ucode/ucode_go_function_service
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+
+imagePullSecrets: "gitlab-registry"
+nameOverride: ""
+fullnameOverride: ""
+
+# command: ["/bin/sh","-c"]
+# args: ["echo 'consuming a message'; sleep 5"]
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: "vault-auth"
+
+podAnnotations:
+  vault.hashicorp.com/agent-inject: "true"
+  vault.hashicorp.com/auth-path: "auth/kubernetes-ucode"
+  vault.hashicorp.com/agent-inject-secret-.env: "secret/data/k8s/ucode-prod/go-function-service"
+  vault.hashicorp.com/secret-volume-path-.env: "/app"
+  vault.hashicorp.com/role: "ucode-prod"
+  vault.hashicorp.com/agent-inject-template-.env: |
+    {{- with secret "secret/data/k8s/ucode-prod/postgres" -}}
+    {{- range $key, $value := .Data.data }}
+    {{ $key }}: {{ $value }}
+    {{- end }}
+    {{ end -}}
+    {{- with secret "secret/data/k8s/ucode-prod/services" -}}
+    {{- range $key, $value := .Data.data }}
+    {{ $key }}: {{ $value }}
+    {{- end }}
+    {{ end -}}
+    {{- with secret "secret/data/k8s/ucode-prod/minio" -}}
+    {{- range $key, $value := .Data.data }}
+    {{ $key }}: {{ $value }}
+    {{- end }}
+    {{ end -}}
+    {{- with secret "secret/data/k8s/ucode-prod/jaeger" -}}
+    {{- range $key, $value := .Data.data }}
+    {{ $key }}: {{ $value }}
+    {{- end }}
+    {{ end -}}
+
+podLabels:
+  app: ucode-go-function-service
+
+podSecurityContext:
+  {}
+  # fsGroup: 2000
+
+securityContext:
+  {}
+  # capabilities:
+  #   drop:
+  #     - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+vault:
+  enabled: false
+  secretName: vault-secrets
+  variables:
+    VAULT_TOKEN: vault_token
+    SECRETS_PATH: vault_path
+
+environment: {}
+volumes:
+  enabled: false
+  pvc:
+    enabled: false
+    existing_claim:
+    name: pvc
+    mountPath: /pv
+    size: 1G
+    class:
+    accessModes:
+      - ReadWriteOnce
+
+service:
+  type: ClusterIP
+  annotations: {}
+  specs:
+    - port: 8080
+      targetPort: 8080
+      name: http
+    - port: 80
+      targetPort: 80
+      name: grpc
+
+ingress:
+  enabled: true
+  rules:
+    - annotations:
+        nginx.ingress.kubernetes.io/proxy-body-size: "0"
+        nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+        nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+        kubernetes.io/ingress.class: nginx
+        cert-manager.io/cluster-issuer: letsencrypt-prod
+      type: web
+      hosts:
+        - host: "function.u-code.io"
+          path: /
+          servicePort: 8080
+      tls:
+        - secretName: function-tls
+          hosts:
+            - "function.u-code.io"
+    - annotations:
+        # type of authentication
+        nginx.ingress.kubernetes.io/auth-type: basic
+        # name of the secret that contains the user/password definitions
+        nginx.ingress.kubernetes.io/auth-secret: basic-auth
+        # message to display with an appropriate context why the authentication is required
+        nginx.ingress.kubernetes.io/auth-realm: "Authentication Required - u-code"
+        nginx.ingress.kubernetes.io/proxy-body-size: "0"
+        nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+        nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+        kubernetes.io/ingress.class: nginx
+        cert-manager.io/cluster-issuer: letsencrypt-prod
+      type: auth
+      hosts:
+        - host: "function.u-code.io"
+          path: /swagger
+          servicePort: 8080
+      tls:
+        - secretName: function-tls
+          hosts:
+            - "function.u-code.io"
+
+# resources:
+#    limits:
+#      cpu: 150m
+#      memory: 256Mi
+#    requests:
+#      cpu: 100m
+#      memory: 200Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: workload
+              operator: In
+              values:
+                - "ucode-prod"
+
+#

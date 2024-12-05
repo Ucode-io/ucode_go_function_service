@@ -1,0 +1,8 @@
+.rollback_template:
+  stage: rollback
+  image: gitlab.udevs.io:5050/docker/docker:dind
+  script:
+    - echo "$KUBECONFIGJSON" | yq -P - > ~/.kube/config
+    - kubectl config set-context --current --namespace=$NAMESPACE
+    - DEPLOYMENT=$(echo $CI_PROJECT_NAME | sed s/_/-/g | sed s/$CI_PROJECT_NAMESPACE-//g)
+    - helm rollback $DEPLOYMENT
