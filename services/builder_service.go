@@ -10,14 +10,14 @@ import (
 )
 
 type BuilderServiceI interface {
-	Function() obs.FunctionServiceV2Client
+	Function() obs.FunctionServiceClient
 	CustomEvent() obs.CustomEventServiceClient
 	VersionHistory() obs.VersionHistoryServiceClient
 }
 
 type builderServiceClient struct {
 	customEventService    obs.CustomEventServiceClient
-	functionService       obs.FunctionServiceV2Client
+	functionService       obs.FunctionServiceClient
 	versionHistoryService obs.VersionHistoryServiceClient
 }
 
@@ -33,7 +33,7 @@ func NewBuilderServiceClient(ctx context.Context, cfg config.Config) (BuilderSer
 
 	return &builderServiceClient{
 		customEventService:    obs.NewCustomEventServiceClient(connObjectBuilderService),
-		functionService:       obs.NewFunctionServiceV2Client(connObjectBuilderService),
+		functionService:       obs.NewFunctionServiceClient(connObjectBuilderService),
 		versionHistoryService: obs.NewVersionHistoryServiceClient(connObjectBuilderService),
 	}, nil
 }
@@ -42,7 +42,7 @@ func (g *builderServiceClient) CustomEvent() obs.CustomEventServiceClient {
 	return g.customEventService
 }
 
-func (g *builderServiceClient) Function() obs.FunctionServiceV2Client {
+func (g *builderServiceClient) Function() obs.FunctionServiceClient {
 	return g.functionService
 }
 

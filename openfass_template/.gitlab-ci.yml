@@ -1,0 +1,80 @@
+before_script:
+  - docker login $CI_REGISTRY --username $CI_REGISTRY_USER --password $CI_REGISTRY_PASSWORD
+
+stages:
+  - test
+  - benchmark
+  - build
+  # - notify
+
+
+variables:
+  GO111MODULE: "on" # Enable Go modules
+
+unit_test:
+  stage: test
+  image: golang:latest # Use an official Go Docker image
+  before_script: []
+  script:
+    - cd $CI_PROJECT_NAME && go test
+
+benchmark_test:
+  stage: benchmark
+  image: golang:latest # Use an official Go Docker image
+  before_script: []
+  script:
+    - cd $CI_PROJECT_NAME && go test -run ^$ -bench . -count=1 -benchtime=5x
+
+# Build the whole stack using only the faas-cli
+docker-build-prod:
+  stage: build
+  image: gitlab.udevs.io:5050/docker/openfaas:dind
+  script:
+    - FUNCTION=$(echo $CI_PROJECT_NAME | sed s/prod-//g)
+    # - export FUNCTION=$(cut -d "-" -f2 -f3 -f4 -f5 -f6 -f7 <<< ${CI_PROJECT_NAME})
+    - export OPENFAAS_URL=$UCODE_OPENFAAS_URL
+    # Build Docker image
+    - faas-cli build -f ${FUNCTION}.yml --tag=branch
+    # Login & Push Docker image to private repo
+    - faas-cli push -f ${FUNCTION}.yml --tag=branch
+    # Login to Openfaas admin panel
+    - /usr/local/bin/faas-cli login --username ${UCODE_OPENFAAS_USER} --password ${UCODE_OPENFAAS_PASSWORD}
+    # Deploy function from private repo
+    - faas-cli deploy -f ${FUNCTION}.yml --secret gitlab-registry --tag=branch
+  only:
+    - /^prod-.*/
+
+
+
+# Build the whole stack using only the faas-cli
+docker-build-staging:
+  stage: build
+  image: gitlab.udevs.io:5050/docker/openfaas:dind
+  script:
+    - FUNCTION=$(echo $CI_PROJECT_NAME | sed s/staging-//g)
+    # - FUNCTION=$(cut -d "-" -f2 -f3 -f4 -f5 -f6 -f7 <<< ${CI_PROJECT_NAME})
+    - echo $FUNCTION
+    - export OPENFAAS_URL=$UCODE_OPENFAAS_URL
+    # Build Docker image
+    - faas-cli build -f ${FUNCTION}.yml --tag=branch
+    # Login & Push Docker image to private repo
+    - faas-cli push -f ${FUNCTION}.yml --tag=branch
+    # Login to Openfaas admin panel
+    - /usr/local/bin/faas-cli login --username ${UCODE_OPENFAAS_USER} --password ${UCODE_OPENFAAS_PASSWORD}
+    # Deploy function from private repo
+    - faas-cli deploy -f ${FUNCTION}.yml --secret gitlab-registry --tag=branch
+  only:
+    - master
+    # - /^staging-.*/
+
+# # Add a job to send a notification when the previous job fails
+# send-telegram-notification:
+#   stage: notify
+#   script:
+#     # Add the following command to send a Telegram notification
+#     - >
+#      curl -s -X POST https://api.telegram.org/bot6553374871:AAFPGwrcMQg1-C6fS-jnHb-NhMeHp3I3KGc/sendMessage  -d chat_id=-1001943630828 -d text="Your message text goes here"
+#   only:
+#     - master
+#   # Define the 'when' attribute to run this job only when the previous job fails
+#   when: on_failure

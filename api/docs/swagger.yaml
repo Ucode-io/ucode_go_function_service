@@ -22,6 +22,8 @@ definitions:
     type: object
   ucode_ucode_go_function_service_api_models.CreateFunctionRequest:
     properties:
+      branch:
+        type: string
       description:
         type: string
       framework_type:
@@ -31,6 +33,10 @@ definitions:
       name:
         type: string
       path:
+        type: string
+      repo_name:
+        type: string
+      resource_id:
         type: string
     type: object
   ucode_ucode_go_function_service_api_models.CustomEvent:
@@ -72,6 +78,51 @@ definitions:
       name:
         type: string
       path:
+        type: string
+    type: object
+  ucode_ucode_go_function_service_api_models.GithubUser:
+    properties:
+      avatar_url:
+        type: string
+      blog:
+        type: string
+      events_url:
+        type: string
+      followers_url:
+        type: string
+      following_url:
+        type: string
+      gists_url:
+        type: string
+      gravatar_id:
+        type: string
+      html_url:
+        type: string
+      id:
+        type: integer
+      login:
+        type: string
+      name:
+        type: string
+      node_id:
+        type: string
+      organizations_url:
+        type: string
+      received_events_url:
+        type: string
+      repos_url:
+        type: string
+      site_admin:
+        type: boolean
+      starred_url:
+        type: string
+      subscriptions_url:
+        type: string
+      type:
+        type: string
+      url:
+        type: string
+      user_view_type:
         type: string
     type: object
   ucode_ucode_go_function_service_api_models.InvokeFunctionRequest:
@@ -230,6 +281,216 @@ info:
   contact: {}
   termsOfService: https://u-code.io/
 paths:
+  /github/branches:
+    get:
+      consumes:
+      - application/json
+      description: Github Branches
+      operationId: github_get_branches
+      parameters:
+      - description: token
+        in: query
+        name: token
+        type: string
+      - description: username
+        in: query
+        name: username
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Data
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  items:
+                    properties:
+                      full_name:
+                        type: string
+                      id:
+                        type: integer
+                      name:
+                        type: string
+                      node_id:
+                        type: string
+                      private:
+                        type: boolean
+                    type: object
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Github Branches
+      tags:
+      - Github
+  /github/login:
+    get:
+      consumes:
+      - application/json
+      description: Github Login
+      operationId: github_login
+      parameters:
+      - description: code
+        in: query
+        name: code
+        type: number
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Data
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Github Login
+      tags:
+      - Github
+  /github/repos:
+    get:
+      consumes:
+      - application/json
+      description: Github Repo
+      operationId: github_get_repos
+      parameters:
+      - description: token
+        in: query
+        name: token
+        type: string
+      - description: username
+        in: query
+        name: username
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Data
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  items:
+                    properties:
+                      full_name:
+                        type: string
+                      id:
+                        type: integer
+                      name:
+                        type: string
+                      node_id:
+                        type: string
+                      private:
+                        type: boolean
+                    type: object
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Github Repo
+      tags:
+      - Github
+  /github/user:
+    get:
+      consumes:
+      - application/json
+      description: Github User
+      operationId: github_get_user
+      parameters:
+      - description: token
+        in: query
+        name: token
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Data
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/ucode_ucode_go_function_service_api_models.GithubUser'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Github User
+      tags:
+      - Github
   /v1/collections/{collection}/automation:
     get:
       consumes:
@@ -1087,4 +1348,9 @@ paths:
       summary: Invoke Function By Path
       tags:
       - InvokeFunction
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

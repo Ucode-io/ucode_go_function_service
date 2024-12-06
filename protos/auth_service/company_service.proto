@@ -24,10 +24,15 @@ message RegisterCompanyRequest {
         string login = 3;
         string password = 4;
         string expires_at = 5;
-        string google_token = 6;
+    }
+    message GoogleToken {
+        string access_token = 1;
+        string token_type = 2;
+        string scope = 3;        
     }
     string name = 1;
     RegisterUserInfo user_info = 2;
+    GoogleToken googleToken = 3;
 }
 
 message CompanyPrimaryKey {

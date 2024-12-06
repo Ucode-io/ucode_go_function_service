@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"os"
 	"strings"
 	"ucode/ucode_go_function_service/api/models"
 	status "ucode/ucode_go_function_service/api/status_http"
@@ -13,14 +14,15 @@ import (
 	nb "ucode/ucode_go_function_service/genproto/new_object_builder_service"
 	obs "ucode/ucode_go_function_service/genproto/object_builder_service"
 
+	"ucode/ucode_go_function_service/pkg/github"
+	"ucode/ucode_go_function_service/pkg/gitlab"
 	"ucode/ucode_go_function_service/pkg/helper"
 
 	"ucode/ucode_go_function_service/pkg/util"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang/protobuf/ptypes/empty"
-	"github.com/xtgo/uuid"
-
+	"github.com/google/uuid"
 	"github.com/spf13/cast"
 )
 
@@ -63,8 +65,7 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 	userId, _ := c.Get("user_id")
 
 	resource, err := h.services.CompanyService().ServiceResource().GetSingle(
-		ctx,
-		&pb.GetSingleServiceResourceReq{
+		ctx, &pb.GetSingleServiceResourceReq{
 			ProjectId:     projectId.(string),
 			EnvironmentId: environmentId.(string),
 			ServiceType:   pb.ServiceType_FUNCTION_SERVICE,
@@ -75,17 +76,17 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 		return
 	}
 
-	environment, err := h.services.CompanyService().Environment().GetById(ctx,
-		&pb.EnvironmentPrimaryKey{Id: environmentId.(string)},
+	environment, err := h.services.CompanyService().Environment().GetById(
+		ctx, &pb.EnvironmentPrimaryKey{Id: environmentId.(string)},
 	)
 	if err != nil {
 		h.handleResponse(c, status.GRPCError, err.Error())
 		return
 	}
 
-	project, err := h.services.CompanyService().Project().GetById(ctx, &pb.GetProjectByIdRequest{
-		ProjectId: environment.GetProjectId(),
-	})
+	project, err := h.services.CompanyService().Project().GetById(
+		ctx, &pb.GetProjectByIdRequest{ProjectId: environment.GetProjectId()},
+	)
 	if err != nil {
 		h.handleResponse(c, status.InternalServerError, err.Error())
 		return
@@ -101,7 +102,7 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 
 	var (
 		functionPath = projectName + "-" + function.Path
-		uuid         = uuid.NewRandom()
+		uuid         = uuid.New()
 		url          = "https://" + uuid.String() + ".u-code.io"
 
 		createFunction = &obs.CreateFunctionRequest{
@@ -128,6 +129,48 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 	)
 
 	// @TODO CREATE FUNCTON ON GITHUB, GITLAB, BITBUCKET
+
+	if config.FunctionResource[function.ResourceId] {
+		_, err = gitlab.CreateProjectFork(functionPath, gitlab.IntegrationData{
+			GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
+			GitlabIntegrationToken: h.cfg.GitlabIntegrationToken,
+			GitlabGroupId:          h.cfg.GitlabGroupId,
+			GitlabProjectId:        h.cfg.GitlabProjectId,
+		})
+		if err != nil {
+			h.handleResponse(c, status.InvalidArgument, err.Error())
+			return
+		}
+	} else {
+		resource, err := h.services.CompanyService().Resource().GetSingleProjectResouece(ctx, &pb.PrimaryKeyProjectResource{
+			Id:            function.ResourceId,
+			EnvironmentId: environment.Id,
+			ProjectId:     environment.ProjectId,
+		})
+		if err != nil {
+			h.handleResponse(c, status.GRPCError, err.Error())
+			return
+		}
+		dir, err := os.Getwd()
+		if err != nil {
+			h.handleResponse(c, status.GRPCError, err.Error())
+			return
+		}
+
+		err = github.GithubPushFiles(github.GithubPushRequest{
+			Token:     resource.Settings.Github.Token,
+			RepoOwner: resource.Settings.Github.Username,
+			RepoName:  function.RepoName,
+			Branch:    function.Branch,
+			Commit:    "Add openFass template",
+			BaseDir:   dir + "/openfass_template",
+			BaseUrl:   h.cfg.GithubApiBaseUrl,
+		})
+		if err != nil {
+			h.handleResponse(c, status.InternalServerError, err.Error())
+			return
+		}
+	}
 
 	switch resource.ResourceType {
 	case pb.ResourceType_MONGODB:
