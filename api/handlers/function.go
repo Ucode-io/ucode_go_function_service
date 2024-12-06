@@ -1054,6 +1054,7 @@ func (h *Handler) InvokeFunction(c *gin.Context) {
 // @Failure 500 {object} status_http.Response{data=string} "Server Error"
 func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 	var invokeFunction models.CommonMessage
+	fmt.Println("----------------HERE AGAIN-------------------")
 
 	if err := c.ShouldBindJSON(&invokeFunction); err != nil {
 		h.handleResponse(c, status_http.BadRequest, err.Error())
