@@ -4,11 +4,11 @@ type CreateFunctionRequest struct {
 	Path             string `json:"path"`
 	Name             string `json:"name"`
 	Description      string `json:"description"`
-	CommitId         int64  `json:"-"`
-	CommitGuid       string `json:"-"`
-	VersionId        string `json:"-"`
 	FunctionFolderId string `json:"function_folder_id"`
 	FrameworkType    string `json:"framework_type"`
+	Branch           string `json:"branch"`
+	RepoName         string `json:"repo_name"`
+	ResourceId       string `json:"resource_id"`
 }
 
 type Function struct {

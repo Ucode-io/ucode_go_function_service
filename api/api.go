@@ -18,9 +18,14 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 	docs.SwaggerInfo.Schemes = []string{cfg.HTTPScheme}
 
 	r.Use(customCORSMiddleware())
+
 	v1 := r.Group("/v1")
 	v1.Use(h.AuthMiddleware(cfg))
-
+	v2 := r.Group("/v2")
+	v2.Use(h.AuthMiddleware(cfg))
+	// @securityDefinitions.apikey ApiKeyAuth
+	// @in header
+	// @name Authorization
 	function := v1.Group("/function")
 	{
 		// Function (OpenFass, Knative)
@@ -51,10 +56,23 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 		collections.DELETE("/:collection/automation/:id", h.DeleteAutomation)
 	}
 
-	invokeFunction := v1.Group("invoke_function")
+	invokeFunction := v1.Group("/invoke_function")
 	{
 		invokeFunction.POST("", h.InvokeFunction)
 		invokeFunction.POST("/:function-path", h.InvokeFunctionByPath)
+	}
+
+	github := r.Group("/github")
+	{
+		github.GET("/login", h.GithubLogin)
+		github.GET("/user", h.GithubGetUser)
+		github.GET("/repos", h.GithubGetRepos)
+		github.GET("/branches", h.GithubGetBranches)
+	}
+
+	knativeFunc := v2.Group("invoke_function")
+	{
+		knativeFunc.POST("/:function-path", h.InvokeFuncByPath)
 	}
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

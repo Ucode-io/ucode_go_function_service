@@ -7,12 +7,12 @@ require (
 	github.com/golang/protobuf v1.5.4
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/golang-lru v1.0.2
+	github.com/joho/godotenv v1.5.1
 	github.com/processout/grpc-go-pool v1.2.1
 	github.com/spf13/cast v1.7.0
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
 	github.com/swaggo/swag v1.16.4
-	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c
 	go.uber.org/zap v1.27.0
 	google.golang.org/grpc v1.68.0
 	google.golang.org/protobuf v1.35.2

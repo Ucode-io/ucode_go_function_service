@@ -20,19 +20,19 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	FunctionServiceV2_Create_FullMethodName                  = "/object_builder_service.FunctionServiceV2/Create"
-	FunctionServiceV2_GetList_FullMethodName                 = "/object_builder_service.FunctionServiceV2/GetList"
-	FunctionServiceV2_GetSingle_FullMethodName               = "/object_builder_service.FunctionServiceV2/GetSingle"
-	FunctionServiceV2_Update_FullMethodName                  = "/object_builder_service.FunctionServiceV2/Update"
-	FunctionServiceV2_Delete_FullMethodName                  = "/object_builder_service.FunctionServiceV2/Delete"
-	FunctionServiceV2_GetListByRequestTime_FullMethodName    = "/object_builder_service.FunctionServiceV2/GetListByRequestTime"
-	FunctionServiceV2_UpdateManyByRequestTime_FullMethodName = "/object_builder_service.FunctionServiceV2/UpdateManyByRequestTime"
+	FunctionService_Create_FullMethodName                  = "/object_builder_service.FunctionService/Create"
+	FunctionService_GetList_FullMethodName                 = "/object_builder_service.FunctionService/GetList"
+	FunctionService_GetSingle_FullMethodName               = "/object_builder_service.FunctionService/GetSingle"
+	FunctionService_Update_FullMethodName                  = "/object_builder_service.FunctionService/Update"
+	FunctionService_Delete_FullMethodName                  = "/object_builder_service.FunctionService/Delete"
+	FunctionService_GetListByRequestTime_FullMethodName    = "/object_builder_service.FunctionService/GetListByRequestTime"
+	FunctionService_UpdateManyByRequestTime_FullMethodName = "/object_builder_service.FunctionService/UpdateManyByRequestTime"
 )
 
-// FunctionServiceV2Client is the client API for FunctionServiceV2 service.
+// FunctionServiceClient is the client API for FunctionService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type FunctionServiceV2Client interface {
+type FunctionServiceClient interface {
 	Create(ctx context.Context, in *CreateFunctionRequest, opts ...grpc.CallOption) (*Function, error)
 	GetList(ctx context.Context, in *GetAllFunctionsRequest, opts ...grpc.CallOption) (*GetAllFunctionsResponse, error)
 	GetSingle(ctx context.Context, in *FunctionPrimaryKey, opts ...grpc.CallOption) (*Function, error)
@@ -42,88 +42,88 @@ type FunctionServiceV2Client interface {
 	UpdateManyByRequestTime(ctx context.Context, in *UpdateManyUrlAndPassword, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
-type functionServiceV2Client struct {
+type functionServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewFunctionServiceV2Client(cc grpc.ClientConnInterface) FunctionServiceV2Client {
-	return &functionServiceV2Client{cc}
+func NewFunctionServiceClient(cc grpc.ClientConnInterface) FunctionServiceClient {
+	return &functionServiceClient{cc}
 }
 
-func (c *functionServiceV2Client) Create(ctx context.Context, in *CreateFunctionRequest, opts ...grpc.CallOption) (*Function, error) {
+func (c *functionServiceClient) Create(ctx context.Context, in *CreateFunctionRequest, opts ...grpc.CallOption) (*Function, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Function)
-	err := c.cc.Invoke(ctx, FunctionServiceV2_Create_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, FunctionService_Create_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *functionServiceV2Client) GetList(ctx context.Context, in *GetAllFunctionsRequest, opts ...grpc.CallOption) (*GetAllFunctionsResponse, error) {
+func (c *functionServiceClient) GetList(ctx context.Context, in *GetAllFunctionsRequest, opts ...grpc.CallOption) (*GetAllFunctionsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetAllFunctionsResponse)
-	err := c.cc.Invoke(ctx, FunctionServiceV2_GetList_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, FunctionService_GetList_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *functionServiceV2Client) GetSingle(ctx context.Context, in *FunctionPrimaryKey, opts ...grpc.CallOption) (*Function, error) {
+func (c *functionServiceClient) GetSingle(ctx context.Context, in *FunctionPrimaryKey, opts ...grpc.CallOption) (*Function, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Function)
-	err := c.cc.Invoke(ctx, FunctionServiceV2_GetSingle_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, FunctionService_GetSingle_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *functionServiceV2Client) Update(ctx context.Context, in *Function, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *functionServiceClient) Update(ctx context.Context, in *Function, opts ...grpc.CallOption) (*empty.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(empty.Empty)
-	err := c.cc.Invoke(ctx, FunctionServiceV2_Update_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, FunctionService_Update_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *functionServiceV2Client) Delete(ctx context.Context, in *FunctionPrimaryKey, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *functionServiceClient) Delete(ctx context.Context, in *FunctionPrimaryKey, opts ...grpc.CallOption) (*empty.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(empty.Empty)
-	err := c.cc.Invoke(ctx, FunctionServiceV2_Delete_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, FunctionService_Delete_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *functionServiceV2Client) GetListByRequestTime(ctx context.Context, in *GetListByRequestTimeRequest, opts ...grpc.CallOption) (*GetAllFunctionsResponse, error) {
+func (c *functionServiceClient) GetListByRequestTime(ctx context.Context, in *GetListByRequestTimeRequest, opts ...grpc.CallOption) (*GetAllFunctionsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetAllFunctionsResponse)
-	err := c.cc.Invoke(ctx, FunctionServiceV2_GetListByRequestTime_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, FunctionService_GetListByRequestTime_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *functionServiceV2Client) UpdateManyByRequestTime(ctx context.Context, in *UpdateManyUrlAndPassword, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *functionServiceClient) UpdateManyByRequestTime(ctx context.Context, in *UpdateManyUrlAndPassword, opts ...grpc.CallOption) (*empty.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(empty.Empty)
-	err := c.cc.Invoke(ctx, FunctionServiceV2_UpdateManyByRequestTime_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, FunctionService_UpdateManyByRequestTime_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// FunctionServiceV2Server is the server API for FunctionServiceV2 service.
-// All implementations must embed UnimplementedFunctionServiceV2Server
+// FunctionServiceServer is the server API for FunctionService service.
+// All implementations must embed UnimplementedFunctionServiceServer
 // for forward compatibility.
-type FunctionServiceV2Server interface {
+type FunctionServiceServer interface {
 	Create(context.Context, *CreateFunctionRequest) (*Function, error)
 	GetList(context.Context, *GetAllFunctionsRequest) (*GetAllFunctionsResponse, error)
 	GetSingle(context.Context, *FunctionPrimaryKey) (*Function, error)
@@ -131,218 +131,218 @@ type FunctionServiceV2Server interface {
 	Delete(context.Context, *FunctionPrimaryKey) (*empty.Empty, error)
 	GetListByRequestTime(context.Context, *GetListByRequestTimeRequest) (*GetAllFunctionsResponse, error)
 	UpdateManyByRequestTime(context.Context, *UpdateManyUrlAndPassword) (*empty.Empty, error)
-	mustEmbedUnimplementedFunctionServiceV2Server()
+	mustEmbedUnimplementedFunctionServiceServer()
 }
 
-// UnimplementedFunctionServiceV2Server must be embedded to have
+// UnimplementedFunctionServiceServer must be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedFunctionServiceV2Server struct{}
+type UnimplementedFunctionServiceServer struct{}
 
-func (UnimplementedFunctionServiceV2Server) Create(context.Context, *CreateFunctionRequest) (*Function, error) {
+func (UnimplementedFunctionServiceServer) Create(context.Context, *CreateFunctionRequest) (*Function, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
 }
-func (UnimplementedFunctionServiceV2Server) GetList(context.Context, *GetAllFunctionsRequest) (*GetAllFunctionsResponse, error) {
+func (UnimplementedFunctionServiceServer) GetList(context.Context, *GetAllFunctionsRequest) (*GetAllFunctionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetList not implemented")
 }
-func (UnimplementedFunctionServiceV2Server) GetSingle(context.Context, *FunctionPrimaryKey) (*Function, error) {
+func (UnimplementedFunctionServiceServer) GetSingle(context.Context, *FunctionPrimaryKey) (*Function, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSingle not implemented")
 }
-func (UnimplementedFunctionServiceV2Server) Update(context.Context, *Function) (*empty.Empty, error) {
+func (UnimplementedFunctionServiceServer) Update(context.Context, *Function) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
 }
-func (UnimplementedFunctionServiceV2Server) Delete(context.Context, *FunctionPrimaryKey) (*empty.Empty, error) {
+func (UnimplementedFunctionServiceServer) Delete(context.Context, *FunctionPrimaryKey) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
 }
-func (UnimplementedFunctionServiceV2Server) GetListByRequestTime(context.Context, *GetListByRequestTimeRequest) (*GetAllFunctionsResponse, error) {
+func (UnimplementedFunctionServiceServer) GetListByRequestTime(context.Context, *GetListByRequestTimeRequest) (*GetAllFunctionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetListByRequestTime not implemented")
 }
-func (UnimplementedFunctionServiceV2Server) UpdateManyByRequestTime(context.Context, *UpdateManyUrlAndPassword) (*empty.Empty, error) {
+func (UnimplementedFunctionServiceServer) UpdateManyByRequestTime(context.Context, *UpdateManyUrlAndPassword) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateManyByRequestTime not implemented")
 }
-func (UnimplementedFunctionServiceV2Server) mustEmbedUnimplementedFunctionServiceV2Server() {}
-func (UnimplementedFunctionServiceV2Server) testEmbeddedByValue()                           {}
+func (UnimplementedFunctionServiceServer) mustEmbedUnimplementedFunctionServiceServer() {}
+func (UnimplementedFunctionServiceServer) testEmbeddedByValue()                         {}
 
-// UnsafeFunctionServiceV2Server may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to FunctionServiceV2Server will
+// UnsafeFunctionServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to FunctionServiceServer will
 // result in compilation errors.
-type UnsafeFunctionServiceV2Server interface {
-	mustEmbedUnimplementedFunctionServiceV2Server()
+type UnsafeFunctionServiceServer interface {
+	mustEmbedUnimplementedFunctionServiceServer()
 }
 
-func RegisterFunctionServiceV2Server(s grpc.ServiceRegistrar, srv FunctionServiceV2Server) {
-	// If the following call pancis, it indicates UnimplementedFunctionServiceV2Server was
+func RegisterFunctionServiceServer(s grpc.ServiceRegistrar, srv FunctionServiceServer) {
+	// If the following call pancis, it indicates UnimplementedFunctionServiceServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&FunctionServiceV2_ServiceDesc, srv)
+	s.RegisterService(&FunctionService_ServiceDesc, srv)
 }
 
-func _FunctionServiceV2_Create_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _FunctionService_Create_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateFunctionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FunctionServiceV2Server).Create(ctx, in)
+		return srv.(FunctionServiceServer).Create(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: FunctionServiceV2_Create_FullMethodName,
+		FullMethod: FunctionService_Create_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FunctionServiceV2Server).Create(ctx, req.(*CreateFunctionRequest))
+		return srv.(FunctionServiceServer).Create(ctx, req.(*CreateFunctionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FunctionServiceV2_GetList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _FunctionService_GetList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetAllFunctionsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FunctionServiceV2Server).GetList(ctx, in)
+		return srv.(FunctionServiceServer).GetList(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: FunctionServiceV2_GetList_FullMethodName,
+		FullMethod: FunctionService_GetList_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FunctionServiceV2Server).GetList(ctx, req.(*GetAllFunctionsRequest))
+		return srv.(FunctionServiceServer).GetList(ctx, req.(*GetAllFunctionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FunctionServiceV2_GetSingle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _FunctionService_GetSingle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(FunctionPrimaryKey)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FunctionServiceV2Server).GetSingle(ctx, in)
+		return srv.(FunctionServiceServer).GetSingle(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: FunctionServiceV2_GetSingle_FullMethodName,
+		FullMethod: FunctionService_GetSingle_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FunctionServiceV2Server).GetSingle(ctx, req.(*FunctionPrimaryKey))
+		return srv.(FunctionServiceServer).GetSingle(ctx, req.(*FunctionPrimaryKey))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FunctionServiceV2_Update_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _FunctionService_Update_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Function)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FunctionServiceV2Server).Update(ctx, in)
+		return srv.(FunctionServiceServer).Update(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: FunctionServiceV2_Update_FullMethodName,
+		FullMethod: FunctionService_Update_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FunctionServiceV2Server).Update(ctx, req.(*Function))
+		return srv.(FunctionServiceServer).Update(ctx, req.(*Function))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FunctionServiceV2_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _FunctionService_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(FunctionPrimaryKey)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FunctionServiceV2Server).Delete(ctx, in)
+		return srv.(FunctionServiceServer).Delete(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: FunctionServiceV2_Delete_FullMethodName,
+		FullMethod: FunctionService_Delete_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FunctionServiceV2Server).Delete(ctx, req.(*FunctionPrimaryKey))
+		return srv.(FunctionServiceServer).Delete(ctx, req.(*FunctionPrimaryKey))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FunctionServiceV2_GetListByRequestTime_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _FunctionService_GetListByRequestTime_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetListByRequestTimeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FunctionServiceV2Server).GetListByRequestTime(ctx, in)
+		return srv.(FunctionServiceServer).GetListByRequestTime(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: FunctionServiceV2_GetListByRequestTime_FullMethodName,
+		FullMethod: FunctionService_GetListByRequestTime_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FunctionServiceV2Server).GetListByRequestTime(ctx, req.(*GetListByRequestTimeRequest))
+		return srv.(FunctionServiceServer).GetListByRequestTime(ctx, req.(*GetListByRequestTimeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FunctionServiceV2_UpdateManyByRequestTime_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _FunctionService_UpdateManyByRequestTime_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateManyUrlAndPassword)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FunctionServiceV2Server).UpdateManyByRequestTime(ctx, in)
+		return srv.(FunctionServiceServer).UpdateManyByRequestTime(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: FunctionServiceV2_UpdateManyByRequestTime_FullMethodName,
+		FullMethod: FunctionService_UpdateManyByRequestTime_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FunctionServiceV2Server).UpdateManyByRequestTime(ctx, req.(*UpdateManyUrlAndPassword))
+		return srv.(FunctionServiceServer).UpdateManyByRequestTime(ctx, req.(*UpdateManyUrlAndPassword))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// FunctionServiceV2_ServiceDesc is the grpc.ServiceDesc for FunctionServiceV2 service.
+// FunctionService_ServiceDesc is the grpc.ServiceDesc for FunctionService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var FunctionServiceV2_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "object_builder_service.FunctionServiceV2",
-	HandlerType: (*FunctionServiceV2Server)(nil),
+var FunctionService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "object_builder_service.FunctionService",
+	HandlerType: (*FunctionServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "Create",
-			Handler:    _FunctionServiceV2_Create_Handler,
+			Handler:    _FunctionService_Create_Handler,
 		},
 		{
 			MethodName: "GetList",
-			Handler:    _FunctionServiceV2_GetList_Handler,
+			Handler:    _FunctionService_GetList_Handler,
 		},
 		{
 			MethodName: "GetSingle",
-			Handler:    _FunctionServiceV2_GetSingle_Handler,
+			Handler:    _FunctionService_GetSingle_Handler,
 		},
 		{
 			MethodName: "Update",
-			Handler:    _FunctionServiceV2_Update_Handler,
+			Handler:    _FunctionService_Update_Handler,
 		},
 		{
 			MethodName: "Delete",
-			Handler:    _FunctionServiceV2_Delete_Handler,
+			Handler:    _FunctionService_Delete_Handler,
 		},
 		{
 			MethodName: "GetListByRequestTime",
-			Handler:    _FunctionServiceV2_GetListByRequestTime_Handler,
+			Handler:    _FunctionService_GetListByRequestTime_Handler,
 		},
 		{
 			MethodName: "UpdateManyByRequestTime",
-			Handler:    _FunctionServiceV2_UpdateManyByRequestTime_Handler,
+			Handler:    _FunctionService_UpdateManyByRequestTime_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

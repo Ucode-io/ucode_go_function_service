@@ -6,7 +6,7 @@ option go_package="genproto/object_builder_service";
 import "google/protobuf/empty.proto";
 
 
-service FunctionServiceV2 {
+service FunctionService {
     rpc Create(CreateFunctionRequest) returns (Function) {}
     rpc GetList(GetAllFunctionsRequest) returns (GetAllFunctionsResponse) {}
     rpc GetSingle(FunctionPrimaryKey) returns (Function) {}

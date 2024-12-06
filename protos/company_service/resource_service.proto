@@ -333,6 +333,7 @@ message ResourceEnvironmentWithPassword {
 message Settings {
     SmsCredentials sms = 1;
     SMTPCredentials smtp = 2;
+    Github github = 3;
 }
 
 message SmsCredentials {
@@ -349,4 +350,9 @@ message SMTPCredentials {
     string password = 2;
     int32 number_of_otp = 3;
     string default_otp = 4;
+}
+
+message Github {
+    string username = 1;
+    string token = 2;
 }

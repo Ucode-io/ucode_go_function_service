@@ -115,16 +115,11 @@ ingress:
         nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
         nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
         kubernetes.io/ingress.class: nginx
-        cert-manager.io/cluster-issuer: letsencrypt-prod
       type: web
       hosts:
         - host: "function.u-code.io"
           path: /
           servicePort: 8080
-      tls:
-        - secretName: function-tls
-          hosts:
-            - "function.u-code.io"
     - annotations:
         # type of authentication
         nginx.ingress.kubernetes.io/auth-type: basic
@@ -136,16 +131,11 @@ ingress:
         nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
         nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
         kubernetes.io/ingress.class: nginx
-        cert-manager.io/cluster-issuer: letsencrypt-prod
       type: auth
       hosts:
         - host: "function.u-code.io"
           path: /swagger
           servicePort: 8080
-      tls:
-        - secretName: function-tls
-          hosts:
-            - "function.u-code.io"
 
 # resources:
 #    limits:

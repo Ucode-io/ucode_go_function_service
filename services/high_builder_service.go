@@ -21,7 +21,7 @@ func NewHighBuilderServiceClient(ctx context.Context, cfg config.Config) (Builde
 
 	return &builderServiceClient{
 		customEventService:    obs.NewCustomEventServiceClient(connObjectBuilderService),
-		functionService:       obs.NewFunctionServiceV2Client(connObjectBuilderService),
+		functionService:       obs.NewFunctionServiceClient(connObjectBuilderService),
 		versionHistoryService: obs.NewVersionHistoryServiceClient(connObjectBuilderService),
 	}, nil
 }
