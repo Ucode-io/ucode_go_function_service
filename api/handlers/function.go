@@ -1054,7 +1054,6 @@ func (h *Handler) InvokeFunction(c *gin.Context) {
 // @Failure 500 {object} status_http.Response{data=string} "Server Error"
 func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 	var invokeFunction models.CommonMessage
-	fmt.Println("----------------HERE AGAIN-------------------")
 
 	if err := c.ShouldBindJSON(&invokeFunction); err != nil {
 		h.handleResponse(c, status_http.BadRequest, err.Error())
@@ -1106,7 +1105,7 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 	invokeFunction.Data["environment_id"] = authInfo.GetEnvId()
 	invokeFunction.Data["app_id"] = apiKeys.GetData()[0].GetAppId()
 
-	url := fmt.Sprintf("http://%s.knative.ucode.run", c.Param("function-path"))
+	url := fmt.Sprintf("http://%s.%s", c.Param("function-path"), h.cfg.KnativeBaseUrl)
 	resp, err := util.DoRequest(url, http.MethodPost, models.NewInvokeFunctionRequest{
 		Data: invokeFunction.Data,
 	})

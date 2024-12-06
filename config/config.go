@@ -49,6 +49,7 @@ type Config struct {
 	GoObjectBuilderGRPCPort    string
 
 	OpeFassBaseUrl string
+	KnativeBaseUrl string
 
 	GithubBaseUrl      string
 	GithubApiBaseUrl   string
@@ -96,6 +97,7 @@ func Load() Config {
 	config.AuthGRPCPort = cast.ToString(getOrReturnDefaultValue("AUTH_GRPC_PORT", ":9103"))
 
 	config.OpeFassBaseUrl = cast.ToString(getOrReturnDefaultValue("OPENFASS_BASE_URL", "https://ofs.u-code.io/function/"))
+	config.KnativeBaseUrl = cast.ToString(getOrReturnDefaultValue("FUNC_BASE_URL", "knative.ucode.run"))
 
 	config.GithubBaseUrl = cast.ToString(getOrReturnDefaultValue("GITHUB_BASE_URL", "https://github.com"))
 	config.GithubApiBaseUrl = cast.ToString(getOrReturnDefaultValue("GITHUB_API_BASE_URL", "https://api.github.com"))
