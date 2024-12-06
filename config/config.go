@@ -76,11 +76,6 @@ func Load() Config {
 	config.ServiceHost = cast.ToString(getOrReturnDefaultValue("SERVICE_HOST", "localhost"))
 	config.HTTPPort = cast.ToString(getOrReturnDefaultValue("HTTP_PORT", ":8080"))
 	config.HTTPScheme = cast.ToString(getOrReturnDefaultValue("HTTP_SCHEME", "http"))
-	config.ServiceName = cast.ToString(getOrReturnDefaultValue("SERVICE_NAME", ""))
-	config.HTTPBaseURL = cast.ToString(getOrReturnDefaultValue("HTTP_BASE_URL", ""))
-	config.ServiceHost = cast.ToString(getOrReturnDefaultValue("SERVICE_HOST", ""))
-	config.HTTPPort = cast.ToString(getOrReturnDefaultValue("HTTP_PORT", ":7090"))
-	config.HTTPScheme = cast.ToString(getOrReturnDefaultValue("HTTP_SCHEME", ""))
 
 	config.Environment = cast.ToString(getOrReturnDefaultValue("ENVIRONMENT", DebugMode))
 	config.Version = cast.ToString(getOrReturnDefaultValue("VERSION", "1.0"))
