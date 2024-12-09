@@ -96,7 +96,7 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 func (h *Handler) HandleWebhook(c *gin.Context) {
 	var payload map[string]interface{}
 
-	fmt.Println("-----------URL---------",c.Request.RequestURI)
+	fmt.Println("-----------RemoteAddr---------", c.Request.RemoteAddr)
 
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
