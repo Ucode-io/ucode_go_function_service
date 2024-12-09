@@ -75,6 +75,13 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 		knativeFunc.POST("/:function-path", h.InvokeFuncByPath)
 	}
 
+	v2Webhook := v2.Group("/webhook")
+	{
+		v2Webhook.POST("/create", h.CreateWebhook)
+		v2Webhook.POST("/handle", h.HandleWebhook)
+
+	}
+
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 }
