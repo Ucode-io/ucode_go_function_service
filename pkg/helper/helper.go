@@ -2,6 +2,8 @@ package helper
 
 import (
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -57,4 +59,22 @@ func ConvertStructToMap(s *structpb.Struct) (map[string]interface{}, error) {
 	}
 
 	return newMap, nil
+}
+
+func ListFiles(folderPath string) ([]string, error) {
+	var files []string
+	err := filepath.Walk(folderPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			relativePath, err := filepath.Rel(folderPath, path)
+			if err != nil {
+				return err
+			}
+			files = append(files, strings.ReplaceAll(relativePath, "\\", "/"))
+		}
+		return nil
+	})
+	return files, err
 }

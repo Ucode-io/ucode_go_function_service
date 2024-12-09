@@ -60,6 +60,12 @@ type Config struct {
 	GitlabIntegrationToken string
 	GitlabGroupId          int
 	GitlabProjectId        int
+	ProjectUrl             string
+	WebhookSecret          string
+	PathToClone            string
+	GitlabGroupIdMicroFE   int
+	GitlabProjectIdMicroFE int
+	GitlabHostMicroFE      string
 }
 
 func Load() Config {
@@ -97,7 +103,7 @@ func Load() Config {
 	config.AuthGRPCPort = cast.ToString(getOrReturnDefaultValue("AUTH_GRPC_PORT", ":9103"))
 
 	config.OpeFassBaseUrl = cast.ToString(getOrReturnDefaultValue("OPENFASS_BASE_URL", "https://ofs.u-code.io/function/"))
-	config.KnativeBaseUrl = cast.ToString(getOrReturnDefaultValue("FUNC_BASE_URL", "knative.ucode.run"))
+	config.KnativeBaseUrl = "knative-fn.u-code.io"
 
 	config.GithubBaseUrl = cast.ToString(getOrReturnDefaultValue("GITHUB_BASE_URL", "https://github.com"))
 	config.GithubApiBaseUrl = cast.ToString(getOrReturnDefaultValue("GITHUB_API_BASE_URL", "https://api.github.com"))
@@ -108,6 +114,8 @@ func Load() Config {
 	config.GitlabIntegrationToken = cast.ToString(getOrReturnDefaultValue("GITLAB_ACCESS_TOKEN", "glpat-3o5LFtq9wE-UzzPF8osd"))
 	config.GitlabGroupId = cast.ToInt(getOrReturnDefaultValue("GITLAB_GROUP_ID", 2008))
 	config.GitlabProjectId = cast.ToInt(getOrReturnDefaultValue("GITLAB_PROJECT_ID", 1467))
+	config.ProjectUrl = "https://admin-api.ucode.run"
+	config.WebhookSecret = "X8kJnsNHD9f4nRQfjs72YLSfPqxjG+PWRjxN3KBuDhE="
 
 	return config
 }
