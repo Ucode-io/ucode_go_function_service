@@ -21,8 +21,7 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 
 	v1 := r.Group("/v1")
 	v1.Use(h.AuthMiddleware(cfg))
-	v2 := r.Group("/v2")
-	v2.Use(h.AuthMiddleware(cfg))
+
 	// @securityDefinitions.apikey ApiKeyAuth
 	// @in header
 	// @name Authorization
@@ -70,6 +69,11 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 		github.GET("/branches", h.GithubGetBranches)
 	}
 
+	v2 := r.Group("/v2")
+	v2.POST("/webhook/handle", h.HandleWebhook)
+
+	v2.Use(h.AuthMiddleware(cfg))
+
 	knativeFunc := v2.Group("invoke_function")
 	{
 		knativeFunc.POST("/:function-path", h.InvokeFuncByPath)
@@ -78,8 +82,6 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 	v2Webhook := v2.Group("/webhook")
 	{
 		v2Webhook.POST("/create", h.CreateWebhook)
-		v2Webhook.POST("/handle", h.HandleWebhook)
-
 	}
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
