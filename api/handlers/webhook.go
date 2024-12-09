@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"time"
 
@@ -94,6 +95,8 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 
 func (h *Handler) HandleWebhook(c *gin.Context) {
 	var payload map[string]interface{}
+
+	fmt.Println("-----------URL---------",c.Request.URL)
 
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
