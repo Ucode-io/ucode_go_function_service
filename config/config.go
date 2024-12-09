@@ -60,6 +60,12 @@ type Config struct {
 	GitlabIntegrationToken string
 	GitlabGroupId          int
 	GitlabProjectId        int
+	ProjectUrl             string
+	WebhookSecret          string
+	PathToClone            string
+	GitlabGroupIdMicroFE   int
+	GitlabProjectIdMicroFE int
+	GitlabHostMicroFE      string
 }
 
 func Load() Config {
@@ -108,6 +114,8 @@ func Load() Config {
 	config.GitlabIntegrationToken = cast.ToString(getOrReturnDefaultValue("GITLAB_ACCESS_TOKEN", "glpat-3o5LFtq9wE-UzzPF8osd"))
 	config.GitlabGroupId = cast.ToInt(getOrReturnDefaultValue("GITLAB_GROUP_ID", 2008))
 	config.GitlabProjectId = cast.ToInt(getOrReturnDefaultValue("GITLAB_PROJECT_ID", 1467))
+	config.ProjectUrl = "https://admin-api.ucode.run"
+	config.WebhookSecret = "X8kJnsNHD9f4nRQfjs72YLSfPqxjG+PWRjxN3KBuDhE="
 
 	return config
 }

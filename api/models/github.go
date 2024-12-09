@@ -45,3 +45,14 @@ type (
 		ProtectionURL string `json:"protection_url"`
 	}
 )
+
+type CreateWebhook struct {
+	Username      string `json:"username"`
+	RepoName      string `json:"repo_name" binding:"required"`
+	Branch        string `json:"branch"`
+	FrameworkType string `json:"framework_type"`
+	GithubToken   string `json:"github_token"`
+	FunctionType  string `json:"type"`
+	Resource      string `json:"resource_id"`
+	Name          string `json:"provided_name"`
+}
