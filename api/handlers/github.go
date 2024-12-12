@@ -35,11 +35,17 @@ func (h *Handler) GithubLogin(c *gin.Context) {
 		"code":          code,
 	}
 
+	fmt.Println("GithubClientId", h.cfg.GithubClientId)
+	fmt.Println("GithubClientSecret", h.cfg.GithubClientSecret)
+
 	result, err := github.MakeRequest("POST", accessTokenUrl, "", param)
 	if err != nil {
 		h.handleResponse(c, status_http.InternalServerError, err.Error())
 		return
 	}
+
+	sfdasfdas, _ := json.Marshal(result)
+	fmt.Println("result", string(sfdasfdas))
 
 	if _, ok := result["error"]; ok {
 		h.handleResponse(c, status_http.InvalidArgument, result["error_description"])
