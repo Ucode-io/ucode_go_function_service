@@ -111,11 +111,12 @@ func Load() Config {
 	config.GithubClientSecret = cast.ToString(getOrReturnDefaultValue("GITHUB_CLIENT_SECRET", "cd5e802aa567432f8a053660dca5698678dfbe23"))
 
 	config.GitlabIntegrationURL = cast.ToString(getOrReturnDefaultValue("GITLAB_URL", "https://gitlab.udevs.io"))
-	config.GitlabIntegrationToken = cast.ToString(getOrReturnDefaultValue("GITLAB_ACCESS_TOKEN", "glpat-3o5LFtq9wE-UzzPF8osd"))
+	config.GitlabIntegrationToken = cast.ToString(getOrReturnDefaultValue("GITLAB_ACCESS_TOKEN", "glpat-dmsZBpMm-zxkUep9wMxr"))
 	config.GitlabGroupId = cast.ToInt(getOrReturnDefaultValue("GITLAB_GROUP_ID", 2008))
 	config.GitlabProjectId = cast.ToInt(getOrReturnDefaultValue("GITLAB_PROJECT_ID", 1467))
 	config.ProjectUrl = "https://admin-api.ucode.run"
 	config.WebhookSecret = "X8kJnsNHD9f4nRQfjs72YLSfPqxjG+PWRjxN3KBuDhE="
+	config.PathToClone = "./app"
 
 	return config
 }
