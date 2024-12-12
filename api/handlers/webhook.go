@@ -13,7 +13,6 @@ import (
 	pb "ucode/ucode_go_function_service/genproto/company_service"
 	obs "ucode/ucode_go_function_service/genproto/object_builder_service"
 	"ucode/ucode_go_function_service/pkg/github"
-	"ucode/ucode_go_function_service/pkg/logger"
 	"ucode/ucode_go_function_service/pkg/util"
 	"ucode/ucode_go_function_service/services"
 
@@ -131,7 +130,7 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		return
 	}
 
-	h.log.Info("From Webhook", logger.Any("data", payload))
+	fmt.Println("----------------PAYLOAD--------------", string(body))
 
 	if !(github.VerifySignature(c.GetHeader("X-Hub-Signature"), body, []byte(h.cfg.WebhookSecret))) {
 		h.handleResponse(c, status_http.BadRequest, "Failed to verify signature")
