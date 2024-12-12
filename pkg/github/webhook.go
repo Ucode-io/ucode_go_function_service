@@ -59,7 +59,8 @@ func ListWebhooks(cfg ListWebhookRequest) (bool, error) {
 
 func CreateWebhook(cfg CreateWebhookRequest) error {
 	apiUrl := fmt.Sprintf(`https://api.github.com/repos/%s/%s/hooks`, cfg.Username, cfg.RepoName)
-	handleUrl := fmt.Sprintf(`%s/v2/webhook/handle?project_id=%s&resource_id=%s`, cfg.ProjectUrl, cfg.ProjectId, cfg.ResourceId)
+	handleUrl := fmt.Sprintf(`%s/v2/webhook/handle?project_id=%s&resource_id=%s&environment_id=%s`,
+		cfg.ProjectUrl, cfg.ProjectId, cfg.ResourceId, cfg.EnvironmentId)
 
 	payload := WebhookPayload{
 		Name:   "web",

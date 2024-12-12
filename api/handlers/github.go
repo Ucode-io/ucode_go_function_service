@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"ucode/ucode_go_function_service/api/models"
 	"ucode/ucode_go_function_service/api/status_http"
 	"ucode/ucode_go_function_service/pkg/github"
@@ -146,7 +147,7 @@ func (h *Handler) GithubGetBranches(c *gin.Context) {
 		response models.GithubBranch
 	)
 
-	resultByte, err := github.DoRequest("GET", url, token, map[string]interface{}{})
+	resultByte, err := github.DoRequest(http.MethodGet, url, token, map[string]interface{}{})
 	if err != nil {
 		h.handleResponse(c, status_http.InternalServerError, err.Error())
 		return

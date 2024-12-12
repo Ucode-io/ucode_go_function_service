@@ -161,8 +161,8 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 		}
 
 		err = github.GithubPushFiles(github.GithubPushRequest{
-			Token:     resource.Settings.Github.Token,
-			RepoOwner: resource.Settings.Github.Username,
+			Token:     resource.GetSettings().GetGithub().GetToken(),
+			RepoOwner: resource.GetSettings().GetGithub().GetUsername(),
 			RepoName:  function.RepoName,
 			Branch:    function.Branch,
 			Commit:    "Add openFass template",

@@ -48,6 +48,7 @@ type CreateWebhookRequest struct {
 	ResourceId    string `json:"resource_id"`
 	Name          string `json:"provided_name"`
 	ProjectId     string `json:"project_id"`
+	EnvironmentId string `json:"environment_id"`
 }
 
 type ImportResponse struct {
