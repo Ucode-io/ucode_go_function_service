@@ -415,3 +415,35 @@ func MakeRequest(method, url, token string, payload map[string]interface{}) (map
 
 	return result, nil
 }
+
+func MakeRequestV1(method, url, token string, payload map[string]interface{}) ([]byte, error) {
+	var reqBody = new(bytes.Buffer)
+
+	if payload != nil {
+		json.NewEncoder(reqBody).Encode(payload)
+	}
+
+	req, err := http.NewRequest(method, url, reqBody)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return respBody, nil
+}
