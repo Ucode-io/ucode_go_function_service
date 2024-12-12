@@ -27,7 +27,6 @@ func (h *Handler) GithubLogin(c *gin.Context) {
 	var (
 		code                  = c.Query("code")
 		accessTokenUrl string = h.cfg.GithubBaseUrl + "/login/oauth/access_token"
-		response       models.GihubLogin
 	)
 
 	param := map[string]interface{}{
@@ -36,14 +35,14 @@ func (h *Handler) GithubLogin(c *gin.Context) {
 		"code":          code,
 	}
 
-	result, err := github.DoRequest("POST", accessTokenUrl, "", param)
+	result, err := github.MakeRequest("POST", accessTokenUrl, "", param)
 	if err != nil {
 		h.handleResponse(c, status_http.InternalServerError, err.Error())
 		return
 	}
 
-	if err := json.Unmarshal(result, &response); err != nil {
-		h.handleResponse(c, status_http.InternalServerError, err.Error())
+	if _, ok := result["error"]; ok {
+		h.handleResponse(c, status_http.InvalidArgument, result["error_description"])
 		return
 	}
 

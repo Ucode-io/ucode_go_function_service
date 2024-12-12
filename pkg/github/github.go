@@ -378,3 +378,40 @@ func VerifySignature(signatureHeader string, body []byte, secret []byte) bool {
 
 	return hmac.Equal(receivedSignature, expectedMAC)
 }
+
+func MakeRequest(method, url, token string, payload map[string]interface{}) (map[string]interface{}, error) {
+	reqBody := new(bytes.Buffer)
+	if payload != nil {
+		json.NewEncoder(reqBody).Encode(payload)
+	}
+
+	req, err := http.NewRequest(method, url, reqBody)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var result map[string]interface{}
+	err = json.Unmarshal(respBody, &result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
