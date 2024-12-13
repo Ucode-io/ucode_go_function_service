@@ -10,9 +10,12 @@ import (
 
 	"ucode/ucode_go_function_service/api/models"
 	"ucode/ucode_go_function_service/api/status_http"
+	status "ucode/ucode_go_function_service/api/status_http"
 	pb "ucode/ucode_go_function_service/genproto/company_service"
+	nb "ucode/ucode_go_function_service/genproto/new_object_builder_service"
 	obs "ucode/ucode_go_function_service/genproto/object_builder_service"
 	"ucode/ucode_go_function_service/pkg/github"
+	"ucode/ucode_go_function_service/pkg/helper"
 	"ucode/ucode_go_function_service/pkg/util"
 	"ucode/ucode_go_function_service/services"
 
@@ -21,7 +24,10 @@ import (
 )
 
 func (h *Handler) CreateWebhook(c *gin.Context) {
-	var createWebhookRequest models.CreateWebhook
+	var (
+		createWebhookRequest models.CreateWebhook
+		createFunction       *obs.CreateFunctionRequest
+	)
 
 	if err := c.ShouldBindJSON(&createWebhookRequest); err != nil {
 		h.handleResponse(c, status_http.BadRequest, err.Error())
@@ -40,6 +46,18 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 		return
 	}
 
+	resource, err := h.services.CompanyService().ServiceResource().GetSingle(
+		c.Request.Context(), &pb.GetSingleServiceResourceReq{
+			ProjectId:     projectId.(string),
+			EnvironmentId: environmentId.(string),
+			ServiceType:   pb.ServiceType_BUILDER_SERVICE,
+		},
+	)
+	if err != nil {
+		h.handleResponse(c, status.GRPCError, err.Error())
+		return
+	}
+
 	githubResource, err := h.services.CompanyService().Resource().GetSingleProjectResouece(
 		c.Request.Context(), &pb.PrimaryKeyProjectResource{
 			Id:            createWebhookRequest.Resource,
@@ -51,8 +69,8 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 		return
 	}
 
-	createWebhookRequest.Username = githubResource.GetSettings().Github.Username
-	createWebhookRequest.GithubToken = githubResource.GetSettings().Github.Token
+	createWebhookRequest.Username = githubResource.GetSettings().GetGithub().GetUsername()
+	createWebhookRequest.GithubToken = githubResource.GetSettings().GetGithub().GetToken()
 
 	if createWebhookRequest.RepoName == "" || createWebhookRequest.Username == "" {
 		h.handleResponse(c, status_http.BadRequest, "Username or RepoName is empty")
@@ -73,6 +91,47 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 	if exists {
 		h.handleResponse(c, status_http.OK, nil)
 		return
+	}
+
+	createFunction = &obs.CreateFunctionRequest{
+		Path:           createWebhookRequest.RepoName,
+		Name:           createWebhookRequest.RepoName,
+		Description:    createWebhookRequest.RepoName,
+		ProjectId:      resource.ResourceEnvironmentId,
+		EnvironmentId:  resource.EnvironmentId,
+		Type:           createWebhookRequest.FunctionType,
+		Url:            "",
+		SourceUrl:      "",
+		Branch:         createWebhookRequest.Branch,
+		PipelineStatus: "running",
+		Resource:       createWebhookRequest.Resource,
+	}
+
+	switch resource.ResourceType {
+	case pb.ResourceType_MONGODB:
+		_, err = h.services.GetBuilderServiceByType(resource.NodeType).Function().Create(
+			c.Request.Context(), createFunction,
+		)
+
+		if err != nil {
+			h.handleResponse(c, status.GRPCError, err.Error())
+			return
+		}
+	case pb.ResourceType_POSTGRESQL:
+		var newCreateFunction = &nb.CreateFunctionRequest{}
+
+		if err = helper.MarshalToStruct(createFunction, &newCreateFunction); err != nil {
+			h.handleResponse(c, status.InternalServerError, err.Error())
+			return
+		}
+
+		_, err = h.services.GoObjectBuilderService().Function().Create(
+			c.Request.Context(), newCreateFunction,
+		)
+		if err != nil {
+			h.handleResponse(c, status.GRPCError, err.Error())
+			return
+		}
 	}
 
 	err = github.CreateWebhook(github.CreateWebhookRequest{
@@ -130,18 +189,23 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		return
 	}
 
-	fmt.Println("----------------PAYLOAD--------------", string(body))
+	// fmt.Println("----------------PAYLOAD--------------", string(body))
 
-	if !(github.VerifySignature(c.GetHeader("X-Hub-Signature"), body, []byte(h.cfg.WebhookSecret))) {
-		h.handleResponse(c, status_http.BadRequest, "Failed to verify signature")
-		return
-	}
+	// if !(github.VerifySignature(c.GetHeader("X-Hub-Signature"), body, []byte(h.cfg.WebhookSecret))) {
+	// 	h.handleResponse(c, status_http.BadRequest, "Failed to verify signature")
+	// 	return
+	// }
 
 	projectResource, err := h.services.CompanyService().Resource().GetSingleProjectResouece(
 		c.Request.Context(),
-		&pb.PrimaryKeyProjectResource{Id: projectResourceId},
+		&pb.PrimaryKeyProjectResource{
+			Id:            projectResourceId,
+			ProjectId:     projectId,
+			EnvironmentId: environmentId,
+		},
 	)
 	if err != nil {
+		fmt.Println("here again1")
 		h.handleResponse(c, status_http.InternalServerError, err.Error())
 		return
 	}
@@ -199,6 +263,8 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 			functionType = function.Type
 		}
 
+		fmt.Println("FunctION", function)
+
 		switch functionType {
 		case "FUNCTION":
 		case "KNATIVE":
@@ -224,7 +290,9 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 			}
 			function.PipelineStatus = "running"
 			go h.deployOpenfaas(h.services, token, repoId, resource.NodeType, function)
+		default:
 		}
+
 	case pb.ResourceType_POSTGRESQL:
 
 	}
