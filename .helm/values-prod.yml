@@ -40,6 +40,11 @@ podAnnotations:
   vault.hashicorp.com/secret-volume-path-.env: "/app"
   vault.hashicorp.com/role: "ucode-prod"
   vault.hashicorp.com/agent-inject-template-.env: |
+    {{- with secret "secret/data/k8s/ucode-prod/go-function-service" -}}
+    {{- range $key, $value := .Data.data }}
+    {{ $key }}: {{ $value }}
+    {{- end }}
+    {{ end -}}
     {{- with secret "secret/data/k8s/ucode-prod/postgres" -}}
     {{- range $key, $value := .Data.data }}
     {{ $key }}: {{ $value }}
