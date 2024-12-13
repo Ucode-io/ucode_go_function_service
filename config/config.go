@@ -55,6 +55,7 @@ type Config struct {
 	GithubApiBaseUrl   string
 	GithubClientId     string
 	GithubClientSecret string
+	PathToClone        string
 
 	GitlabIntegrationURL   string
 	GitlabIntegrationToken string
