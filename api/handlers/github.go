@@ -26,7 +26,6 @@ func (h *Handler) GithubLogin(c *gin.Context) {
 	var (
 		code                  = c.Query("code")
 		accessTokenUrl string = h.cfg.GithubBaseUrl + "/login/oauth/access_token"
-		response       models.GihubLogin
 	)
 
 	param := map[string]interface{}{
@@ -35,14 +34,17 @@ func (h *Handler) GithubLogin(c *gin.Context) {
 		"code":          code,
 	}
 
-	result, err := github.DoRequest("POST", accessTokenUrl, "", param)
+	result, err := github.MakeRequest("POST", accessTokenUrl, "", param)
 	if err != nil {
 		h.handleResponse(c, status_http.InternalServerError, err.Error())
 		return
 	}
 
-	if err := json.Unmarshal(result, &response); err != nil {
-		h.handleResponse(c, status_http.InternalServerError, err.Error())
+	sfdasfdas, _ := json.Marshal(result)
+	fmt.Println("result", string(sfdasfdas))
+
+	if _, ok := result["error"]; ok {
+		h.handleResponse(c, status_http.InvalidArgument, result["error_description"])
 		return
 	}
 
@@ -64,17 +66,11 @@ func (h *Handler) GithubLogin(c *gin.Context) {
 func (h *Handler) GithubGetUser(c *gin.Context) {
 	var (
 		token      = c.Query("token")
-		getUserUrl = h.cfg.GithubApiBaseUrl + "/user"
+		getUserUrl = "https://api.github.com/user"
 		response   models.GithubUser
 	)
 
-	result, err := github.DoRequest("GET", getUserUrl, token, map[string]interface{}{})
-	if err != nil {
-		h.handleResponse(c, status_http.InternalServerError, err.Error())
-		return
-	}
-
-	resultByte, err := json.Marshal(result)
+	resultByte, err := github.MakeRequestV1("GET", getUserUrl, token, map[string]interface{}{})
 	if err != nil {
 		h.handleResponse(c, status_http.InternalServerError, err.Error())
 		return
@@ -82,6 +78,11 @@ func (h *Handler) GithubGetUser(c *gin.Context) {
 
 	if err := json.Unmarshal(resultByte, &response); err != nil {
 		h.handleResponse(c, status_http.InternalServerError, err.Error())
+		return
+	}
+
+	if response.Status == "401" {
+		h.handleResponse(c, status_http.BadRequest, "can not find username wrong token format")
 		return
 	}
 
@@ -105,11 +106,11 @@ func (h *Handler) GithubGetRepos(c *gin.Context) {
 	var (
 		username = c.Query("username")
 		token    = c.Query("token")
-		url      = fmt.Sprintf("%s/users/%s/repos", h.cfg.GithubApiBaseUrl, username)
+		url      = fmt.Sprintf("https://api.github.com/users/%s/repos", username)
 		response = models.GithubRepo{}
 	)
 
-	resultByte, err := github.DoRequest("GET", url, token, map[string]any{})
+	resultByte, err := github.MakeRequestV1("GET", url, token, map[string]any{})
 	if err != nil {
 		h.handleResponse(c, status_http.InternalServerError, err.Error())
 		return
@@ -142,11 +143,11 @@ func (h *Handler) GithubGetBranches(c *gin.Context) {
 		repoName = c.Query("repo")
 		token    = c.Query("token")
 
-		url      = fmt.Sprintf("%s/repos/%s/%s/branches", h.cfg.GithubApiBaseUrl, username, repoName)
+		url      = fmt.Sprintf("https://api.github.com/repos/%s/%s/branches", username, repoName)
 		response models.GithubBranch
 	)
 
-	resultByte, err := github.DoRequest("GET", url, token, map[string]interface{}{})
+	resultByte, err := github.MakeRequestV1("GET", url, token, map[string]interface{}{})
 	if err != nil {
 		h.handleResponse(c, status_http.InternalServerError, err.Error())
 		return

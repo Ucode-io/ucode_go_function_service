@@ -5,19 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 	"ucode/ucode_go_function_service/api/models"
-	"ucode/ucode_go_function_service/api/status_http"
 	status "ucode/ucode_go_function_service/api/status_http"
 	"ucode/ucode_go_function_service/config"
-	"ucode/ucode_go_function_service/genproto/auth_service"
 	as "ucode/ucode_go_function_service/genproto/auth_service"
 	pb "ucode/ucode_go_function_service/genproto/company_service"
 	nb "ucode/ucode_go_function_service/genproto/new_object_builder_service"
 	obs "ucode/ucode_go_function_service/genproto/object_builder_service"
 
-	"ucode/ucode_go_function_service/pkg/github"
 	"ucode/ucode_go_function_service/pkg/gitlab"
 	"ucode/ucode_go_function_service/pkg/helper"
 
@@ -131,48 +127,15 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 		}
 	)
 
-	// @TODO CREATE FUNCTON ON GITHUB, GITLAB, BITBUCKET
-
-	if config.FunctionResource[function.ResourceId] {
-		_, err = gitlab.CreateProjectFork(functionPath, gitlab.IntegrationData{
-			GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
-			GitlabIntegrationToken: h.cfg.GitlabIntegrationToken,
-			GitlabGroupId:          h.cfg.GitlabGroupId,
-			GitlabProjectId:        h.cfg.GitlabProjectId,
-		})
-		if err != nil {
-			h.handleResponse(c, status.InvalidArgument, err.Error())
-			return
-		}
-	} else {
-		resource, err := h.services.CompanyService().Resource().GetSingleProjectResouece(ctx, &pb.PrimaryKeyProjectResource{
-			Id:            function.ResourceId,
-			EnvironmentId: environment.Id,
-			ProjectId:     environment.ProjectId,
-		})
-		if err != nil {
-			h.handleResponse(c, status.GRPCError, err.Error())
-			return
-		}
-		dir, err := os.Getwd()
-		if err != nil {
-			h.handleResponse(c, status.GRPCError, err.Error())
-			return
-		}
-
-		err = github.GithubPushFiles(github.GithubPushRequest{
-			Token:     resource.Settings.Github.Token,
-			RepoOwner: resource.Settings.Github.Username,
-			RepoName:  function.RepoName,
-			Branch:    function.Branch,
-			Commit:    "Add openFass template",
-			BaseDir:   dir + "/openfass_template",
-			BaseUrl:   h.cfg.GithubApiBaseUrl,
-		})
-		if err != nil {
-			h.handleResponse(c, status.InternalServerError, err.Error())
-			return
-		}
+	_, err = gitlab.CreateProjectFork(functionPath, gitlab.IntegrationData{
+		GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
+		GitlabIntegrationToken: h.cfg.GitlabIntegrationToken,
+		GitlabGroupId:          h.cfg.GitlabGroupId,
+		GitlabProjectId:        h.cfg.GitlabProjectId,
+	})
+	if err != nil {
+		h.handleResponse(c, status.InvalidArgument, err.Error())
+		return
 	}
 
 	switch resource.ResourceType {
@@ -247,8 +210,7 @@ func (h *Handler) GetFunctionByID(c *gin.Context) {
 	}
 
 	resource, err := h.services.CompanyService().ServiceResource().GetSingle(
-		ctx,
-		&pb.GetSingleServiceResourceReq{
+		ctx, &pb.GetSingleServiceResourceReq{
 			ProjectId:     projectId.(string),
 			EnvironmentId: environmentId.(string),
 			ServiceType:   pb.ServiceType_FUNCTION_SERVICE,
@@ -298,8 +260,7 @@ func (h *Handler) GetFunctionByID(c *gin.Context) {
 		}
 	case pb.ResourceType_POSTGRESQL:
 		resp, err := h.services.GoObjectBuilderService().Function().GetSingle(
-			ctx,
-			&nb.FunctionPrimaryKey{
+			ctx, &nb.FunctionPrimaryKey{
 				Id:        functionID,
 				ProjectId: resource.ResourceEnvironmentId,
 			},
@@ -1049,27 +1010,27 @@ func (h *Handler) InvokeFunction(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param InvokeFunctionByPathRequest body models.CommonMessage true "InvokeFunctionByPathRequest"
-// @Success 201 {object} status_http.Response{data=models.InvokeFunctionRequest} "Function data"
-// @Response 400 {object} status_http.Response{data=string} "Bad Request"
-// @Failure 500 {object} status_http.Response{data=string} "Server Error"
+// @Success 201 {object} status.Response{data=models.InvokeFunctionRequest} "Function data"
+// @Response 400 {object} status.Response{data=string} "Bad Request"
+// @Failure 500 {object} status.Response{data=string} "Server Error"
 func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 	var invokeFunction models.CommonMessage
 
 	if err := c.ShouldBindJSON(&invokeFunction); err != nil {
-		h.handleResponse(c, status_http.BadRequest, err.Error())
+		h.handleResponse(c, status.BadRequest, err.Error())
 		return
 	}
 
 	projectId, ok := c.Get("project_id")
 	if !ok || !util.IsValidUUID(projectId.(string)) {
-		h.handleResponse(c, status_http.InvalidArgument, "project id is an invalid uuid")
+		h.handleResponse(c, status.InvalidArgument, "project id is an invalid uuid")
 		return
 	}
 
 	environmentId, ok := c.Get("environment_id")
 	if !ok || !util.IsValidUUID(environmentId.(string)) {
 		err := errors.New("error getting environment id | not valid")
-		h.handleResponse(c, status_http.BadRequest, err)
+		h.handleResponse(c, status.BadRequest, err)
 		return
 	}
 
@@ -1082,22 +1043,23 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 		},
 	)
 	if err != nil {
-		h.handleResponse(c, status_http.GRPCError, err.Error())
+		h.handleResponse(c, status.GRPCError, err.Error())
 		return
 	}
 
-	apiKeys, err := h.services.AuthService().ApiKey().GetList(c.Request.Context(), &auth_service.GetListReq{
+	apiKeys, err := h.services.AuthService().ApiKey().GetList(c.Request.Context(), &as.GetListReq{
 		EnvironmentId: environmentId.(string),
 		ProjectId:     resource.ProjectId,
 	})
 	if err != nil {
-		h.handleResponse(c, status_http.GRPCError, err.Error())
+		h.handleResponse(c, status.GRPCError, err.Error())
 		return
 	}
 	if len(apiKeys.Data) < 1 {
-		h.handleResponse(c, status_http.InvalidArgument, "Api key not found")
+		h.handleResponse(c, status.InvalidArgument, "Api key not found")
 		return
 	}
+
 	authInfo, _ := h.GetAuthInfo(c)
 
 	invokeFunction.Data["user_id"] = authInfo.GetUserId()
@@ -1110,16 +1072,16 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 		Data: invokeFunction.Data,
 	})
 	if err != nil {
-		h.handleResponse(c, status_http.InvalidArgument, err.Error())
+		h.handleResponse(c, status.InvalidArgument, err.Error())
 		return
 	} else if resp.Status == "error" {
 		var errStr = resp.Status
 		if resp.Data != nil && resp.Data["message"] != nil {
 			errStr = resp.Data["message"].(string)
 		}
-		h.handleResponse(c, status_http.InvalidArgument, errStr)
+		h.handleResponse(c, status.InvalidArgument, errStr)
 		return
 	}
 
-	h.handleResponse(c, status_http.Created, resp)
+	h.handleResponse(c, status.Created, resp)
 }
