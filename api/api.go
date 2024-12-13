@@ -19,32 +19,12 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 
 	r.Use(customCORSMiddleware())
 
-	v1 := r.Group("/v1")
+	v1 := r.Group("/v")
 	v1.Use(h.AuthMiddleware(cfg))
 
 	// @securityDefinitions.apikey ApiKeyAuth
 	// @in header
 	// @name Authorization
-	function := v1.Group("/function")
-	{
-		// Function (OpenFass, Knative)
-		function.POST("", h.CreateFunction)
-		function.GET("/:function_id", h.GetFunctionByID)
-		function.GET("", h.GetAllFunctions)
-		function.PUT("", h.UpdateFunction)
-		function.DELETE(":function_id", h.DeleteFunction)
-
-	}
-
-	microFe := function.Group("/micro-frontend")
-	{
-		// MICROFRONTEND (React, Vue, Angular)
-		microFe.POST("", h.CreateMicroFrontEnd)
-		microFe.GET("/:micro-frontend-id", h.GetMicroFrontEndByID)
-		microFe.GET("", h.GetAllMicroFrontEnd)
-		microFe.PUT("", h.UpdateMicroFrontEnd)
-		microFe.DELETE("/:micro-frontend-id", h.DeleteMicroFrontEnd)
-	}
 
 	collections := v1.Group("/collections")
 	{
@@ -73,6 +53,26 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 	v2.POST("/webhook/handle", h.HandleWebhook)
 
 	v2.Use(h.AuthMiddleware(cfg))
+	functions := v2.Group("/function")
+	{
+		// Function (OpenFass, Knative)
+		functions.POST("", h.CreateFunction)
+		functions.GET("/:function_id", h.GetFunctionByID)
+		functions.GET("", h.GetAllFunctions)
+		functions.PUT("", h.UpdateFunction)
+		functions.DELETE(":function_id", h.DeleteFunction)
+
+	}
+
+	microFe := functions.Group("/micro-frontend")
+	{
+		// MICROFRONTEND (React, Vue, Angular)
+		microFe.POST("", h.CreateMicroFrontEnd)
+		microFe.GET("/:micro-frontend-id", h.GetMicroFrontEndByID)
+		microFe.GET("", h.GetAllMicroFrontEnd)
+		microFe.PUT("", h.UpdateMicroFrontEnd)
+		microFe.DELETE("/:micro-frontend-id", h.DeleteMicroFrontEnd)
+	}
 
 	knativeFunc := v2.Group("invoke_function")
 	{
