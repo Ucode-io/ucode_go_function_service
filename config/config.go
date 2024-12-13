@@ -55,6 +55,7 @@ type Config struct {
 	GithubApiBaseUrl   string
 	GithubClientId     string
 	GithubClientSecret string
+	PathToClone        string
 
 	GitlabIntegrationURL   string
 	GitlabIntegrationToken string
@@ -110,11 +111,11 @@ func Load() Config {
 	config.GithubClientSecret = cast.ToString(getOrReturnDefaultValue("GITHUB_CLIENT_SECRET", "4dd3740a1c9e0df1c1626d1028e22134c2faef06"))
 
 	config.GitlabIntegrationURL = cast.ToString(getOrReturnDefaultValue("GITLAB_URL", "https://gitlab.udevs.io"))
-	config.GitlabIntegrationToken = cast.ToString(getOrReturnDefaultValue("GITLAB_ACCESS_TOKEN", "glpat-xuTZNSfSNXs3xgNrnVCZ"))
+	config.GitlabIntegrationToken = cast.ToString(getOrReturnDefaultValue("GITLAB_ACCESS_TOKEN", "glpat-dmsZBpMm-zxkUep9wMxr"))
 	config.GitlabGroupId = cast.ToInt(getOrReturnDefaultValue("GITLAB_GROUP_ID", 2008))
 	config.GitlabProjectId = cast.ToInt(getOrReturnDefaultValue("GITLAB_PROJECT_ID", 1467))
-	config.ProjectUrl = "https://admin-api.ucode.run"
-	config.WebhookSecret = "X8kJnsNHD9f4nRQfjs72YLSfPqxjG+PWRjxN3KBuDhE="
+	config.ProjectUrl = cast.ToString(getOrReturnDefaultValue("PROJECT_URL", "https://admin-api.ucode.run"))
+	config.WebhookSecret = cast.ToString(getOrReturnDefaultValue("WEBHOOK_SECRET", "X8kJnsNHD9f4nRQfjs72YLSfPqxjG+PWRjxN3KBuDhE="))
 
 	return config
 }
