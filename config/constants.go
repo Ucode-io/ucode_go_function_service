@@ -23,6 +23,9 @@ const (
 	REDIS_TIMEOUT      = 5 * time.Minute
 	REDIS_WAIT_TIMEOUT = 1 * time.Second
 	REDIS_SLEEP        = 100 * time.Millisecond
+
+	PathToCloneKnative  = "knative_template"
+	PathToCloneFunction = "openfass_template"
 )
 
 var FunctionResource = map[string]bool{

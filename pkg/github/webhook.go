@@ -12,7 +12,7 @@ import (
 )
 
 func ListWebhooks(cfg ListWebhookRequest) (bool, error) {
-	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/hooks", cfg.Username, cfg.RepoName)
+	var url = fmt.Sprintf("https://api.github.com/repos/%s/%s/hooks", cfg.Username, cfg.RepoName)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -32,8 +32,6 @@ func ListWebhooks(cfg ListWebhookRequest) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-
-	fmt.Println(string(body))
 
 	var webhooks []interface{}
 	if err := json.Unmarshal(body, &webhooks); err != nil {
@@ -58,21 +56,21 @@ func ListWebhooks(cfg ListWebhookRequest) (bool, error) {
 }
 
 func CreateWebhook(cfg CreateWebhookRequest) error {
-	apiUrl := fmt.Sprintf(`https://api.github.com/repos/%s/%s/hooks`, cfg.Username, cfg.RepoName)
-	handleUrl := fmt.Sprintf(`%s/v2/webhook/handle?project_id=%s&resource_id=%s&environment_id=%s`,
-		cfg.ProjectUrl, cfg.ProjectId, cfg.ResourceId, cfg.EnvironmentId)
-
-	payload := WebhookPayload{
-		Name:   "web",
-		Active: true,
-		Events: []string{"push"},
-		Config: Config{
-			URL:         handleUrl,
-			ContentType: "json",
-			Secret:      cfg.WebhookSecret,
-			Name:        cfg.Name,
-		},
-	}
+	var (
+		apiUrl    = fmt.Sprintf(`https://api.github.com/repos/%s/%s/hooks`, cfg.Username, cfg.RepoName)
+		handleUrl = fmt.Sprintf(`%s/v2/webhook/handle?project_id=%s&resource_id=%s&environment_id=%s`, cfg.ProjectUrl, cfg.ProjectId, cfg.ResourceId, cfg.EnvironmentId)
+		payload   = WebhookPayload{
+			Name:   "web",
+			Active: true,
+			Events: []string{"push"},
+			Config: Config{
+				URL:         handleUrl,
+				ContentType: "json",
+				Secret:      cfg.WebhookSecret,
+				Name:        cfg.Name,
+			},
+		}
+	)
 
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {

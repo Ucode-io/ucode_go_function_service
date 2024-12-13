@@ -47,48 +47,46 @@ func ImportFromGithub(cfg ImportData) (response ImportResponse, err error) {
 	if err = json.Unmarshal(respBody, &importResponse); err != nil {
 		return ImportResponse{}, errors.New("failed to unmarshal response body")
 	}
+
 	return importResponse, nil
 }
 
-func AddCiFile(gitlabToken string, gitlabRepoId int, branch, localFolderPath string) error {
+func AddCiFileKnative(gitlabToken string, gitlabRepoId int, branch, localFolderPath string) error {
 	dir, err := os.Getwd()
 	if err != nil {
 		return errors.New("failed to get current directory")
 	}
 
-	mainFilePath := fmt.Sprintf("%v/%v/.gitlab-ci.yml", dir, localFolderPath)
-	packageDirPath := fmt.Sprintf("%v/%v/.gitlab/ci", dir, localFolderPath)
+	var (
+		mainFilePath   = fmt.Sprintf("%s/%s/.gitlab-ci.yml", dir, localFolderPath)
+		packageDirPath = fmt.Sprintf("%s/%s/.gitlab/ci", dir, localFolderPath)
+		commitActions  = []map[string]any{}
+	)
 
-	commitActions := []map[string]interface{}{}
-
-	// Add main .gitlab-ci.yml file to actions
 	mainFileContent, err := os.ReadFile(mainFilePath)
 	if err != nil {
 		return errors.New("failed to read .gitlab-ci.yml file")
 	}
-	commitActions = append(commitActions, map[string]interface{}{
+
+	commitActions = append(commitActions, map[string]any{
 		"action":    "create",
 		"file_path": ".gitlab-ci.yml",
 		"content":   string(mainFileContent),
 	})
 
-	// Iterate over files in the package directory and add them to actions
 	err = filepath.Walk(packageDirPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
-		// Only process files
 		if !info.IsDir() {
-			// Calculate relative path based on baseDir
 			relPath, err := filepath.Rel(dir, path)
 			if err != nil {
 				return err
 			}
 
-			// Ensure the file paths start from ".gitlab/ci"
-			if strings.HasPrefix(relPath, "knative/.gitlab/ci") {
-				relPath = strings.TrimPrefix(relPath, "knative/")
+			if strings.HasPrefix(relPath, "knative_template/.gitlab/ci") {
+				relPath = strings.TrimPrefix(relPath, "knative_template/")
 			}
 
 			fileContent, err := os.ReadFile(path)
@@ -96,7 +94,7 @@ func AddCiFile(gitlabToken string, gitlabRepoId int, branch, localFolderPath str
 				return errors.New("failed to read a file in the .gitlab/ci directory")
 			}
 
-			commitActions = append(commitActions, map[string]interface{}{
+			commitActions = append(commitActions, map[string]any{
 				"action":    "create",
 				"file_path": relPath,
 				"content":   string(fileContent),
@@ -108,18 +106,61 @@ func AddCiFile(gitlabToken string, gitlabRepoId int, branch, localFolderPath str
 		return err
 	}
 
-	// Create commit payload
-	commitURL := fmt.Sprintf("https://gitlab.udevs.io/api/v4/projects/%v/repository/commits", gitlabRepoId)
-	commitPayload := map[string]interface{}{
-		"branch":         branch,
-		"commit_message": "Added CI files",
-		"actions":        commitActions,
-	}
+	var (
+		commitURL     = fmt.Sprintf("https://gitlab.udevs.io/api/v4/projects/%v/repository/commits", gitlabRepoId)
+		commitPayload = map[string]any{
+			"branch":         branch,
+			"commit_message": "Added CI files",
+			"actions":        commitActions,
+		}
+	)
 
 	_, err = DoRequest(http.MethodPost, commitURL, commitPayload, gitlabToken)
 	if err != nil {
 		return errors.New("failed to make GitLab request")
 	}
+
+	return nil
+}
+
+func AddCiFileFunction(gitlabToken string, gitlabRepoId int, branch, localFolderPath string) error {
+	fmt.Println("HERE AddCiFileFunction =>>>>>>>>")
+	dir, err := os.Getwd()
+	if err != nil {
+		fmt.Println("qwertyuio", err.Error())
+		return errors.New("can not get current directory")
+	}
+
+	var filePath = fmt.Sprintf("%s/%s/.gitlab-ci.yml", dir, localFolderPath)
+
+	fileContent, err := os.ReadFile(filePath)
+	if err != nil {
+		fmt.Println("zxcvbnm,./", err.Error())
+		return errors.New("failed to read file")
+	}
+
+	var (
+		commitURL     = fmt.Sprintf("https://gitlab.udevs.io/api/v4/projects/%v/repository/commits", gitlabRepoId)
+		commitPayload = map[string]any{
+			"branch":         branch,
+			"commit_message": "Added ci file",
+			"actions": []map[string]any{
+				{
+					"action":    "create",
+					"file_path": ".gitlab-ci.yml",
+					"content":   string(fileContent),
+				},
+			},
+		}
+	)
+
+	_, err = DoRequest(http.MethodPost, commitURL, commitPayload, gitlabToken)
+	if err != nil {
+		fmt.Println("asdfghjkl;", err.Error())
+		return errors.New("failed to make GitLab request")
+	}
+
+	fmt.Println("Succesflly uploaded")
 
 	return nil
 }
@@ -159,20 +200,25 @@ func DoRequest(method, url string, payload map[string]interface{}, token string)
 }
 
 func DeleteRepository(token string, projectID int) error {
-	apiURL := fmt.Sprintf("%s/projects/%v", "https://gitlab.udevs.io/api/v4", projectID)
+	var apiURL = fmt.Sprintf("%s/projects/%v", "https://gitlab.udevs.io/api/v4", projectID)
 
 	req, err := http.NewRequest(http.MethodDelete, apiURL, nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create request: %w", err)
 	}
 
 	req.Header.Set("PRIVATE-TOKEN", token)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("request failed: %w", err)
 	}
+
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusNoContent {
+		return fmt.Errorf("failed to delete project: status %d", resp.StatusCode)
+	}
 
 	return nil
 }
@@ -287,7 +333,7 @@ func VerifySignature(signatureHeader string, body []byte, secret []byte) bool {
 	return hmac.Equal(receivedSignature, expectedMAC)
 }
 
-func MakeRequest(method, url, token string, payload map[string]interface{}) (map[string]interface{}, error) {
+func MakeRequest(method, url, token string, payload map[string]any) (map[string]any, error) {
 	reqBody := new(bytes.Buffer)
 	if payload != nil {
 		json.NewEncoder(reqBody).Encode(payload)

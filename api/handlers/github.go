@@ -40,9 +40,6 @@ func (h *Handler) GithubLogin(c *gin.Context) {
 		return
 	}
 
-	sfdasfdas, _ := json.Marshal(result)
-	fmt.Println("result", string(sfdasfdas))
-
 	if _, ok := result["error"]; ok {
 		h.handleResponse(c, status_http.InvalidArgument, result["error_description"])
 		return

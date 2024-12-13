@@ -10,13 +10,13 @@ import (
 
 	"ucode/ucode_go_function_service/api/models"
 	status "ucode/ucode_go_function_service/api/status_http"
+	"ucode/ucode_go_function_service/config"
 	pb "ucode/ucode_go_function_service/genproto/company_service"
 	nb "ucode/ucode_go_function_service/genproto/new_object_builder_service"
 	obs "ucode/ucode_go_function_service/genproto/object_builder_service"
 	"ucode/ucode_go_function_service/pkg/github"
 	"ucode/ucode_go_function_service/pkg/helper"
 	"ucode/ucode_go_function_service/pkg/util"
-	"ucode/ucode_go_function_service/services"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
@@ -188,23 +188,19 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		return
 	}
 
-	fmt.Println("----------------PAYLOAD--------------", string(body))
-
 	// if !(github.VerifySignature(c.GetHeader("X-Hub-Signature"), body, []byte(h.cfg.WebhookSecret))) {
 	// 	h.handleResponse(c, status.BadRequest, "Failed to verify signature")
 	// 	return
 	// }
 
 	projectResource, err := h.services.CompanyService().Resource().GetSingleProjectResouece(
-		c.Request.Context(),
-		&pb.PrimaryKeyProjectResource{
+		c.Request.Context(), &pb.PrimaryKeyProjectResource{
 			Id:            projectResourceId,
 			ProjectId:     projectId,
 			EnvironmentId: environmentId,
 		},
 	)
 	if err != nil {
-		fmt.Println("here again1")
 		h.handleResponse(c, status.InternalServerError, err.Error())
 		return
 	}
@@ -234,8 +230,8 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		branch = parts[len(parts)-1]
 	}
 
-	resource, err := h.services.CompanyService().ServiceResource().GetSingle(c.Request.Context(),
-		&pb.GetSingleServiceResourceReq{
+	resource, err := h.services.CompanyService().ServiceResource().GetSingle(
+		c.Request.Context(), &pb.GetSingleServiceResourceReq{
 			ProjectId:     projectId,
 			EnvironmentId: environmentId,
 			ServiceType:   pb.ServiceType_FUNCTION_SERVICE,
@@ -261,16 +257,41 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 			functionType = function.Type
 		}
 
-		fmt.Println("htmlUrl", htmlUrl)
-		fmt.Println("branch", branch)
-		fmt.Println("FunctION =========>", function)
-
 		switch functionType {
 		case "FUNCTION":
+			if functionErr != nil {
+				function, err = builderService.Function().Create(
+					c.Request.Context(), &obs.CreateFunctionRequest{
+						Path:           repoName,
+						Name:           name,
+						Description:    repoDescription,
+						ProjectId:      resource.ResourceEnvironmentId,
+						EnvironmentId:  resource.EnvironmentId,
+						Type:           "FUNCTION",
+						SourceUrl:      htmlUrl,
+						Branch:         branch,
+						PipelineStatus: "running",
+						Resource:       resourceType,
+					},
+				)
+				if err != nil {
+					h.handleResponse(c, status.GRPCError, err.Error())
+					return
+				}
+			}
+			function.PipelineStatus = "running"
+
+			go h.deployFunction(models.DeployFunctionRequest{
+				GithubToken:     "glpat-SA8FqtKh8u7hyV_SdLzh",
+				RepoId:          repoId,
+				ResourceType:    resource.NodeType,
+				Function:        function,
+				TargetNamespace: "ucode_functions_group",
+			})
 		case "KNATIVE":
 			if functionErr != nil {
-				function, err = builderService.Function().Create(c.Request.Context(),
-					&obs.CreateFunctionRequest{
+				function, err = builderService.Function().Create(
+					c.Request.Context(), &obs.CreateFunctionRequest{
 						Path:           repoName,
 						Name:           name,
 						Description:    repoDescription,
@@ -289,7 +310,14 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 				}
 			}
 			function.PipelineStatus = "running"
-			go h.deployOpenfaas(h.services, token, repoId, resource.NodeType, function)
+
+			go h.deployFunction(models.DeployFunctionRequest{
+				GithubToken:     token,
+				RepoId:          repoId,
+				ResourceType:    resource.NodeType,
+				Function:        function,
+				TargetNamespace: "ucode/knative",
+			})
 		default:
 		}
 
@@ -298,12 +326,12 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 	}
 }
 
-func (h *Handler) deployOpenfaas(services services.ServiceManagerI, githubToken, repoId, resourceType string, function *obs.Function) (github.ImportResponse, error) {
+func (h *Handler) deployFunction(req models.DeployFunctionRequest) (github.ImportResponse, error) {
 	importResponse, err := github.ImportFromGithub(github.ImportData{
-		PersonalAccessToken: githubToken,
-		RepoId:              repoId,
-		TargetNamespace:     "ucode/knative",
-		NewName:             function.Path,
+		PersonalAccessToken: req.GithubToken,
+		RepoId:              req.RepoId,
+		TargetNamespace:     req.TargetNamespace,
+		NewName:             req.Function.Path,
 		GitlabToken:         h.cfg.GitlabIntegrationToken,
 	})
 	if err != nil {
@@ -311,41 +339,49 @@ func (h *Handler) deployOpenfaas(services services.ServiceManagerI, githubToken,
 	}
 
 	time.Sleep(10 * time.Second)
-	err = github.AddCiFile(h.cfg.GitlabIntegrationToken, importResponse.ID, function.Branch, h.cfg.PathToClone)
-	if err != nil {
-		fmt.Println(err.Error())
-		err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID)
+	switch req.Function.Type {
+	case "KNATIVE":
+		err = github.AddCiFileKnative(h.cfg.GitlabIntegrationToken, importResponse.ID, req.Function.Branch, config.PathToCloneKnative)
 		if err != nil {
-			return github.ImportResponse{}, err
+			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
+				return github.ImportResponse{}, err
+			}
+		}
+	case "FUNCTION":
+		err = github.AddCiFileFunction(h.cfg.GitlabIntegrationToken, importResponse.ID, req.Function.Branch, config.PathToCloneFunction)
+		if err != nil {
+			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
+				return github.ImportResponse{}, err
+			}
 		}
 	}
 
 	for {
 		time.Sleep(60 * time.Second)
-		pipeline, err := github.GetLatestPipeline(h.cfg.GitlabIntegrationToken, function.Branch, importResponse.ID)
+		pipeline, err := github.GetLatestPipeline(h.cfg.GitlabIntegrationToken, req.Function.Branch, importResponse.ID)
 		if err != nil {
-			services.GetBuilderServiceByType(resourceType).Function().Update(context.Background(),
-				&obs.Function{
-					Id:             function.Id,
-					Path:           function.Path,
-					Name:           function.Name,
-					Description:    function.Description,
-					ProjectId:      function.ProjectId,
-					EnvironmentId:  function.EnvironmentId,
-					Type:           function.Type,
-					Url:            function.Url,
-					SourceUrl:      function.SourceUrl,
-					Branch:         function.Branch,
+			h.services.GetBuilderServiceByType(req.ResourceType).Function().Update(
+				context.Background(), &obs.Function{
+					Id:             req.Function.Id,
+					Path:           req.Function.Path,
+					Name:           req.Function.Name,
+					Description:    req.Function.Description,
+					ProjectId:      req.Function.ProjectId,
+					EnvironmentId:  req.Function.EnvironmentId,
+					Type:           req.Function.Type,
+					Url:            req.Function.Url,
+					SourceUrl:      req.Function.SourceUrl,
+					Branch:         req.Function.Branch,
 					PipelineStatus: "failed",
 					RepoId:         fmt.Sprintf("%v", importResponse.ID),
 					ErrorMessage:   "Failed to get pipeline status",
 					JobName:        "",
-					Resource:       function.Resource,
-					ProvidedName:   function.ProvidedName,
+					Resource:       req.Function.Resource,
+					ProvidedName:   req.Function.ProvidedName,
 				},
 			)
-			err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID)
-			if err != nil {
+
+			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
 				return github.ImportResponse{}, err
 			}
 			return github.ImportResponse{}, err
@@ -357,26 +393,26 @@ func (h *Handler) deployOpenfaas(services services.ServiceManagerI, githubToken,
 				return github.ImportResponse{}, err
 			}
 
-			services.GetBuilderServiceByType(resourceType).Function().Update(context.Background(),
-				&obs.Function{
-					Id:               function.Id,
-					Path:             function.Path,
-					Name:             function.Name,
-					Description:      function.Description,
-					FunctionFolderId: function.FunctionFolderId,
-					ProjectId:        function.ProjectId,
-					EnvironmentId:    function.EnvironmentId,
-					Type:             function.Type,
-					Url:              function.Url,
-					FrameworkType:    function.FrameworkType,
-					SourceUrl:        function.SourceUrl,
-					Branch:           function.Branch,
+			h.services.GetBuilderServiceByType(req.ResourceType).Function().Update(
+				context.Background(), &obs.Function{
+					Id:               req.Function.Id,
+					Path:             req.Function.Path,
+					Name:             req.Function.Name,
+					Description:      req.Function.Description,
+					FunctionFolderId: req.Function.FunctionFolderId,
+					ProjectId:        req.Function.ProjectId,
+					EnvironmentId:    req.Function.EnvironmentId,
+					Type:             req.Function.Type,
+					Url:              req.Function.Url,
+					FrameworkType:    req.Function.FrameworkType,
+					SourceUrl:        req.Function.SourceUrl,
+					Branch:           req.Function.Branch,
 					PipelineStatus:   pipeline.Status,
 					RepoId:           fmt.Sprintf("%v", importResponse.ID),
 					ErrorMessage:     logResp.Log,
 					JobName:          logResp.JobName,
-					Resource:         function.Resource,
-					ProvidedName:     function.ProvidedName,
+					Resource:         req.Function.Resource,
+					ProvidedName:     req.Function.ProvidedName,
 				},
 			)
 
@@ -387,32 +423,30 @@ func (h *Handler) deployOpenfaas(services services.ServiceManagerI, githubToken,
 			return github.ImportResponse{}, err
 		}
 
-		services.GetBuilderServiceByType(resourceType).Function().Update(context.Background(),
-			&obs.Function{
-				Id:               function.Id,
-				Path:             function.Path,
-				Name:             function.Name,
-				Description:      function.Description,
-				FunctionFolderId: function.FunctionFolderId,
-				ProjectId:        function.ProjectId,
-				EnvironmentId:    function.EnvironmentId,
-				Type:             function.Type,
-				Url:              function.Url,
-				FrameworkType:    function.FrameworkType,
-				SourceUrl:        function.SourceUrl,
-				Branch:           function.Branch,
+		h.services.GetBuilderServiceByType(req.ResourceType).Function().Update(
+			context.Background(), &obs.Function{
+				Id:               req.Function.Id,
+				Path:             req.Function.Path,
+				Name:             req.Function.Name,
+				Description:      req.Function.Description,
+				FunctionFolderId: req.Function.FunctionFolderId,
+				ProjectId:        req.Function.ProjectId,
+				EnvironmentId:    req.Function.EnvironmentId,
+				Type:             req.Function.Type,
+				Url:              req.Function.Url,
+				FrameworkType:    req.Function.FrameworkType,
+				SourceUrl:        req.Function.SourceUrl,
+				Branch:           req.Function.Branch,
 				PipelineStatus:   pipeline.Status,
 				RepoId:           fmt.Sprintf("%v", importResponse.ID),
 				ErrorMessage:     "",
 				JobName:          "",
-				Resource:         function.Resource,
-				ProvidedName:     function.ProvidedName,
+				Resource:         req.Function.Resource,
+				ProvidedName:     req.Function.ProvidedName,
 			},
 		)
-
 		if pipeline.Status == "success" || pipeline.Status == "skipped" {
-			err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID)
-			if err != nil {
+			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
 				return github.ImportResponse{}, err
 			}
 			return github.ImportResponse{}, nil
