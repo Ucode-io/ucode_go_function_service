@@ -189,7 +189,7 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		return
 	}
 
-	// fmt.Println("----------------PAYLOAD--------------", string(body))
+	fmt.Println("----------------PAYLOAD--------------", string(body))
 
 	// if !(github.VerifySignature(c.GetHeader("X-Hub-Signature"), body, []byte(h.cfg.WebhookSecret))) {
 	// 	h.handleResponse(c, status_http.BadRequest, "Failed to verify signature")
