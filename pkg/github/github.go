@@ -181,8 +181,8 @@ func ImportFromGithub(cfg ImportData) (response ImportResponse, err error) {
 	}
 
 	var importResponse ImportResponse
-	err = json.Unmarshal(respBody, &importResponse)
-	if err != nil {
+
+	if err = json.Unmarshal(respBody, &importResponse); err != nil {
 		return ImportResponse{}, errors.New("failed to unmarshal response body")
 	}
 	return importResponse, nil
@@ -271,7 +271,7 @@ func DeleteRepository(token string, projectID int) error {
 }
 
 func GetLatestPipeline(token, branchName string, projectID int) (*Pipeline, error) {
-	apiURL := fmt.Sprintf("%s/projects/%v/pipelines?ref=%s&order_by=id&sort=desc&per_page=1", "https://gitlab.udevs.io/api/v4", projectID, branchName)
+	var apiURL = fmt.Sprintf("%s/projects/%v/pipelines?ref=%s&order_by=id&sort=desc&per_page=1", "https://gitlab.udevs.io/api/v4", projectID, branchName)
 
 	req, err := http.NewRequest("GET", apiURL, nil)
 	if err != nil {
@@ -303,7 +303,8 @@ func GetLatestPipeline(token, branchName string, projectID int) (*Pipeline, erro
 }
 
 func GetPipelineLog(repoId, gitlabURL, token string) (PipelineLogResponse, error) {
-	url := fmt.Sprintf("%s/api/v4/projects/%v/jobs", gitlabURL, repoId)
+	var url = fmt.Sprintf("%s/api/v4/projects/%v/jobs", gitlabURL, repoId)
+
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return PipelineLogResponse{}, err

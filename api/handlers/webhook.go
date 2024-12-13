@@ -101,7 +101,7 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 		EnvironmentId:  resource.EnvironmentId,
 		Type:           createWebhookRequest.FunctionType,
 		Url:            "",
-		SourceUrl:      "",
+		SourceUrl:      fmt.Sprintf("https://github.com/%s/%s", createWebhookRequest.Username, createWebhookRequest.RepoName),
 		Branch:         createWebhookRequest.Branch,
 		PipelineStatus: "running",
 		Resource:       createWebhookRequest.Resource,
@@ -219,12 +219,11 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		repoName        = cast.ToString(repository["name"])
 		repoDescription = cast.ToString(repository["description"])
 		htmlUrl         = cast.ToString(repository["html_url"])
+		branch          = cast.ToString(repository["default_branch"])
 
 		config = cast.ToStringMap(hook["config"])
 
-		// frameworkType = cast.ToString(config["framework_type"])
 		functionType = cast.ToString(config["type"])
-		branch       = cast.ToString(config["branch"])
 		resourceType = cast.ToString(config["resource_id"])
 		name         = cast.ToString(config["name"])
 
@@ -263,7 +262,9 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 			functionType = function.Type
 		}
 
-		fmt.Println("FunctION", function)
+		fmt.Println("htmlUrl", htmlUrl)
+		fmt.Println("branch", branch)
+		fmt.Println("FunctION =========>", function)
 
 		switch functionType {
 		case "FUNCTION":
@@ -299,6 +300,8 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 }
 
 func (h *Handler) deployOpenfaas(services services.ServiceManagerI, githubToken, repoId, resourceType string, function *obs.Function) (github.ImportResponse, error) {
+	fmt.Println("WATAFUCK IS THAT")
+
 	importResponse, err := github.ImportFromGithub(github.ImportData{
 		PersonalAccessToken: githubToken,
 		RepoId:              repoId,
@@ -319,7 +322,10 @@ func (h *Handler) deployOpenfaas(services services.ServiceManagerI, githubToken,
 		}
 	}
 
+	fmt.Println("SUCCESFULLY CI FILE UPLODED")
+
 	for {
+		fmt.Println("DSJFHDJFBJBDBFDBJBFJBDJ")
 		// time.Sleep(60 * time.Second)
 		pipeline, err := github.GetLatestPipeline(h.cfg.GitlabIntegrationToken, function.Branch, importResponse.ID)
 		if err != nil {
