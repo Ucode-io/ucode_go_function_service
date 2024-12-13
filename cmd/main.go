@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"ucode/ucode_go_function_service/api"
 	"ucode/ucode_go_function_service/api/handlers"
 	"ucode/ucode_go_function_service/config"
@@ -17,6 +19,9 @@ func main() {
 		cfg         = config.Load()
 	)
 	*loggerLevel = logger.LevelDebug
+
+	cfgJson, _ := json.Marshal(cfg)
+	fmt.Println("-------CONFIG------", string(cfgJson))
 
 	switch cfg.Environment {
 	case config.DebugMode:
@@ -46,7 +51,7 @@ func main() {
 
 	h := handlers.NewHandler(cfg, log, grpcSvcs)
 	r := gin.New()
-	
+
 	r.Use(gin.Logger(), gin.Recovery())
 	api.SetUpAPI(r, h, cfg)
 
