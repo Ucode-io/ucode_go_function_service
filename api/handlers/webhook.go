@@ -73,8 +73,15 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 			ProjectId: projectId.(string),
 		},
 	)
+	if err != nil {
+		h.handleResponse(c, status.GRPCError, err.Error())
+		return
+	}
 
-	if !strings.HasPrefix(createWebhookRequest.RepoName, strings.ToLower(project.GetTitle())) {
+	var projectName = strings.ReplaceAll(strings.TrimSpace(project.Title), " ", "-")
+	projectName = strings.ToLower(projectName)
+
+	if !strings.HasPrefix(createWebhookRequest.RepoName, projectName) {
 		h.handleResponse(c, status.BadRequest, "repository name must start with lowercase project name")
 		return
 	}
