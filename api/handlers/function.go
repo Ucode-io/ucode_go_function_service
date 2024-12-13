@@ -235,29 +235,6 @@ func (h *Handler) GetFunctionByID(c *gin.Context) {
 			return
 		}
 
-		// @TODO should be un commented this
-		if function.Url == "" {
-			// err = gitlab.CloneForkToPath(function.GetSshUrl(), h.baseConf)
-			// if err != nil {
-			// 	h.handleResponse(c, status.InvalidArgument, err.Error())
-			// 	return
-			// }
-			// uuid, _ := uuid.NewRandom()
-			// password, err := code_server.CreateCodeServer(function.Path, h.baseConf, uuid.String())
-			// if err != nil {
-			// 	h.handleResponse(c, status.InvalidArgument, err.Error())
-			// 	return
-			// }
-			// function.Url = "https://" + uuid.String() + ".u-code.io"
-			// function.Password = password
-		}
-
-		function.ProjectId = resource.ResourceEnvironmentId
-		_, err = h.services.GetBuilderServiceByType(resource.NodeType).Function().Update(ctx, function)
-		if err != nil {
-			h.handleResponse(c, status.GRPCError, err.Error())
-			return
-		}
 	case pb.ResourceType_POSTGRESQL:
 		resp, err := h.services.GoObjectBuilderService().Function().GetSingle(
 			ctx, &nb.FunctionPrimaryKey{
