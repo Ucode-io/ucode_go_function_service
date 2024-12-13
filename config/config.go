@@ -116,7 +116,7 @@ func Load() Config {
 	config.GitlabProjectId = cast.ToInt(getOrReturnDefaultValue("GITLAB_PROJECT_ID", 1467))
 	config.ProjectUrl = "https://admin-api.ucode.run"
 	config.WebhookSecret = "X8kJnsNHD9f4nRQfjs72YLSfPqxjG+PWRjxN3KBuDhE="
-	config.PathToClone = "./app"
+	config.PathToClone = cast.ToString(getOrReturnDefaultValue("PATH_TO_CLONE", "./app"))
 
 	return config
 }

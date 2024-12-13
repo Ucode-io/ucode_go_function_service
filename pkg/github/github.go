@@ -188,25 +188,65 @@ func ImportFromGithub(cfg ImportData) (response ImportResponse, err error) {
 	return importResponse, nil
 }
 
-func AddCiFile(gitlabToken, path string, gitlabRepoId int, branch, localFolderPath string) error {
-	filePath := fmt.Sprintf("%v/.gitlab-ci.yml", localFolderPath)
-
-	fileContent, err := os.ReadFile(filePath)
+func AddCiFile(gitlabToken string, gitlabRepoId int, branch, localFolderPath string) error {
+	dir, err := os.Getwd()
 	if err != nil {
-		return errors.New("failed to read file")
+		return errors.New("failed to get current directory")
 	}
 
+	mainFilePath := fmt.Sprintf("%v/%v/.gitlab-ci.yml", dir, localFolderPath)
+	packageDirPath := fmt.Sprintf("%v/%v/.gitlab/ci", dir, localFolderPath)
+
+	commitActions := []map[string]interface{}{}
+
+	// Add main .gitlab-ci.yml file to actions
+	mainFileContent, err := os.ReadFile(mainFilePath)
+	if err != nil {
+		fmt.Println("Error reading .gitlab-ci.yml file:", err.Error())
+		return errors.New("failed to read .gitlab-ci.yml file")
+	}
+	commitActions = append(commitActions, map[string]interface{}{
+		"action":    "create",
+		"file_path": ".gitlab-ci.yml",
+		"content":   string(mainFileContent),
+	})
+
+	// Iterate over files in the package directory and add them to actions
+	err = filepath.Walk(packageDirPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		// Skip directories, only add files
+		if !info.IsDir() {
+			relPath, err := filepath.Rel(dir, path)
+			if err != nil {
+				return err
+			}
+
+			fileContent, err := os.ReadFile(path)
+			if err != nil {
+				fmt.Println("Error reading file:", path, err.Error())
+				return errors.New("failed to read a file in the .gitlab/.ci directory")
+			}
+
+			commitActions = append(commitActions, map[string]interface{}{
+				"action":    "create",
+				"file_path": relPath,
+				"content":   string(fileContent),
+			})
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	// Create commit payload
 	commitURL := fmt.Sprintf("https://gitlab.udevs.io/api/v4/projects/%v/repository/commits", gitlabRepoId)
 	commitPayload := map[string]interface{}{
 		"branch":         branch,
-		"commit_message": "Added ci file",
-		"actions": []map[string]interface{}{
-			{
-				"action":    "create",
-				"file_path": ".gitlab-ci.yml",
-				"content":   string(fileContent),
-			},
-		},
+		"commit_message": "Added CI files and package files",
+		"actions":        commitActions,
 	}
 
 	_, err = MakeGitLabRequest(http.MethodPost, commitURL, commitPayload, gitlabToken)
@@ -216,6 +256,7 @@ func AddCiFile(gitlabToken, path string, gitlabRepoId int, branch, localFolderPa
 
 	return nil
 }
+
 
 func MakeGitLabRequest(method, url string, payload map[string]interface{}, token string) (map[string]interface{}, error) {
 	reqBody := new(bytes.Buffer)
@@ -243,12 +284,58 @@ func MakeGitLabRequest(method, url string, payload map[string]interface{}, token
 	}
 
 	var result map[string]interface{}
-	err = json.Unmarshal(respBody, &result)
-	if err != nil {
+
+	if err = json.Unmarshal(respBody, &result); err != nil {
 		return nil, err
 	}
 
 	return result, nil
+}
+
+func PushPackage(gitlabToken string, gitlabRepoId int, branch, localFolderPath string) error {
+	files, err := os.ReadDir(localFolderPath)
+	if err != nil {
+		return errors.New("failed to read package directory")
+	}
+
+	var actions []map[string]interface{}
+	for _, file := range files {
+		if file.IsDir() {
+			fmt.Println("ksnkdsnsdnksnkdsndks", file.IsDir())
+			continue // Skip directories
+		}
+
+		// Read file content
+		fileContent, err := os.ReadFile(localFolderPath)
+		if err != nil {
+			return fmt.Errorf("failed to read file %v: %v", localFolderPath, err)
+		}
+
+		// Add file to actions
+		actions = append(actions, map[string]interface{}{
+			"action":    "create",
+			"file_path": file.Name(),
+			"content":   string(fileContent),
+		})
+	}
+
+	// Prepare the commit payload
+	commitURL := fmt.Sprintf("https://gitlab.udevs.io/api/v4/projects/%v/repository/commits", gitlabRepoId)
+	commitPayload := map[string]interface{}{
+		"branch":         branch,
+		"commit_message": "Pushed package files",
+		"actions":        actions,
+	}
+
+	fmt.Println("commitPayload =>>>>>>", commitPayload)
+
+	// Make the GitLab API request
+	_, err = MakeGitLabRequest(http.MethodPost, commitURL, commitPayload, gitlabToken)
+	if err != nil {
+		return errors.New("failed to push package to GitLab")
+	}
+
+	return nil
 }
 
 func DeleteRepository(token string, projectID int) error {

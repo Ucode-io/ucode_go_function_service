@@ -313,9 +313,12 @@ func (h *Handler) deployOpenfaas(services services.ServiceManagerI, githubToken,
 		return github.ImportResponse{}, err
 	}
 
+	fmt.Println("importResponse =>>>>", importResponse)
+
 	time.Sleep(10 * time.Second)
-	err = github.AddCiFile(h.cfg.GitlabIntegrationToken, h.cfg.PathToClone, importResponse.ID, function.Branch, "openfaas_integration")
+	err = github.AddCiFile(h.cfg.GitlabIntegrationToken, importResponse.ID, function.Branch, h.cfg.PathToClone)
 	if err != nil {
+		fmt.Println(err.Error())
 		err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID)
 		if err != nil {
 			return github.ImportResponse{}, err
@@ -326,7 +329,7 @@ func (h *Handler) deployOpenfaas(services services.ServiceManagerI, githubToken,
 
 	for {
 		fmt.Println("DSJFHDJFBJBDBFDBJBFJBDJ")
-		// time.Sleep(60 * time.Second)
+		time.Sleep(60 * time.Second)
 		pipeline, err := github.GetLatestPipeline(h.cfg.GitlabIntegrationToken, function.Branch, importResponse.ID)
 		if err != nil {
 			services.GetBuilderServiceByType(resourceType).Function().Update(context.Background(),

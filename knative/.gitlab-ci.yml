@@ -1,0 +1,16 @@
+include:
+  - .gitlab/ci/*.gitlab-ci.yml
+
+stages:
+  - deploy
+
+deploy-staging:
+  stage: deploy
+  extends: .deploy_template
+  variables:
+    K8SCONFIGJSON: $UCODE_KUBECONFIG
+  only:
+    - master
+
+
+# Build the whole stack using only the faas-cli
