@@ -68,6 +68,17 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 		return
 	}
 
+	project, err := h.services.CompanyService().Project().GetById(
+		c.Request.Context(), &pb.GetProjectByIdRequest{
+			ProjectId: projectId.(string),
+		},
+	)
+
+	if !strings.HasPrefix(createWebhookRequest.RepoName, strings.ToLower(project.GetTitle())) {
+		h.handleResponse(c, status.BadRequest, "repository name must start with lowercase project name")
+		return
+	}
+
 	createWebhookRequest.Username = githubResource.GetSettings().GetGithub().GetUsername()
 	createWebhookRequest.GithubToken = githubResource.GetSettings().GetGithub().GetToken()
 
