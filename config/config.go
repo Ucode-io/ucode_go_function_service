@@ -62,7 +62,6 @@ type Config struct {
 	GitlabProjectId        int
 	ProjectUrl             string
 	WebhookSecret          string
-	PathToClone            string
 	GitlabGroupIdMicroFE   int
 	GitlabProjectIdMicroFE int
 	GitlabHostMicroFE      string
@@ -114,9 +113,8 @@ func Load() Config {
 	config.GitlabIntegrationToken = cast.ToString(getOrReturnDefaultValue("GITLAB_ACCESS_TOKEN", "glpat-dmsZBpMm-zxkUep9wMxr"))
 	config.GitlabGroupId = cast.ToInt(getOrReturnDefaultValue("GITLAB_GROUP_ID", 2008))
 	config.GitlabProjectId = cast.ToInt(getOrReturnDefaultValue("GITLAB_PROJECT_ID", 1467))
-	config.ProjectUrl = "https://admin-api.ucode.run"
-	config.WebhookSecret = "X8kJnsNHD9f4nRQfjs72YLSfPqxjG+PWRjxN3KBuDhE="
-	config.PathToClone = cast.ToString(getOrReturnDefaultValue("PATH_TO_CLONE", "./app"))
+	config.ProjectUrl = cast.ToString(getOrReturnDefaultValue("PROJECT_URL", "https://admin-api.ucode.run"))
+	config.WebhookSecret = cast.ToString(getOrReturnDefaultValue("WEBHOOK_SECRET", "X8kJnsNHD9f4nRQfjs72YLSfPqxjG+PWRjxN3KBuDhE="))
 
 	return config
 }
