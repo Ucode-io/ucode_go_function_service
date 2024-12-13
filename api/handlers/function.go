@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 	"ucode/ucode_go_function_service/api/models"
 	"ucode/ucode_go_function_service/api/status_http"
@@ -17,7 +16,6 @@ import (
 	nb "ucode/ucode_go_function_service/genproto/new_object_builder_service"
 	obs "ucode/ucode_go_function_service/genproto/object_builder_service"
 
-	"ucode/ucode_go_function_service/pkg/github"
 	"ucode/ucode_go_function_service/pkg/gitlab"
 	"ucode/ucode_go_function_service/pkg/helper"
 
@@ -131,48 +129,15 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 		}
 	)
 
-	// @TODO CREATE FUNCTON ON GITHUB, GITLAB, BITBUCKET
-
-	if config.FunctionResource[function.ResourceId] {
-		_, err = gitlab.CreateProjectFork(functionPath, gitlab.IntegrationData{
-			GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
-			GitlabIntegrationToken: h.cfg.GitlabIntegrationToken,
-			GitlabGroupId:          h.cfg.GitlabGroupId,
-			GitlabProjectId:        h.cfg.GitlabProjectId,
-		})
-		if err != nil {
-			h.handleResponse(c, status.InvalidArgument, err.Error())
-			return
-		}
-	} else {
-		resource, err := h.services.CompanyService().Resource().GetSingleProjectResouece(ctx, &pb.PrimaryKeyProjectResource{
-			Id:            function.ResourceId,
-			EnvironmentId: environment.Id,
-			ProjectId:     environment.ProjectId,
-		})
-		if err != nil {
-			h.handleResponse(c, status.GRPCError, err.Error())
-			return
-		}
-		dir, err := os.Getwd()
-		if err != nil {
-			h.handleResponse(c, status.GRPCError, err.Error())
-			return
-		}
-
-		err = github.GithubPushFiles(github.GithubPushRequest{
-			Token:     resource.GetSettings().GetGithub().GetToken(),
-			RepoOwner: resource.GetSettings().GetGithub().GetUsername(),
-			RepoName:  function.RepoName,
-			Branch:    function.Branch,
-			Commit:    "Add openFass template",
-			BaseDir:   dir + "/openfass_template",
-			BaseUrl:   h.cfg.GithubApiBaseUrl,
-		})
-		if err != nil {
-			h.handleResponse(c, status.InternalServerError, err.Error())
-			return
-		}
+	_, err = gitlab.CreateProjectFork(functionPath, gitlab.IntegrationData{
+		GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
+		GitlabIntegrationToken: h.cfg.GitlabIntegrationToken,
+		GitlabGroupId:          h.cfg.GitlabGroupId,
+		GitlabProjectId:        h.cfg.GitlabProjectId,
+	})
+	if err != nil {
+		h.handleResponse(c, status.InvalidArgument, err.Error())
+		return
 	}
 
 	switch resource.ResourceType {

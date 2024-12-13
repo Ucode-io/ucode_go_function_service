@@ -4,154 +4,16 @@ import (
 	"bytes"
 	"crypto/hmac"
 	"crypto/sha1"
-	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 )
-
-func GithubPushFiles(in GithubPushRequest) error {
-	err := filepath.WalkDir(in.BaseDir, func(filePath string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		relativePath := strings.TrimPrefix(filePath, in.BaseDir+"/")
-
-		if !d.IsDir() {
-			if strings.HasPrefix(relativePath, "template") || relativePath == ".gitignore" || relativePath == "gitlab-ci.yml" || relativePath == "Makefile" || relativePath == "README.md" {
-				uploadFileToGitHub(in.Token, in.RepoOwner, in.RepoName, filePath, relativePath, in.Branch, in.Commit, in.BaseUrl)
-			}
-		}
-		return nil
-	})
-
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func uploadFileToGitHub(token, repoOwner, repoName, localFilePath, repoFilePath, branch, commitMessage, githubAPIURL string) error {
-	fileContent, err := os.ReadFile(localFilePath) // Read the file content
-	if err != nil {
-		return err
-	}
-
-	var (
-		encodedContent = base64.StdEncoding.EncodeToString(fileContent)
-		fileURL        = fmt.Sprintf("%s/repos/%s/%s/contents/%s", githubAPIURL, repoOwner, repoName, repoFilePath)
-	)
-
-	// Check if the file already exists on GitHub
-	req, err := http.NewRequest("GET", fileURL, nil)
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("Authorization", "token "+token)
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	var existingFile struct {
-		SHA string `json:"sha"`
-	}
-
-	if resp.StatusCode == http.StatusOK {
-		if err := json.NewDecoder(resp.Body).Decode(&existingFile); err != nil {
-			return err
-		}
-	} else if resp.StatusCode != http.StatusNotFound {
-		return err
-	}
-
-	payload := map[string]interface{}{
-		"message": commitMessage,
-		"content": encodedContent,
-		"branch":  branch,
-	}
-
-	if existingFile.SHA != "" {
-		payload["sha"] = existingFile.SHA
-	}
-
-	payloadBytes, err := json.Marshal(payload)
-	if err != nil {
-		return err
-	}
-
-	req, err = http.NewRequest("PUT", fileURL, bytes.NewBuffer(payloadBytes))
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("Authorization", "token "+token)
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err = client.Do(req)
-	if err != nil {
-		return err
-	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		fmt.Printf("Successfully uploaded %s to GitHub!\n", repoFilePath)
-	} else {
-		body, err := io.ReadAll(resp.Body) // or io.ReadAll in Go 1.16+
-		if err != nil {
-			return err
-		}
-		fmt.Printf("Failed to upload %s. Status: %s, Response: %s\n", repoFilePath, resp.Status, string(body))
-	}
-
-	return nil
-}
-
-func DoRequest(method, url, token string, payload map[string]interface{}) ([]byte, error) {
-	var reqBody = new(bytes.Buffer)
-
-	if payload != nil {
-		json.NewEncoder(reqBody).Encode(payload)
-	}
-
-	req, err := http.NewRequest(method, url, reqBody)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
-	if token != "" {
-		req.Header.Set("Authorization", "Bearer "+token)
-	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return respBody, nil
-}
 
 func ImportFromGithub(cfg ImportData) (response ImportResponse, err error) {
 	gitlabBodyJSON, err := json.Marshal(cfg)
@@ -202,7 +64,6 @@ func AddCiFile(gitlabToken string, gitlabRepoId int, branch, localFolderPath str
 	// Add main .gitlab-ci.yml file to actions
 	mainFileContent, err := os.ReadFile(mainFilePath)
 	if err != nil {
-		fmt.Println("Error reading .gitlab-ci.yml file:", err.Error())
 		return errors.New("failed to read .gitlab-ci.yml file")
 	}
 	commitActions = append(commitActions, map[string]interface{}{
@@ -216,17 +77,23 @@ func AddCiFile(gitlabToken string, gitlabRepoId int, branch, localFolderPath str
 		if err != nil {
 			return err
 		}
-		// Skip directories, only add files
+
+		// Only process files
 		if !info.IsDir() {
+			// Calculate relative path based on baseDir
 			relPath, err := filepath.Rel(dir, path)
 			if err != nil {
 				return err
 			}
 
+			// Ensure the file paths start from ".gitlab/ci"
+			if strings.HasPrefix(relPath, "knative/.gitlab/ci") {
+				relPath = strings.TrimPrefix(relPath, "knative/")
+			}
+
 			fileContent, err := os.ReadFile(path)
 			if err != nil {
-				fmt.Println("Error reading file:", path, err.Error())
-				return errors.New("failed to read a file in the .gitlab/.ci directory")
+				return errors.New("failed to read a file in the .gitlab/ci directory")
 			}
 
 			commitActions = append(commitActions, map[string]interface{}{
@@ -245,7 +112,7 @@ func AddCiFile(gitlabToken string, gitlabRepoId int, branch, localFolderPath str
 	commitURL := fmt.Sprintf("https://gitlab.udevs.io/api/v4/projects/%v/repository/commits", gitlabRepoId)
 	commitPayload := map[string]interface{}{
 		"branch":         branch,
-		"commit_message": "Added CI files and package files",
+		"commit_message": "Added CI files",
 		"actions":        commitActions,
 	}
 
@@ -256,7 +123,6 @@ func AddCiFile(gitlabToken string, gitlabRepoId int, branch, localFolderPath str
 
 	return nil
 }
-
 
 func MakeGitLabRequest(method, url string, payload map[string]interface{}, token string) (map[string]interface{}, error) {
 	reqBody := new(bytes.Buffer)
@@ -290,52 +156,6 @@ func MakeGitLabRequest(method, url string, payload map[string]interface{}, token
 	}
 
 	return result, nil
-}
-
-func PushPackage(gitlabToken string, gitlabRepoId int, branch, localFolderPath string) error {
-	files, err := os.ReadDir(localFolderPath)
-	if err != nil {
-		return errors.New("failed to read package directory")
-	}
-
-	var actions []map[string]interface{}
-	for _, file := range files {
-		if file.IsDir() {
-			fmt.Println("ksnkdsnsdnksnkdsndks", file.IsDir())
-			continue // Skip directories
-		}
-
-		// Read file content
-		fileContent, err := os.ReadFile(localFolderPath)
-		if err != nil {
-			return fmt.Errorf("failed to read file %v: %v", localFolderPath, err)
-		}
-
-		// Add file to actions
-		actions = append(actions, map[string]interface{}{
-			"action":    "create",
-			"file_path": file.Name(),
-			"content":   string(fileContent),
-		})
-	}
-
-	// Prepare the commit payload
-	commitURL := fmt.Sprintf("https://gitlab.udevs.io/api/v4/projects/%v/repository/commits", gitlabRepoId)
-	commitPayload := map[string]interface{}{
-		"branch":         branch,
-		"commit_message": "Pushed package files",
-		"actions":        actions,
-	}
-
-	fmt.Println("commitPayload =>>>>>>", commitPayload)
-
-	// Make the GitLab API request
-	_, err = MakeGitLabRequest(http.MethodPost, commitURL, commitPayload, gitlabToken)
-	if err != nil {
-		return errors.New("failed to push package to GitLab")
-	}
-
-	return nil
 }
 
 func DeleteRepository(token string, projectID int) error {
