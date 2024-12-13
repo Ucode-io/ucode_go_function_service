@@ -116,7 +116,7 @@ func AddCiFile(gitlabToken string, gitlabRepoId int, branch, localFolderPath str
 		"actions":        commitActions,
 	}
 
-	_, err = MakeGitLabRequest(http.MethodPost, commitURL, commitPayload, gitlabToken)
+	_, err = DoRequest(http.MethodPost, commitURL, commitPayload, gitlabToken)
 	if err != nil {
 		return errors.New("failed to make GitLab request")
 	}
@@ -124,7 +124,7 @@ func AddCiFile(gitlabToken string, gitlabRepoId int, branch, localFolderPath str
 	return nil
 }
 
-func MakeGitLabRequest(method, url string, payload map[string]interface{}, token string) (map[string]interface{}, error) {
+func DoRequest(method, url string, payload map[string]interface{}, token string) (map[string]interface{}, error) {
 	reqBody := new(bytes.Buffer)
 	if payload != nil {
 		json.NewEncoder(reqBody).Encode(payload)

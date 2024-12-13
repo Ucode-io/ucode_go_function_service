@@ -198,8 +198,7 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 			EnvironmentId:    environmentId.(string),
 			FunctionFolderId: function.FunctionFolderId,
 			Type:             config.MICROFE,
-			// Url:              repoHost,
-			FrameworkType: function.FrameworkType,
+			FrameworkType:    function.FrameworkType,
 		}
 
 		logReq = &models.CreateVersionHistoryRequest{
