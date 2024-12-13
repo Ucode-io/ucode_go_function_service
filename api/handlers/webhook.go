@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"ucode/ucode_go_function_service/api/models"
-	"ucode/ucode_go_function_service/api/status_http"
 	status "ucode/ucode_go_function_service/api/status_http"
 	pb "ucode/ucode_go_function_service/genproto/company_service"
 	nb "ucode/ucode_go_function_service/genproto/new_object_builder_service"
@@ -30,19 +29,19 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 	)
 
 	if err := c.ShouldBindJSON(&createWebhookRequest); err != nil {
-		h.handleResponse(c, status_http.BadRequest, err.Error())
+		h.handleResponse(c, status.BadRequest, err.Error())
 		return
 	}
 
 	projectId, ok := c.Get("project_id")
 	if !ok || !util.IsValidUUID(projectId.(string)) {
-		h.handleResponse(c, status_http.InvalidArgument, "project id is an invalid uuid")
+		h.handleResponse(c, status.InvalidArgument, "project id is an invalid uuid")
 		return
 	}
 
 	environmentId, ok := c.Get("environment_id")
 	if !ok || !util.IsValidUUID(environmentId.(string)) {
-		h.handleResponse(c, status_http.BadRequest, "error getting environment id | not valid")
+		h.handleResponse(c, status.BadRequest, "error getting environment id | not valid")
 		return
 	}
 
@@ -65,7 +64,7 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 			ProjectId:     projectId.(string),
 		})
 	if err != nil {
-		h.handleResponse(c, status_http.GRPCError, err.Error())
+		h.handleResponse(c, status.GRPCError, err.Error())
 		return
 	}
 
@@ -73,7 +72,7 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 	createWebhookRequest.GithubToken = githubResource.GetSettings().GetGithub().GetToken()
 
 	if createWebhookRequest.RepoName == "" || createWebhookRequest.Username == "" {
-		h.handleResponse(c, status_http.BadRequest, "Username or RepoName is empty")
+		h.handleResponse(c, status.BadRequest, "Username or RepoName is empty")
 		return
 	}
 
@@ -84,12 +83,12 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 		ProjectUrl:  h.cfg.ProjectUrl,
 	})
 	if err != nil {
-		h.handleResponse(c, status_http.InternalServerError, err.Error())
+		h.handleResponse(c, status.InternalServerError, err.Error())
 		return
 	}
 
 	if exists {
-		h.handleResponse(c, status_http.OK, nil)
+		h.handleResponse(c, status.OK, nil)
 		return
 	}
 
@@ -149,11 +148,11 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 		EnvironmentId: environmentId.(string),
 	})
 	if err != nil {
-		h.handleResponse(c, status_http.InternalServerError, err.Error())
+		h.handleResponse(c, status.InternalServerError, err.Error())
 		return
 	}
 
-	h.handleResponse(c, status_http.Created, nil)
+	h.handleResponse(c, status.Created, nil)
 }
 
 func (h *Handler) HandleWebhook(c *gin.Context) {
@@ -161,38 +160,38 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		h.handleResponse(c, status_http.BadRequest, "Failed to read request body")
+		h.handleResponse(c, status.BadRequest, "Failed to read request body")
 		return
 	}
 
 	err = json.Unmarshal(body, &payload)
 	if err != nil {
-		h.handleResponse(c, status_http.BadRequest, "Failed to unmarshal JSON inside handle webhook")
+		h.handleResponse(c, status.BadRequest, "Failed to unmarshal JSON inside handle webhook")
 		return
 	}
 
 	projectId := c.Query("project_id")
 	if !util.IsValidUUID(projectId) {
-		h.handleResponse(c, status_http.InvalidArgument, "project id is an invalid uuid")
+		h.handleResponse(c, status.InvalidArgument, "project id is an invalid uuid")
 		return
 	}
 
 	environmentId := c.Query("environment_id")
 	if !util.IsValidUUID(environmentId) {
-		h.handleResponse(c, status_http.BadRequest, "environment id id is an invalid uuid")
+		h.handleResponse(c, status.BadRequest, "environment id id is an invalid uuid")
 		return
 	}
 
 	projectResourceId := c.Query("resource_id")
 	if !util.IsValidUUID(projectResourceId) {
-		h.handleResponse(c, status_http.InvalidArgument, "project resource id is an invalid uuid")
+		h.handleResponse(c, status.InvalidArgument, "project resource id is an invalid uuid")
 		return
 	}
 
 	fmt.Println("----------------PAYLOAD--------------", string(body))
 
 	// if !(github.VerifySignature(c.GetHeader("X-Hub-Signature"), body, []byte(h.cfg.WebhookSecret))) {
-	// 	h.handleResponse(c, status_http.BadRequest, "Failed to verify signature")
+	// 	h.handleResponse(c, status.BadRequest, "Failed to verify signature")
 	// 	return
 	// }
 
@@ -206,7 +205,7 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 	)
 	if err != nil {
 		fmt.Println("here again1")
-		h.handleResponse(c, status_http.InternalServerError, err.Error())
+		h.handleResponse(c, status.InternalServerError, err.Error())
 		return
 	}
 
@@ -243,7 +242,7 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		},
 	)
 	if err != nil {
-		h.handleResponse(c, status_http.InternalServerError, err.Error())
+		h.handleResponse(c, status.InternalServerError, err.Error())
 		return
 	}
 
@@ -285,7 +284,7 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 					},
 				)
 				if err != nil {
-					h.handleResponse(c, status_http.InvalidArgument, err.Error())
+					h.handleResponse(c, status.InvalidArgument, err.Error())
 					return
 				}
 			}
@@ -300,8 +299,6 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 }
 
 func (h *Handler) deployOpenfaas(services services.ServiceManagerI, githubToken, repoId, resourceType string, function *obs.Function) (github.ImportResponse, error) {
-	fmt.Println("WATAFUCK IS THAT")
-
 	importResponse, err := github.ImportFromGithub(github.ImportData{
 		PersonalAccessToken: githubToken,
 		RepoId:              repoId,
@@ -313,8 +310,6 @@ func (h *Handler) deployOpenfaas(services services.ServiceManagerI, githubToken,
 		return github.ImportResponse{}, err
 	}
 
-	fmt.Println("importResponse =>>>>", importResponse)
-
 	time.Sleep(10 * time.Second)
 	err = github.AddCiFile(h.cfg.GitlabIntegrationToken, importResponse.ID, function.Branch, h.cfg.PathToClone)
 	if err != nil {
@@ -325,10 +320,7 @@ func (h *Handler) deployOpenfaas(services services.ServiceManagerI, githubToken,
 		}
 	}
 
-	fmt.Println("SUCCESFULLY CI FILE UPLODED")
-
 	for {
-		fmt.Println("DSJFHDJFBJBDBFDBJBFJBDJ")
 		time.Sleep(60 * time.Second)
 		pipeline, err := github.GetLatestPipeline(h.cfg.GitlabIntegrationToken, function.Branch, importResponse.ID)
 		if err != nil {

@@ -49,8 +49,10 @@ func main() {
 		return
 	}
 
-	h := handlers.NewHandler(cfg, log, grpcSvcs)
-	r := gin.New()
+	var (
+		h = handlers.NewHandler(cfg, log, grpcSvcs)
+		r = gin.New()
+	)
 
 	r.Use(gin.Logger(), gin.Recovery())
 	api.SetUpAPI(r, h, cfg)
