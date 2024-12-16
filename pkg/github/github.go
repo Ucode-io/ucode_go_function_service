@@ -124,10 +124,8 @@ func AddCiFileKnative(gitlabToken string, gitlabRepoId int, branch, localFolderP
 }
 
 func AddCiFileFunction(gitlabToken string, gitlabRepoId int, branch, localFolderPath string) error {
-	fmt.Println("HERE AddCiFileFunction =>>>>>>>>")
 	dir, err := os.Getwd()
 	if err != nil {
-		fmt.Println("qwertyuio", err.Error())
 		return errors.New("can not get current directory")
 	}
 
@@ -135,7 +133,6 @@ func AddCiFileFunction(gitlabToken string, gitlabRepoId int, branch, localFolder
 
 	fileContent, err := os.ReadFile(filePath)
 	if err != nil {
-		fmt.Println("zxcvbnm,./", err.Error())
 		return errors.New("failed to read file")
 	}
 
@@ -156,11 +153,10 @@ func AddCiFileFunction(gitlabToken string, gitlabRepoId int, branch, localFolder
 
 	_, err = DoRequest(http.MethodPost, commitURL, commitPayload, gitlabToken)
 	if err != nil {
-		fmt.Println("asdfghjkl;", err.Error())
 		return errors.New("failed to make GitLab request")
 	}
 
-	fmt.Println("Succesflly uploaded")
+	fmt.Println("-------------Succesflly uploaded---------")
 
 	return nil
 }
