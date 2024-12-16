@@ -109,7 +109,7 @@ func AddCiFileKnative(gitlabToken string, gitlabRepoId int, branch, localFolderP
 	var (
 		commitURL     = fmt.Sprintf("https://gitlab.udevs.io/api/v4/projects/%v/repository/commits", gitlabRepoId)
 		commitPayload = map[string]any{
-			"branch":         "master",
+			"branch":         branch,
 			"commit_message": "Added CI files",
 			"actions":        commitActions,
 		}
