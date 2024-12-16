@@ -11,6 +11,7 @@ type CreateFunctionRequest struct {
 	Branch           string `json:"branch"`
 	RepoName         string `json:"repo_name"`
 	ResourceId       string `json:"resource_id"`
+	Type             string `json:"type"`
 }
 
 type Function struct {

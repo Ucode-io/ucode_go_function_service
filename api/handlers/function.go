@@ -112,7 +112,7 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 			EnvironmentId:    environmentId.(string),
 			FunctionFolderId: function.FunctionFolderId,
 			Url:              url,
-			Type:             config.FUNCTION,
+			Type:             function.Type,
 		}
 
 		logReq = &models.CreateVersionHistoryRequest{
