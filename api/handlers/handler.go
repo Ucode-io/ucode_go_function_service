@@ -18,11 +18,12 @@ type Handler struct {
 	cache    *caching.ExpiringLRUCache
 }
 
-func NewHandler(cfg config.Config, log logger.LoggerI, svcs services.ServiceManagerI) Handler {
+func NewHandler(cfg config.Config, log logger.LoggerI, svcs services.ServiceManagerI, cache *caching.ExpiringLRUCache) Handler {
 	return Handler{
 		cfg:      cfg,
 		log:      log,
 		services: svcs,
+		cache:    cache,
 	}
 }
 
