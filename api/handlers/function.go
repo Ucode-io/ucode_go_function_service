@@ -736,7 +736,7 @@ func (h *Handler) GetAllFunctionsForApp(c *gin.Context) {
 // InvokeFunctionByPath godoc
 // @Security ApiKeyAuth
 // @Param function-path path string true "function-path"
-// @ID invoke_function_by_path
+// @ID invoke_function_by_path_openfass
 // @Router /v1/invoke_function/{function-path} [POST]
 // @Summary Invoke Function By Path
 // @Description Invoke Function By Path
@@ -979,7 +979,7 @@ func (h *Handler) InvokeFunction(c *gin.Context) {
 // InvokeFunctionByPath godoc
 // @Security ApiKeyAuth
 // @Param function-path path string true "function-path"
-// @ID invoke_function_by_path
+// @ID invoke_function_by_path_knative
 // @Router /v2/invoke_function/{function-path} [POST]
 // @Summary Invoke Function By Path
 // @Description Invoke Function By Path
