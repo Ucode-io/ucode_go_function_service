@@ -73,8 +73,6 @@ func GetFunctionList(token, url string) (any, error) {
 		return response, err
 	}
 
-	fmt.Println(string(resp))
-
 	if err := json.Unmarshal(resp, &response); err != nil {
 		return response, err
 	}
