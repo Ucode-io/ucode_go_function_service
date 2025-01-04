@@ -123,8 +123,8 @@ func Load() Config {
 	config.DefaultOffset = cast.ToString(getOrReturnDefaultValue("DEFAULT_OFFSET", "0"))
 	config.DefaultLimit = "60"
 
-	config.GrafanaBaseUrl = cast.ToString(getOrReturnDefaultValue("GRAFANA_BASE_URL", ""))
-	config.GrafanaAuth = cast.ToString(getOrReturnDefaultValue("GRAFANA_AUTH", ""))
+	config.GrafanaBaseUrl = "https://grafana.u-code.io"
+	config.GrafanaAuth = "ucode-dev:sie0eeBuZ3Neigageejo"
 
 	return config
 }
