@@ -29,7 +29,7 @@ func (h *Handler) GetGrafanaFunctionLogs(c *gin.Context) {
 		return
 	}
 
-	var url = fmt.Sprintf("%s/api/ds/query?ds_type=loki&requestId=explore_IR6_1", h.cfg.GrafanaBaseUrl)
+	var url = fmt.Sprintf("%s/api/ds/query?ds_type=loki&requestId=explore_V1i_1", h.cfg.GrafanaBaseUrl)
 
 	resp, err := grafana.GetFunctionLogs(request, h.cfg.GrafanaAuth, url)
 	if err != nil {
