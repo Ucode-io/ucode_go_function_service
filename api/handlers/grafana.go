@@ -61,7 +61,7 @@ func (h *Handler) GetGrafanaFunctionList(c *gin.Context) {
 		end       = c.Query("end")
 	)
 
-	var url = fmt.Sprintf("%s/api/datasources/uid/loki/resources/series?match[]=%s&start=%s&end=%s", h.cfg.GrafanaBaseUrl, namespace, start, end)
+	var url = fmt.Sprintf(`%s/api/datasources/uid/loki/resources/series?match[]={namespace="%s"}&start=%s&end=%s`, h.cfg.GrafanaBaseUrl, namespace, start, end)
 
 	resp, err := grafana.GetFunctionList(h.cfg.GrafanaAuth, url)
 	if err != nil {
