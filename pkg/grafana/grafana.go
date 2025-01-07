@@ -22,8 +22,8 @@ func GetFunctionLogs(req models.GetGrafanaFunctionLogRequest, token, url string)
 	payloadString := fmt.Sprintf(`{
 		"queries": [
 			{
-				"refId": "A",
-				"expr": "{namespace=\"%s\", app=\"%s\"}",
+				"refId": "loki-data-samples",
+				"expr": "{namespace=\"%s\", app=~\"%s.*\"}",
 				"queryType": "range",
 				"datasource": {
 					"type": "loki",

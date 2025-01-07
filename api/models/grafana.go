@@ -9,7 +9,7 @@ type GetGrafanaFunctionLogRequest struct {
 
 type GetGrafanaFunctionLogResponse struct {
 	Results struct {
-		A GetGrafanaFunctionLogA `json:"A"`
+		A GetGrafanaFunctionLogA `json:"loki-data-samples"`
 	} `json:"results"`
 }
 
