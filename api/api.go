@@ -25,7 +25,6 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 	// @securityDefinitions.apikey ApiKeyAuth
 	// @in header
 	// @name Authorization
-
 	collections := v1.Group("/collections")
 	{
 		collections.GET("/:collection/automation", h.GetAllAutomation)
@@ -51,6 +50,13 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 
 	v2 := r.Group("/v2")
 	v2.POST("/webhook/handle", h.HandleWebhook)
+
+	grafana := v2.Group("/grafana")
+	{
+		grafana.POST("/loki", h.GetGrafanaFunctionLogs)
+		grafana.GET("/function", h.GetGrafanaFunctionList)
+
+	}
 
 	v2.Use(h.AuthMiddleware(cfg))
 	functions := v2.Group("/function")

@@ -80,12 +80,26 @@ definitions:
       path:
         type: string
     type: object
+  ucode_ucode_go_function_service_api_models.GetGrafanaFunctionLogRequest:
+    properties:
+      from:
+        type: string
+      function:
+        type: string
+      namespace:
+        type: string
+      to:
+        type: string
+    type: object
   ucode_ucode_go_function_service_api_models.GithubUser:
     properties:
       avatar_url:
         type: string
+      bio: {}
       blog:
         type: string
+      company: {}
+      email: {}
       events_url:
         type: string
       followers_url:
@@ -96,10 +110,12 @@ definitions:
         type: string
       gravatar_id:
         type: string
+      hireable: {}
       html_url:
         type: string
       id:
         type: integer
+      location: {}
       login:
         type: string
       name:
@@ -115,6 +131,8 @@ definitions:
       site_admin:
         type: boolean
       starred_url:
+        type: string
+      status:
         type: string
       subscriptions_url:
         type: string
@@ -1300,7 +1318,7 @@ paths:
       consumes:
       - application/json
       description: Invoke Function By Path
-      operationId: invoke_function_by_path
+      operationId: invoke_function_by_path_openfass
       parameters:
       - description: function-path
         in: path
@@ -1348,6 +1366,160 @@ paths:
       summary: Invoke Function By Path
       tags:
       - InvokeFunction
+  /v2/grafana/function:
+    post:
+      consumes:
+      - application/json
+      description: Grafana Function List
+      operationId: grafana_function_list
+      parameters:
+      - description: namespace
+        in: query
+        name: namespace
+        required: true
+        type: string
+      - description: start
+        in: query
+        name: start
+        required: true
+        type: string
+      - description: end
+        in: query
+        name: end
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Grafana Function List
+      tags:
+      - Grafana
+  /v2/grafana/loki:
+    post:
+      consumes:
+      - application/json
+      description: Grafana Function Logs
+      operationId: grafana_function_logs
+      parameters:
+      - description: GetGrafanaFunctionLogRequest
+        in: body
+        name: Grafana
+        required: true
+        schema:
+          $ref: '#/definitions/ucode_ucode_go_function_service_api_models.GetGrafanaFunctionLogRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Grafana Function Logs
+      tags:
+      - Grafana
+  /v2/invoke_function/{function-path}:
+    post:
+      consumes:
+      - application/json
+      description: Invoke Function By Path
+      operationId: invoke_function_by_path_knative
+      parameters:
+      - description: function-path
+        in: path
+        name: function-path
+        required: true
+        type: string
+      - description: InvokeFunctionByPathRequest
+        in: body
+        name: InvokeFunctionByPathRequest
+        required: true
+        schema:
+          $ref: '#/definitions/ucode_ucode_go_function_service_api_models.CommonMessage'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Function data
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/ucode_ucode_go_function_service_api_models.InvokeFunctionRequest'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Invoke Function By Path
+      tags:
+      - Function
 securityDefinitions:
   ApiKeyAuth:
     in: header

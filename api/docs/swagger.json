@@ -1834,7 +1834,280 @@
                     "InvokeFunction"
                 ],
                 "summary": "Invoke Function By Path",
-                "operationId": "invoke_function_by_path",
+                "operationId": "invoke_function_by_path_openfass",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "function-path",
+                        "name": "function-path",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "InvokeFunctionByPathRequest",
+                        "name": "InvokeFunctionByPathRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ucode_ucode_go_function_service_api_models.CommonMessage"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Function data",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/ucode_ucode_go_function_service_api_models.InvokeFunctionRequest"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Server Error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/v2/grafana/function": {
+            "post": {
+                "description": "Grafana Function List",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Grafana"
+                ],
+                "summary": "Grafana Function List",
+                "operationId": "grafana_function_list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "namespace",
+                        "name": "namespace",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "start",
+                        "name": "start",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "end",
+                        "name": "end",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Server Error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/v2/grafana/loki": {
+            "post": {
+                "description": "Grafana Function Logs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Grafana"
+                ],
+                "summary": "Grafana Function Logs",
+                "operationId": "grafana_function_logs",
+                "parameters": [
+                    {
+                        "description": "GetGrafanaFunctionLogRequest",
+                        "name": "Grafana",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ucode_ucode_go_function_service_api_models.GetGrafanaFunctionLogRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Server Error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/v2/invoke_function/{function-path}": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Invoke Function By Path",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Function"
+                ],
+                "summary": "Invoke Function By Path",
+                "operationId": "invoke_function_by_path_knative",
                 "parameters": [
                     {
                         "type": "string",
@@ -2036,15 +2309,35 @@
                 }
             }
         },
+        "ucode_ucode_go_function_service_api_models.GetGrafanaFunctionLogRequest": {
+            "type": "object",
+            "properties": {
+                "from": {
+                    "type": "string"
+                },
+                "function": {
+                    "type": "string"
+                },
+                "namespace": {
+                    "type": "string"
+                },
+                "to": {
+                    "type": "string"
+                }
+            }
+        },
         "ucode_ucode_go_function_service_api_models.GithubUser": {
             "type": "object",
             "properties": {
                 "avatar_url": {
                     "type": "string"
                 },
+                "bio": {},
                 "blog": {
                     "type": "string"
                 },
+                "company": {},
+                "email": {},
                 "events_url": {
                     "type": "string"
                 },
@@ -2060,12 +2353,14 @@
                 "gravatar_id": {
                     "type": "string"
                 },
+                "hireable": {},
                 "html_url": {
                     "type": "string"
                 },
                 "id": {
                     "type": "integer"
                 },
+                "location": {},
                 "login": {
                     "type": "string"
                 },
@@ -2088,6 +2383,9 @@
                     "type": "boolean"
                 },
                 "starred_url": {
+                    "type": "string"
+                },
+                "status": {
                     "type": "string"
                 },
                 "subscriptions_url": {

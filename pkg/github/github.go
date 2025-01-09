@@ -156,43 +156,7 @@ func AddCiFileFunction(gitlabToken string, gitlabRepoId int, branch, localFolder
 		return errors.New("failed to make GitLab request")
 	}
 
-	fmt.Println("-------------Succesflly uploaded---------")
-
 	return nil
-}
-
-func DoRequest(method, url string, payload map[string]interface{}, token string) (map[string]interface{}, error) {
-	reqBody := new(bytes.Buffer)
-	if payload != nil {
-		json.NewEncoder(reqBody).Encode(payload)
-	}
-
-	req, err := http.NewRequest(method, url, reqBody)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+token)
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	var result map[string]interface{}
-
-	if err = json.Unmarshal(respBody, &result); err != nil {
-		return nil, err
-	}
-
-	return result, nil
 }
 
 func DeleteRepository(token string, projectID int) error {
@@ -327,6 +291,40 @@ func VerifySignature(signatureHeader string, body []byte, secret []byte) bool {
 	}
 
 	return hmac.Equal(receivedSignature, expectedMAC)
+}
+
+func DoRequest(method, url string, payload map[string]any, token string) (map[string]any, error) {
+	reqBody := new(bytes.Buffer)
+	if payload != nil {
+		json.NewEncoder(reqBody).Encode(payload)
+	}
+
+	req, err := http.NewRequest(method, url, reqBody)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var result map[string]interface{}
+
+	if err = json.Unmarshal(respBody, &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 func MakeRequest(method, url, token string, payload map[string]any) (map[string]any, error) {

@@ -66,6 +66,9 @@ type Config struct {
 	GitlabGroupIdMicroFE   int
 	GitlabProjectIdMicroFE int
 	GitlabHostMicroFE      string
+
+	GrafanaBaseUrl string
+	GrafanaAuth    string
 }
 
 func Load() Config {
@@ -119,6 +122,9 @@ func Load() Config {
 
 	config.DefaultOffset = cast.ToString(getOrReturnDefaultValue("DEFAULT_OFFSET", "0"))
 	config.DefaultLimit = "60"
+
+	config.GrafanaBaseUrl = "https://grafana.u-code.io"
+	config.GrafanaAuth = "ucode-dev:sie0eeBuZ3Neigageejo"
 
 	return config
 }
