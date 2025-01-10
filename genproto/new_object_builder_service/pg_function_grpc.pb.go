@@ -27,7 +27,7 @@ const (
 	FunctionServiceV2_Delete_FullMethodName                  = "/new_object_builder_service.FunctionServiceV2/Delete"
 	FunctionServiceV2_GetListByRequestTime_FullMethodName    = "/new_object_builder_service.FunctionServiceV2/GetListByRequestTime"
 	FunctionServiceV2_UpdateManyByRequestTime_FullMethodName = "/new_object_builder_service.FunctionServiceV2/UpdateManyByRequestTime"
-	FunctionServiceV2_GetCount_FullMethodName                = "/new_object_builder_service.FunctionServiceV2/GetCount"
+	FunctionServiceV2_GetCountByType_FullMethodName          = "/new_object_builder_service.FunctionServiceV2/GetCountByType"
 )
 
 // FunctionServiceV2Client is the client API for FunctionServiceV2 service.
@@ -41,7 +41,7 @@ type FunctionServiceV2Client interface {
 	Delete(ctx context.Context, in *FunctionPrimaryKey, opts ...grpc.CallOption) (*empty.Empty, error)
 	GetListByRequestTime(ctx context.Context, in *GetListByRequestTimeRequest, opts ...grpc.CallOption) (*GetAllFunctionsResponse, error)
 	UpdateManyByRequestTime(ctx context.Context, in *UpdateManyUrlAndPassword, opts ...grpc.CallOption) (*empty.Empty, error)
-	GetCount(ctx context.Context, in *GetCountRequest, opts ...grpc.CallOption) (*GetCountResponse, error)
+	GetCountByType(ctx context.Context, in *GetCountByTypeRequest, opts ...grpc.CallOption) (*GetCountByTypeResponse, error)
 }
 
 type functionServiceV2Client struct {
@@ -122,10 +122,10 @@ func (c *functionServiceV2Client) UpdateManyByRequestTime(ctx context.Context, i
 	return out, nil
 }
 
-func (c *functionServiceV2Client) GetCount(ctx context.Context, in *GetCountRequest, opts ...grpc.CallOption) (*GetCountResponse, error) {
+func (c *functionServiceV2Client) GetCountByType(ctx context.Context, in *GetCountByTypeRequest, opts ...grpc.CallOption) (*GetCountByTypeResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetCountResponse)
-	err := c.cc.Invoke(ctx, FunctionServiceV2_GetCount_FullMethodName, in, out, cOpts...)
+	out := new(GetCountByTypeResponse)
+	err := c.cc.Invoke(ctx, FunctionServiceV2_GetCountByType_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +143,7 @@ type FunctionServiceV2Server interface {
 	Delete(context.Context, *FunctionPrimaryKey) (*empty.Empty, error)
 	GetListByRequestTime(context.Context, *GetListByRequestTimeRequest) (*GetAllFunctionsResponse, error)
 	UpdateManyByRequestTime(context.Context, *UpdateManyUrlAndPassword) (*empty.Empty, error)
-	GetCount(context.Context, *GetCountRequest) (*GetCountResponse, error)
+	GetCountByType(context.Context, *GetCountByTypeRequest) (*GetCountByTypeResponse, error)
 	mustEmbedUnimplementedFunctionServiceV2Server()
 }
 
@@ -175,8 +175,8 @@ func (UnimplementedFunctionServiceV2Server) GetListByRequestTime(context.Context
 func (UnimplementedFunctionServiceV2Server) UpdateManyByRequestTime(context.Context, *UpdateManyUrlAndPassword) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateManyByRequestTime not implemented")
 }
-func (UnimplementedFunctionServiceV2Server) GetCount(context.Context, *GetCountRequest) (*GetCountResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetCount not implemented")
+func (UnimplementedFunctionServiceV2Server) GetCountByType(context.Context, *GetCountByTypeRequest) (*GetCountByTypeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCountByType not implemented")
 }
 func (UnimplementedFunctionServiceV2Server) mustEmbedUnimplementedFunctionServiceV2Server() {}
 func (UnimplementedFunctionServiceV2Server) testEmbeddedByValue()                           {}
@@ -325,20 +325,20 @@ func _FunctionServiceV2_UpdateManyByRequestTime_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FunctionServiceV2_GetCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetCountRequest)
+func _FunctionServiceV2_GetCountByType_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCountByTypeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FunctionServiceV2Server).GetCount(ctx, in)
+		return srv.(FunctionServiceV2Server).GetCountByType(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: FunctionServiceV2_GetCount_FullMethodName,
+		FullMethod: FunctionServiceV2_GetCountByType_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FunctionServiceV2Server).GetCount(ctx, req.(*GetCountRequest))
+		return srv.(FunctionServiceV2Server).GetCountByType(ctx, req.(*GetCountByTypeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -379,8 +379,8 @@ var FunctionServiceV2_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _FunctionServiceV2_UpdateManyByRequestTime_Handler,
 		},
 		{
-			MethodName: "GetCount",
-			Handler:    _FunctionServiceV2_GetCount_Handler,
+			MethodName: "GetCountByType",
+			Handler:    _FunctionServiceV2_GetCountByType_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
