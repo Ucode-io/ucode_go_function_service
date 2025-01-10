@@ -100,7 +100,7 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 		var count int32
 		switch resource.ResourceType {
 		case pb.ResourceType_MONGODB:
-			response, err := h.services.GetBuilderServiceByType(resource.NodeType).Function().GetCount(ctx, &obs.GetCountRequest{
+			response, err := h.services.GetBuilderServiceByType(resource.NodeType).Function().GetCountByType(ctx, &obs.GetCountByTypeRequest{
 				ProjectId: resource.ResourceEnvironmentId,
 				Type:      []string{config.KNATIVE, config.FUNCTION},
 			})
@@ -110,7 +110,7 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 			}
 			count = response.Count
 		case pb.ResourceType_POSTGRESQL:
-			response, err := h.services.GoObjectBuilderService().Function().GetCount(ctx, &nb.GetCountRequest{
+			response, err := h.services.GoObjectBuilderService().Function().GetCountByType(ctx, &nb.GetCountByTypeRequest{
 				ProjectId: resource.ResourceEnvironmentId,
 				Type:      []string{config.KNATIVE, config.FUNCTION},
 			})
