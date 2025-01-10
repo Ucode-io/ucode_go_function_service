@@ -19,20 +19,21 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ItemsService_Create_FullMethodName           = "/new_object_builder_service.ItemsService/Create"
-	ItemsService_GetSingle_FullMethodName        = "/new_object_builder_service.ItemsService/GetSingle"
-	ItemsService_GetList_FullMethodName          = "/new_object_builder_service.ItemsService/GetList"
-	ItemsService_Update_FullMethodName           = "/new_object_builder_service.ItemsService/Update"
-	ItemsService_Delete_FullMethodName           = "/new_object_builder_service.ItemsService/Delete"
-	ItemsService_ManyToManyAppend_FullMethodName = "/new_object_builder_service.ItemsService/ManyToManyAppend"
-	ItemsService_ManyToManyDelete_FullMethodName = "/new_object_builder_service.ItemsService/ManyToManyDelete"
-	ItemsService_MultipleUpdate_FullMethodName   = "/new_object_builder_service.ItemsService/MultipleUpdate"
-	ItemsService_MultipleInsert_FullMethodName   = "/new_object_builder_service.ItemsService/MultipleInsert"
-	ItemsService_DeleteMany_FullMethodName       = "/new_object_builder_service.ItemsService/DeleteMany"
-	ItemsService_GetSlugsByTable_FullMethodName  = "/new_object_builder_service.ItemsService/GetSlugsByTable"
-	ItemsService_UpdateBySearch_FullMethodName   = "/new_object_builder_service.ItemsService/UpdateBySearch"
-	ItemsService_DeleteBySearch_FullMethodName   = "/new_object_builder_service.ItemsService/DeleteBySearch"
-	ItemsService_UpsertMany_FullMethodName       = "/new_object_builder_service.ItemsService/UpsertMany"
+	ItemsService_Create_FullMethodName             = "/new_object_builder_service.ItemsService/Create"
+	ItemsService_GetSingle_FullMethodName          = "/new_object_builder_service.ItemsService/GetSingle"
+	ItemsService_GetList_FullMethodName            = "/new_object_builder_service.ItemsService/GetList"
+	ItemsService_Update_FullMethodName             = "/new_object_builder_service.ItemsService/Update"
+	ItemsService_Delete_FullMethodName             = "/new_object_builder_service.ItemsService/Delete"
+	ItemsService_ManyToManyAppend_FullMethodName   = "/new_object_builder_service.ItemsService/ManyToManyAppend"
+	ItemsService_ManyToManyDelete_FullMethodName   = "/new_object_builder_service.ItemsService/ManyToManyDelete"
+	ItemsService_MultipleUpdate_FullMethodName     = "/new_object_builder_service.ItemsService/MultipleUpdate"
+	ItemsService_MultipleInsert_FullMethodName     = "/new_object_builder_service.ItemsService/MultipleInsert"
+	ItemsService_DeleteMany_FullMethodName         = "/new_object_builder_service.ItemsService/DeleteMany"
+	ItemsService_GetSlugsByTable_FullMethodName    = "/new_object_builder_service.ItemsService/GetSlugsByTable"
+	ItemsService_UpdateBySearch_FullMethodName     = "/new_object_builder_service.ItemsService/UpdateBySearch"
+	ItemsService_DeleteBySearch_FullMethodName     = "/new_object_builder_service.ItemsService/DeleteBySearch"
+	ItemsService_UpsertMany_FullMethodName         = "/new_object_builder_service.ItemsService/UpsertMany"
+	ItemsService_UpdateByUserIdAuth_FullMethodName = "/new_object_builder_service.ItemsService/UpdateByUserIdAuth"
 )
 
 // ItemsServiceClient is the client API for ItemsService service.
@@ -53,6 +54,7 @@ type ItemsServiceClient interface {
 	UpdateBySearch(ctx context.Context, in *UpdateBySearchReq, opts ...grpc.CallOption) (*CommonMessage, error)
 	DeleteBySearch(ctx context.Context, in *DeleteBySearchReq, opts ...grpc.CallOption) (*CommonMessage, error)
 	UpsertMany(ctx context.Context, in *CommonMessage, opts ...grpc.CallOption) (*CommonMessage, error)
+	UpdateByUserIdAuth(ctx context.Context, in *CommonMessage, opts ...grpc.CallOption) (*CommonMessage, error)
 }
 
 type itemsServiceClient struct {
@@ -203,6 +205,16 @@ func (c *itemsServiceClient) UpsertMany(ctx context.Context, in *CommonMessage, 
 	return out, nil
 }
 
+func (c *itemsServiceClient) UpdateByUserIdAuth(ctx context.Context, in *CommonMessage, opts ...grpc.CallOption) (*CommonMessage, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CommonMessage)
+	err := c.cc.Invoke(ctx, ItemsService_UpdateByUserIdAuth_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ItemsServiceServer is the server API for ItemsService service.
 // All implementations must embed UnimplementedItemsServiceServer
 // for forward compatibility.
@@ -221,6 +233,7 @@ type ItemsServiceServer interface {
 	UpdateBySearch(context.Context, *UpdateBySearchReq) (*CommonMessage, error)
 	DeleteBySearch(context.Context, *DeleteBySearchReq) (*CommonMessage, error)
 	UpsertMany(context.Context, *CommonMessage) (*CommonMessage, error)
+	UpdateByUserIdAuth(context.Context, *CommonMessage) (*CommonMessage, error)
 	mustEmbedUnimplementedItemsServiceServer()
 }
 
@@ -272,6 +285,9 @@ func (UnimplementedItemsServiceServer) DeleteBySearch(context.Context, *DeleteBy
 }
 func (UnimplementedItemsServiceServer) UpsertMany(context.Context, *CommonMessage) (*CommonMessage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpsertMany not implemented")
+}
+func (UnimplementedItemsServiceServer) UpdateByUserIdAuth(context.Context, *CommonMessage) (*CommonMessage, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateByUserIdAuth not implemented")
 }
 func (UnimplementedItemsServiceServer) mustEmbedUnimplementedItemsServiceServer() {}
 func (UnimplementedItemsServiceServer) testEmbeddedByValue()                      {}
@@ -546,6 +562,24 @@ func _ItemsService_UpsertMany_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ItemsService_UpdateByUserIdAuth_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CommonMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ItemsServiceServer).UpdateByUserIdAuth(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ItemsService_UpdateByUserIdAuth_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ItemsServiceServer).UpdateByUserIdAuth(ctx, req.(*CommonMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ItemsService_ServiceDesc is the grpc.ServiceDesc for ItemsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -608,6 +642,10 @@ var ItemsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpsertMany",
 			Handler:    _ItemsService_UpsertMany_Handler,
+		},
+		{
+			MethodName: "UpdateByUserIdAuth",
+			Handler:    _ItemsService_UpdateByUserIdAuth_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

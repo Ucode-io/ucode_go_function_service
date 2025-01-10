@@ -16,6 +16,7 @@ type CompanyServiceI interface {
 	ServiceResource() company_service.MicroserviceResourceClient
 	Redirect() company_service.RedirectUrlServiceClient
 	IntegrationResource() company_service.IntegrationResourceServiceClient
+	Billing() company_service.BillingServiceClient
 }
 
 type companyServiceClient struct {
@@ -25,6 +26,7 @@ type companyServiceClient struct {
 	serviceResource            company_service.MicroserviceResourceClient
 	redirectService            company_service.RedirectUrlServiceClient
 	integrationResourceService company_service.IntegrationResourceServiceClient
+	billingService             company_service.BillingServiceClient
 }
 
 func NewCompanyServiceClient(ctx context.Context, cfg config.Config) (CompanyServiceI, error) {
@@ -43,6 +45,7 @@ func NewCompanyServiceClient(ctx context.Context, cfg config.Config) (CompanySer
 		serviceResource:            company_service.NewMicroserviceResourceClient(connCompanyService),
 		redirectService:            company_service.NewRedirectUrlServiceClient(connCompanyService),
 		integrationResourceService: company_service.NewIntegrationResourceServiceClient(connCompanyService),
+		billingService:             company_service.NewBillingServiceClient(connCompanyService),
 	}, nil
 }
 
@@ -68,4 +71,8 @@ func (g *companyServiceClient) Redirect() company_service.RedirectUrlServiceClie
 
 func (g *companyServiceClient) IntegrationResource() company_service.IntegrationResourceServiceClient {
 	return g.integrationResourceService
+}
+
+func (g *companyServiceClient) Billing() company_service.BillingServiceClient {
+	return g.billingService
 }

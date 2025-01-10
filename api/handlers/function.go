@@ -96,6 +96,47 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 		return
 	}
 
+	if len(project.GetFareId()) != 0 {
+		var count int32
+		switch resource.ResourceType {
+		case pb.ResourceType_MONGODB:
+			response, err := h.services.GetBuilderServiceByType(resource.NodeType).Function().GetCount(ctx, &obs.GetCountRequest{
+				ProjectId: resource.ResourceEnvironmentId,
+				Type:      []string{config.KNATIVE, config.FUNCTION},
+			})
+			if err != nil {
+				h.handleResponse(c, status.GRPCError, err.Error())
+				return
+			}
+			count = response.Count
+		case pb.ResourceType_POSTGRESQL:
+			response, err := h.services.GoObjectBuilderService().Function().GetCount(ctx, &nb.GetCountRequest{
+				ProjectId: resource.ResourceEnvironmentId,
+				Type:      []string{config.KNATIVE, config.FUNCTION},
+			})
+			if err != nil {
+				h.handleResponse(c, status.GRPCError, err.Error())
+				return
+			}
+			count = response.Count
+		}
+
+		response, err := h.services.CompanyService().Billing().CompareFunction(ctx, &pb.CompareFunctionRequest{
+			Type:   config.FUNCTION,
+			FareId: project.GetFareId(),
+			Count:  count,
+		})
+		if err != nil {
+			h.handleResponse(c, status.GRPCError, err.Error())
+			return
+		}
+
+		if !response.HasAccess {
+			h.handleResponse(c, status.GRPCError, "you have reach limit of openfass")
+			return
+		}
+	}
+
 	var projectName = strings.ReplaceAll(strings.TrimSpace(project.Title), " ", "-")
 	projectName = strings.ToLower(projectName)
 
@@ -204,8 +245,7 @@ func (h *Handler) GetFunctionByID(c *gin.Context) {
 
 	environmentId, ok := c.Get("environment_id")
 	if !ok || !util.IsValidUUID(environmentId.(string)) {
-		err := errors.New("error getting environment id | not valid")
-		h.handleResponse(c, status.BadRequest, err)
+		h.handleResponse(c, status.BadRequest, "error getting environment id | not valid")
 		return
 	}
 

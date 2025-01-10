@@ -237,6 +237,7 @@ message V2GetRolesListRequest {
     int32 resource_type = 6;
     string node_type = 7;
     string resource_environment_id = 8;
+    bool status = 9;
 }
 
 message V2AddRoleRequest {
@@ -249,6 +250,7 @@ message V2AddRoleRequest {
     bool grant_access = 8;
     string node_type = 9;
     string resource_environment_id = 10;
+    bool status = 11;
 }
 
 message V2UpdateRoleRequest {

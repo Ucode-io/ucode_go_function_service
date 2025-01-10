@@ -30,4 +30,6 @@ message RegisterUserRequest {
     string client_type_id = 15;
     string role_id = 16;
     string client_id = 17;
+    string client_ip = 18;
+    string user_agent = 19;
 }

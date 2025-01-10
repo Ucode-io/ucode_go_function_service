@@ -98,6 +98,47 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 		return
 	}
 
+	if len(project.GetFareId()) != 0 {
+		var count int32
+		switch resource.ResourceType {
+		case pb.ResourceType_MONGODB:
+			response, err := h.services.GetBuilderServiceByType(resource.NodeType).Function().GetCount(ctx, &obs.GetCountRequest{
+				ProjectId: resource.ResourceEnvironmentId,
+				Type:      []string{config.MICROFE},
+			})
+			if err != nil {
+				h.handleResponse(c, status.GRPCError, err.Error())
+				return
+			}
+			count = response.Count
+		case pb.ResourceType_POSTGRESQL:
+			response, err := h.services.GoObjectBuilderService().Function().GetCount(ctx, &nb.GetCountRequest{
+				ProjectId: resource.ResourceEnvironmentId,
+				Type:      []string{config.MICROFE},
+			})
+			if err != nil {
+				h.handleResponse(c, status.GRPCError, err.Error())
+				return
+			}
+			count = response.Count
+		}
+
+		response, err := h.services.CompanyService().Billing().CompareFunction(ctx, &pb.CompareFunctionRequest{
+			Type:   config.FARE_MICROFRONTEND,
+			FareId: project.GetFareId(),
+			Count:  count,
+		})
+		if err != nil {
+			h.handleResponse(c, status.GRPCError, err.Error())
+			return
+		}
+
+		if !response.HasAccess {
+			h.handleResponse(c, status.GRPCError, "you have reach limit of openfass")
+			return
+		}
+	}
+
 	projectName := strings.ReplaceAll(strings.TrimSpace(project.Title), " ", "-")
 	projectName = strings.ToLower(projectName)
 	var functionPath = projectName + "_" + strings.ReplaceAll(function.Path, "-", "_")
@@ -158,12 +199,12 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 	var (
 		// id, _ = uuid.NewRandom()
 		// repoHost = fmt.Sprintf("%s-%s", id.String(), h.cfg.GitlabHostMicroFE)
-		data = make([]map[string]interface{}, 0)
+		// data = make([]map[string]interface{}, 0)
 		host = make(map[string]interface{})
 	)
 	host["key"] = "INGRESS_HOST"
 	// host["value"] = repoHost
-	data = append(data, host)
+	// data = append(data, host)
 
 	// _, err = gitlab.CreateProjectVariable(gitlab.IntegrationData{
 	// 	GitlabIntegrationUrl:   h.baseConf.GitlabIntegrationURL,

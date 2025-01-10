@@ -832,6 +832,104 @@ func (x *GetListByRequestTimeRequest) GetType() string {
 	return ""
 }
 
+type GetCountRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ProjectId string   `protobuf:"bytes,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	Type      []string `protobuf:"bytes,2,rep,name=type,proto3" json:"type,omitempty"`
+}
+
+func (x *GetCountRequest) Reset() {
+	*x = GetCountRequest{}
+	mi := &file_function_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetCountRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetCountRequest) ProtoMessage() {}
+
+func (x *GetCountRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_function_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetCountRequest.ProtoReflect.Descriptor instead.
+func (*GetCountRequest) Descriptor() ([]byte, []int) {
+	return file_function_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *GetCountRequest) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+func (x *GetCountRequest) GetType() []string {
+	if x != nil {
+		return x.Type
+	}
+	return nil
+}
+
+type GetCountResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Count int32 `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+}
+
+func (x *GetCountResponse) Reset() {
+	*x = GetCountResponse{}
+	mi := &file_function_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetCountResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetCountResponse) ProtoMessage() {}
+
+func (x *GetCountResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_function_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetCountResponse.ProtoReflect.Descriptor instead.
+func (*GetCountResponse) Descriptor() ([]byte, []int) {
+	return file_function_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *GetCountResponse) GetCount() int32 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
 var File_function_proto protoreflect.FileDescriptor
 
 var file_function_proto_rawDesc = []byte{
@@ -977,7 +1075,14 @@ var file_function_proto_rawDesc = []byte{
 	0x65, 0x6e, 0x76, 0x69, 0x72, 0x6f, 0x6e, 0x6d, 0x65, 0x6e, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x05,
 	0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x65, 0x6e, 0x76, 0x69, 0x72, 0x6f, 0x6e, 0x6d, 0x65, 0x6e,
 	0x74, 0x49, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x18, 0x06, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x32, 0xb6, 0x05, 0x0a, 0x0f, 0x46, 0x75, 0x6e, 0x63,
+	0x09, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x22, 0x44, 0x0a, 0x0f, 0x47, 0x65, 0x74, 0x43, 0x6f,
+	0x75, 0x6e, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x70, 0x72,
+	0x6f, 0x6a, 0x65, 0x63, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09,
+	0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x49, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x79, 0x70,
+	0x65, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x22, 0x28, 0x0a,
+	0x10, 0x47, 0x65, 0x74, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x12, 0x14, 0x0a, 0x05, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05,
+	0x52, 0x05, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x32, 0x97, 0x06, 0x0a, 0x0f, 0x46, 0x75, 0x6e, 0x63,
 	0x74, 0x69, 0x6f, 0x6e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x5b, 0x0a, 0x06, 0x43,
 	0x72, 0x65, 0x61, 0x74, 0x65, 0x12, 0x2d, 0x2e, 0x6f, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x5f, 0x62,
 	0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x5f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x43,
@@ -1021,9 +1126,15 @@ var file_function_proto_rawDesc = []byte{
 	0x64, 0x61, 0x74, 0x65, 0x4d, 0x61, 0x6e, 0x79, 0x55, 0x72, 0x6c, 0x41, 0x6e, 0x64, 0x50, 0x61,
 	0x73, 0x73, 0x77, 0x6f, 0x72, 0x64, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e,
 	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0x00,
-	0x42, 0x21, 0x5a, 0x1f, 0x67, 0x65, 0x6e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x6f, 0x62, 0x6a,
-	0x65, 0x63, 0x74, 0x5f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x5f, 0x73, 0x65, 0x72, 0x76,
-	0x69, 0x63, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x12, 0x5f, 0x0a, 0x08, 0x47, 0x65, 0x74, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x27, 0x2e, 0x6f,
+	0x62, 0x6a, 0x65, 0x63, 0x74, 0x5f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x5f, 0x73, 0x65,
+	0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x28, 0x2e, 0x6f, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x5f, 0x62,
+	0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x5f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x47,
+	0x65, 0x74, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
+	0x00, 0x42, 0x21, 0x5a, 0x1f, 0x67, 0x65, 0x6e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x6f, 0x62,
+	0x6a, 0x65, 0x63, 0x74, 0x5f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x5f, 0x73, 0x65, 0x72,
+	0x76, 0x69, 0x63, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1038,7 +1149,7 @@ func file_function_proto_rawDescGZIP() []byte {
 	return file_function_proto_rawDescData
 }
 
-var file_function_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_function_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_function_proto_goTypes = []any{
 	(*CreateFunctionRequest)(nil),       // 0: object_builder_service.CreateFunctionRequest
 	(*Function)(nil),                    // 1: object_builder_service.Function
@@ -1047,7 +1158,9 @@ var file_function_proto_goTypes = []any{
 	(*FunctionPrimaryKey)(nil),          // 4: object_builder_service.FunctionPrimaryKey
 	(*UpdateManyUrlAndPassword)(nil),    // 5: object_builder_service.UpdateManyUrlAndPassword
 	(*GetListByRequestTimeRequest)(nil), // 6: object_builder_service.GetListByRequestTimeRequest
-	(*empty.Empty)(nil),                 // 7: google.protobuf.Empty
+	(*GetCountRequest)(nil),             // 7: object_builder_service.GetCountRequest
+	(*GetCountResponse)(nil),            // 8: object_builder_service.GetCountResponse
+	(*empty.Empty)(nil),                 // 9: google.protobuf.Empty
 }
 var file_function_proto_depIdxs = []int32{
 	1, // 0: object_builder_service.GetAllFunctionsResponse.functions:type_name -> object_builder_service.Function
@@ -1058,15 +1171,17 @@ var file_function_proto_depIdxs = []int32{
 	4, // 5: object_builder_service.FunctionService.Delete:input_type -> object_builder_service.FunctionPrimaryKey
 	6, // 6: object_builder_service.FunctionService.GetListByRequestTime:input_type -> object_builder_service.GetListByRequestTimeRequest
 	5, // 7: object_builder_service.FunctionService.UpdateManyByRequestTime:input_type -> object_builder_service.UpdateManyUrlAndPassword
-	1, // 8: object_builder_service.FunctionService.Create:output_type -> object_builder_service.Function
-	3, // 9: object_builder_service.FunctionService.GetList:output_type -> object_builder_service.GetAllFunctionsResponse
-	1, // 10: object_builder_service.FunctionService.GetSingle:output_type -> object_builder_service.Function
-	7, // 11: object_builder_service.FunctionService.Update:output_type -> google.protobuf.Empty
-	7, // 12: object_builder_service.FunctionService.Delete:output_type -> google.protobuf.Empty
-	3, // 13: object_builder_service.FunctionService.GetListByRequestTime:output_type -> object_builder_service.GetAllFunctionsResponse
-	7, // 14: object_builder_service.FunctionService.UpdateManyByRequestTime:output_type -> google.protobuf.Empty
-	8, // [8:15] is the sub-list for method output_type
-	1, // [1:8] is the sub-list for method input_type
+	7, // 8: object_builder_service.FunctionService.GetCount:input_type -> object_builder_service.GetCountRequest
+	1, // 9: object_builder_service.FunctionService.Create:output_type -> object_builder_service.Function
+	3, // 10: object_builder_service.FunctionService.GetList:output_type -> object_builder_service.GetAllFunctionsResponse
+	1, // 11: object_builder_service.FunctionService.GetSingle:output_type -> object_builder_service.Function
+	9, // 12: object_builder_service.FunctionService.Update:output_type -> google.protobuf.Empty
+	9, // 13: object_builder_service.FunctionService.Delete:output_type -> google.protobuf.Empty
+	3, // 14: object_builder_service.FunctionService.GetListByRequestTime:output_type -> object_builder_service.GetAllFunctionsResponse
+	9, // 15: object_builder_service.FunctionService.UpdateManyByRequestTime:output_type -> google.protobuf.Empty
+	8, // 16: object_builder_service.FunctionService.GetCount:output_type -> object_builder_service.GetCountResponse
+	9, // [9:17] is the sub-list for method output_type
+	1, // [1:9] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
 	1, // [1:1] is the sub-list for extension extendee
 	0, // [0:1] is the sub-list for field type_name
@@ -1083,7 +1198,7 @@ func file_function_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_function_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

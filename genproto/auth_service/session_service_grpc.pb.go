@@ -41,6 +41,8 @@ const (
 	SessionService_V2ResetPassword_FullMethodName          = "/auth_service.SessionService/V2ResetPassword"
 	SessionService_V2RefreshTokenForEnv_FullMethodName     = "/auth_service.SessionService/V2RefreshTokenForEnv"
 	SessionService_ExpireSessions_FullMethodName           = "/auth_service.SessionService/ExpireSessions"
+	SessionService_GetList_FullMethodName                  = "/auth_service.SessionService/GetList"
+	SessionService_Delete_FullMethodName                   = "/auth_service.SessionService/Delete"
 )
 
 // SessionServiceClient is the client API for SessionService service.
@@ -68,6 +70,8 @@ type SessionServiceClient interface {
 	V2ResetPassword(ctx context.Context, in *V2ResetPasswordRequest, opts ...grpc.CallOption) (*User, error)
 	V2RefreshTokenForEnv(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*V2LoginResponse, error)
 	ExpireSessions(ctx context.Context, in *ExpireSessionsRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	GetList(ctx context.Context, in *GetSessionListRequest, opts ...grpc.CallOption) (*GetSessionListResponse, error)
+	Delete(ctx context.Context, in *SessionPrimaryKey, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
 type sessionServiceClient struct {
@@ -288,6 +292,26 @@ func (c *sessionServiceClient) ExpireSessions(ctx context.Context, in *ExpireSes
 	return out, nil
 }
 
+func (c *sessionServiceClient) GetList(ctx context.Context, in *GetSessionListRequest, opts ...grpc.CallOption) (*GetSessionListResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSessionListResponse)
+	err := c.cc.Invoke(ctx, SessionService_GetList_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sessionServiceClient) Delete(ctx context.Context, in *SessionPrimaryKey, opts ...grpc.CallOption) (*empty.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, SessionService_Delete_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SessionServiceServer is the server API for SessionService service.
 // All implementations must embed UnimplementedSessionServiceServer
 // for forward compatibility.
@@ -313,6 +337,8 @@ type SessionServiceServer interface {
 	V2ResetPassword(context.Context, *V2ResetPasswordRequest) (*User, error)
 	V2RefreshTokenForEnv(context.Context, *RefreshTokenRequest) (*V2LoginResponse, error)
 	ExpireSessions(context.Context, *ExpireSessionsRequest) (*empty.Empty, error)
+	GetList(context.Context, *GetSessionListRequest) (*GetSessionListResponse, error)
+	Delete(context.Context, *SessionPrimaryKey) (*empty.Empty, error)
 	mustEmbedUnimplementedSessionServiceServer()
 }
 
@@ -385,6 +411,12 @@ func (UnimplementedSessionServiceServer) V2RefreshTokenForEnv(context.Context, *
 }
 func (UnimplementedSessionServiceServer) ExpireSessions(context.Context, *ExpireSessionsRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExpireSessions not implemented")
+}
+func (UnimplementedSessionServiceServer) GetList(context.Context, *GetSessionListRequest) (*GetSessionListResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetList not implemented")
+}
+func (UnimplementedSessionServiceServer) Delete(context.Context, *SessionPrimaryKey) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
 }
 func (UnimplementedSessionServiceServer) mustEmbedUnimplementedSessionServiceServer() {}
 func (UnimplementedSessionServiceServer) testEmbeddedByValue()                        {}
@@ -785,6 +817,42 @@ func _SessionService_ExpireSessions_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SessionService_GetList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSessionListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SessionServiceServer).GetList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SessionService_GetList_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SessionServiceServer).GetList(ctx, req.(*GetSessionListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SessionService_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SessionPrimaryKey)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SessionServiceServer).Delete(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SessionService_Delete_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SessionServiceServer).Delete(ctx, req.(*SessionPrimaryKey))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SessionService_ServiceDesc is the grpc.ServiceDesc for SessionService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -875,6 +943,14 @@ var SessionService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ExpireSessions",
 			Handler:    _SessionService_ExpireSessions_Handler,
+		},
+		{
+			MethodName: "GetList",
+			Handler:    _SessionService_GetList_Handler,
+		},
+		{
+			MethodName: "Delete",
+			Handler:    _SessionService_Delete_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

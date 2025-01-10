@@ -27,6 +27,7 @@ const (
 	FunctionServiceV2_Delete_FullMethodName                  = "/new_object_builder_service.FunctionServiceV2/Delete"
 	FunctionServiceV2_GetListByRequestTime_FullMethodName    = "/new_object_builder_service.FunctionServiceV2/GetListByRequestTime"
 	FunctionServiceV2_UpdateManyByRequestTime_FullMethodName = "/new_object_builder_service.FunctionServiceV2/UpdateManyByRequestTime"
+	FunctionServiceV2_GetCount_FullMethodName                = "/new_object_builder_service.FunctionServiceV2/GetCount"
 )
 
 // FunctionServiceV2Client is the client API for FunctionServiceV2 service.
@@ -40,6 +41,7 @@ type FunctionServiceV2Client interface {
 	Delete(ctx context.Context, in *FunctionPrimaryKey, opts ...grpc.CallOption) (*empty.Empty, error)
 	GetListByRequestTime(ctx context.Context, in *GetListByRequestTimeRequest, opts ...grpc.CallOption) (*GetAllFunctionsResponse, error)
 	UpdateManyByRequestTime(ctx context.Context, in *UpdateManyUrlAndPassword, opts ...grpc.CallOption) (*empty.Empty, error)
+	GetCount(ctx context.Context, in *GetCountRequest, opts ...grpc.CallOption) (*GetCountResponse, error)
 }
 
 type functionServiceV2Client struct {
@@ -120,6 +122,16 @@ func (c *functionServiceV2Client) UpdateManyByRequestTime(ctx context.Context, i
 	return out, nil
 }
 
+func (c *functionServiceV2Client) GetCount(ctx context.Context, in *GetCountRequest, opts ...grpc.CallOption) (*GetCountResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetCountResponse)
+	err := c.cc.Invoke(ctx, FunctionServiceV2_GetCount_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FunctionServiceV2Server is the server API for FunctionServiceV2 service.
 // All implementations must embed UnimplementedFunctionServiceV2Server
 // for forward compatibility.
@@ -131,6 +143,7 @@ type FunctionServiceV2Server interface {
 	Delete(context.Context, *FunctionPrimaryKey) (*empty.Empty, error)
 	GetListByRequestTime(context.Context, *GetListByRequestTimeRequest) (*GetAllFunctionsResponse, error)
 	UpdateManyByRequestTime(context.Context, *UpdateManyUrlAndPassword) (*empty.Empty, error)
+	GetCount(context.Context, *GetCountRequest) (*GetCountResponse, error)
 	mustEmbedUnimplementedFunctionServiceV2Server()
 }
 
@@ -161,6 +174,9 @@ func (UnimplementedFunctionServiceV2Server) GetListByRequestTime(context.Context
 }
 func (UnimplementedFunctionServiceV2Server) UpdateManyByRequestTime(context.Context, *UpdateManyUrlAndPassword) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateManyByRequestTime not implemented")
+}
+func (UnimplementedFunctionServiceV2Server) GetCount(context.Context, *GetCountRequest) (*GetCountResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCount not implemented")
 }
 func (UnimplementedFunctionServiceV2Server) mustEmbedUnimplementedFunctionServiceV2Server() {}
 func (UnimplementedFunctionServiceV2Server) testEmbeddedByValue()                           {}
@@ -309,6 +325,24 @@ func _FunctionServiceV2_UpdateManyByRequestTime_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FunctionServiceV2_GetCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FunctionServiceV2Server).GetCount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FunctionServiceV2_GetCount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FunctionServiceV2Server).GetCount(ctx, req.(*GetCountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // FunctionServiceV2_ServiceDesc is the grpc.ServiceDesc for FunctionServiceV2 service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -343,6 +377,10 @@ var FunctionServiceV2_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateManyByRequestTime",
 			Handler:    _FunctionServiceV2_UpdateManyByRequestTime_Handler,
+		},
+		{
+			MethodName: "GetCount",
+			Handler:    _FunctionServiceV2_GetCount_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
