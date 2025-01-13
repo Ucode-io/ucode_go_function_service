@@ -13,6 +13,7 @@ service FunctionServiceV2 {
     rpc Delete(FunctionPrimaryKey) returns (google.protobuf.Empty) {}
     rpc GetListByRequestTime(GetListByRequestTimeRequest) returns (GetAllFunctionsResponse) {}
     rpc UpdateManyByRequestTime(UpdateManyUrlAndPassword) returns (google.protobuf.Empty) {}
+    rpc GetCountByType(GetCountByTypeRequest) returns (GetCountByTypeResponse) {}
 }
 
 message CreateFunctionRequest {
@@ -102,4 +103,13 @@ message GetListByRequestTimeRequest {
     string project_id = 4;
     string environment_id = 5;
     string type = 6;
+}
+
+message GetCountByTypeRequest {
+    string project_id = 1;
+    repeated string type = 2;
+}
+
+message GetCountByTypeResponse{
+    int32 count = 1;
 }

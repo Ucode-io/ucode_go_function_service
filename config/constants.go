@@ -4,12 +4,13 @@ import "time"
 
 const (
 	// SERVICE TYPES
-	LOW_NODE_TYPE  = "LOW"
-	HIGH_NODE_TYPE = "HIGH"
+	LOW_NODE_TYPE  string = "LOW"
+	HIGH_NODE_TYPE string = "HIGH"
 
 	// FUNCTION TYPES
-	FUNCTION = "FUNCTION"
-	MICROFE  = "MICRO_FRONTEND"
+	FUNCTION string = "FUNCTION"
+	MICROFE  string = "MICRO_FRONTEND"
+	KNATIVE  string = "KNATIVE"
 
 	// ACTION TYPES
 	DELETE string = "DELETE"
@@ -17,15 +18,20 @@ const (
 	CREATE string = "CREATE"
 
 	// Cache settings
-	CACHE_WAIT         = "WAIT"
-	REDIS_KEY_TIMEOUT  = 280 * time.Second
-	LRU_CACHE_SIZE     = 10000
-	REDIS_TIMEOUT      = 5 * time.Minute
-	REDIS_WAIT_TIMEOUT = 1 * time.Second
-	REDIS_SLEEP        = 100 * time.Millisecond
+	CACHE_WAIT         string        = "WAIT"
+	REDIS_KEY_TIMEOUT  time.Duration = 280 * time.Second
+	REDIS_TIMEOUT      time.Duration = 5 * time.Minute
+	REDIS_WAIT_TIMEOUT time.Duration = 1 * time.Second
+	REDIS_SLEEP        time.Duration = 100 * time.Millisecond
+	LRU_CACHE_SIZE                   = 10000
 
-	PathToCloneKnative  = "knative_template"
-	PathToCloneFunction = "openfass_template"
+	// Path
+	PathToCloneKnative  string = "knative_template"
+	PathToCloneFunction string = "openfass_template"
+
+	// Fare Types
+	FARE_FUNCTION      string = "function"
+	FARE_MICROFRONTEND string = "microfrontend"
 )
 
 var FunctionResource = map[string]bool{

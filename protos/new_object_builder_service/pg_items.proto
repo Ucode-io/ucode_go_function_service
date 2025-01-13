@@ -22,6 +22,7 @@ service ItemsService {
     rpc UpdateBySearch(UpdateBySearchReq) returns (CommonMessage) {}
     rpc DeleteBySearch(DeleteBySearchReq) returns (CommonMessage) {}
     rpc UpsertMany(CommonMessage) returns (CommonMessage) {}
+    rpc UpdateByUserIdAuth(CommonMessage) returns (CommonMessage) {}
 }
 
 message GetSlugsByTableReq {

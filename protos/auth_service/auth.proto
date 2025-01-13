@@ -119,6 +119,7 @@ message User {
     Language language = 15;
     Timezone  timezone = 16;
     string hash_type = 17;
+    string status = 18;
 }
 message Timezone {
     string id = 1;

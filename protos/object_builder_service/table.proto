@@ -113,6 +113,7 @@ message CreateTableResponse {
     bool default_editable = 12;
     bool soft_delete = 13;
     google.protobuf.Struct attributes = 14;
+    Permission record_permission = 15;
 }
 
 message UpdateTableRequest {
@@ -207,6 +208,22 @@ message Permission {
     string guid = 5;
     bool is_public = 6;
     bool is_have_condition = 7;
+    string delete_all = 8;
+    string add_filter = 9;
+    string field_filter = 10;
+    string fix_column = 11;
+    string tab_group = 12;
+    string columns = 13;
+    string group = 14;
+    string excel_menu = 15;
+    string search_button = 16;
+    string view_create = 17;
+    string share_modal = 18;
+    string settings = 19;
+    string automation = 20;
+    string language_btn = 21;
+    string pdf_action = 22;
+    string add_field = 23;
 }
 
 message GetTablesByLabelReq {

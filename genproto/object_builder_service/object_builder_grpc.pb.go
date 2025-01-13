@@ -46,6 +46,7 @@ const (
 	ObjectBuilderService_GetListAggregation_FullMethodName        = "/object_builder_service.ObjectBuilderService/GetListAggregation"
 	ObjectBuilderService_GetListRelationTabInExcel_FullMethodName = "/object_builder_service.ObjectBuilderService/GetListRelationTabInExcel"
 	ObjectBuilderService_UpsertMany_FullMethodName                = "/object_builder_service.ObjectBuilderService/UpsertMany"
+	ObjectBuilderService_UpdateByUserIdAuth_FullMethodName        = "/object_builder_service.ObjectBuilderService/UpdateByUserIdAuth"
 )
 
 // ObjectBuilderServiceClient is the client API for ObjectBuilderService service.
@@ -79,6 +80,7 @@ type ObjectBuilderServiceClient interface {
 	GetListAggregation(ctx context.Context, in *CommonMessage, opts ...grpc.CallOption) (*CommonMessage, error)
 	GetListRelationTabInExcel(ctx context.Context, in *CommonMessage, opts ...grpc.CallOption) (*CommonMessage, error)
 	UpsertMany(ctx context.Context, in *CommonMessage, opts ...grpc.CallOption) (*CommonMessage, error)
+	UpdateByUserIdAuth(ctx context.Context, in *CommonMessage, opts ...grpc.CallOption) (*CommonMessage, error)
 }
 
 type objectBuilderServiceClient struct {
@@ -359,6 +361,16 @@ func (c *objectBuilderServiceClient) UpsertMany(ctx context.Context, in *CommonM
 	return out, nil
 }
 
+func (c *objectBuilderServiceClient) UpdateByUserIdAuth(ctx context.Context, in *CommonMessage, opts ...grpc.CallOption) (*CommonMessage, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CommonMessage)
+	err := c.cc.Invoke(ctx, ObjectBuilderService_UpdateByUserIdAuth_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ObjectBuilderServiceServer is the server API for ObjectBuilderService service.
 // All implementations must embed UnimplementedObjectBuilderServiceServer
 // for forward compatibility.
@@ -390,6 +402,7 @@ type ObjectBuilderServiceServer interface {
 	GetListAggregation(context.Context, *CommonMessage) (*CommonMessage, error)
 	GetListRelationTabInExcel(context.Context, *CommonMessage) (*CommonMessage, error)
 	UpsertMany(context.Context, *CommonMessage) (*CommonMessage, error)
+	UpdateByUserIdAuth(context.Context, *CommonMessage) (*CommonMessage, error)
 	mustEmbedUnimplementedObjectBuilderServiceServer()
 }
 
@@ -480,6 +493,9 @@ func (UnimplementedObjectBuilderServiceServer) GetListRelationTabInExcel(context
 }
 func (UnimplementedObjectBuilderServiceServer) UpsertMany(context.Context, *CommonMessage) (*CommonMessage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpsertMany not implemented")
+}
+func (UnimplementedObjectBuilderServiceServer) UpdateByUserIdAuth(context.Context, *CommonMessage) (*CommonMessage, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateByUserIdAuth not implemented")
 }
 func (UnimplementedObjectBuilderServiceServer) mustEmbedUnimplementedObjectBuilderServiceServer() {}
 func (UnimplementedObjectBuilderServiceServer) testEmbeddedByValue()                              {}
@@ -988,6 +1004,24 @@ func _ObjectBuilderService_UpsertMany_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ObjectBuilderService_UpdateByUserIdAuth_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CommonMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ObjectBuilderServiceServer).UpdateByUserIdAuth(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ObjectBuilderService_UpdateByUserIdAuth_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ObjectBuilderServiceServer).UpdateByUserIdAuth(ctx, req.(*CommonMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ObjectBuilderService_ServiceDesc is the grpc.ServiceDesc for ObjectBuilderService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1102,6 +1136,10 @@ var ObjectBuilderService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpsertMany",
 			Handler:    _ObjectBuilderService_UpsertMany_Handler,
+		},
+		{
+			MethodName: "UpdateByUserIdAuth",
+			Handler:    _ObjectBuilderService_UpdateByUserIdAuth_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

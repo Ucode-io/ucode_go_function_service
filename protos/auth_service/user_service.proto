@@ -125,6 +125,7 @@ message AddUserToProjectReq {
     string table_slug = 8;
     string env_id = 9;
     string node_type = 10;
+    string status = 11;
 }
 
 message AddUserToProjectRes {
@@ -222,6 +223,7 @@ message UpdateUserRequest {
     string resource_environment_id = 17;
     string environment_id = 18;
     string node_type = 19;
+    string status = 20;
 }
 
 message AddUserRelationRequest {

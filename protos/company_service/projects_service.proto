@@ -138,6 +138,7 @@ message GetProjectsByCompanyIdRes {
             string created_at = 5;
             string updated_at = 6;
             string logo = 7;
+            string fare_id = 8;
         }
         string id = 1;
         string name = 2;
@@ -215,6 +216,7 @@ message Project {
     repeated Language language = 7;
     Currency currency = 8;
     Timezone timezone = 9;
+    string fare_id = 10;
 }
 
 message CreateProjectRequest {

@@ -34,6 +34,7 @@ service ObjectBuilderService {
     rpc GetListAggregation(CommonMessage) returns (CommonMessage) {}
     rpc GetListRelationTabInExcel(CommonMessage) returns (CommonMessage) {}
     rpc UpsertMany(CommonMessage) returns (CommonMessage) {}
+    rpc UpdateByUserIdAuth(CommonMessage) returns (CommonMessage) {}
 }
 
 message CommonMessage {
