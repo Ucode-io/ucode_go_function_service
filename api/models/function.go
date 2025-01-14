@@ -1,6 +1,9 @@
 package models
 
-import obs "ucode/ucode_go_function_service/genproto/object_builder_service"
+import (
+	nb "ucode/ucode_go_function_service/genproto/new_object_builder_service"
+	obs "ucode/ucode_go_function_service/genproto/object_builder_service"
+)
 
 type CreateFunctionRequest struct {
 	Path             string `json:"path"`
@@ -45,4 +48,12 @@ type DeployFunctionRequest struct {
 	ResourceType    string
 	TargetNamespace string
 	Function        *obs.Function
+}
+
+type DeployFunctionRequestGo struct {
+	GithubToken     string
+	RepoId          string
+	ResourceType    string
+	TargetNamespace string
+	Function        *nb.Function
 }
