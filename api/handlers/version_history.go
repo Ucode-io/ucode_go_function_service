@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"time"
 	"ucode/ucode_go_function_service/api/models"
 	as "ucode/ucode_go_function_service/genproto/auth_service"
@@ -18,24 +17,24 @@ import (
 
 func (h *Handler) versionHistory(req *models.CreateVersionHistoryRequest) error {
 	var (
-		current  = map[string]interface{}{"data": req.Current}
-		previous = map[string]interface{}{"data": req.Previous}
-		request  = map[string]interface{}{"data": req.Request}
-		response = map[string]interface{}{"data": req.Response}
+		current  = map[string]any{"data": req.Current}
+		previous = map[string]any{"data": req.Previous}
+		request  = map[string]any{"data": req.Request}
+		response = map[string]any{"data": req.Response}
 		user     = ""
 	)
 
 	if req.Current == nil {
-		current["data"] = make(map[string]interface{})
+		current["data"] = make(map[string]any)
 	}
 	if req.Previous == nil {
-		previous["data"] = make(map[string]interface{})
+		previous["data"] = make(map[string]any)
 	}
 	if req.Request == nil {
-		request["data"] = make(map[string]interface{})
+		request["data"] = make(map[string]any)
 	}
 	if req.Response == nil {
-		response["data"] = make(map[string]interface{})
+		response["data"] = make(map[string]any)
 	}
 
 	if util.IsValidUUID(req.UserInfo) {
@@ -78,24 +77,24 @@ func (h *Handler) versionHistory(req *models.CreateVersionHistoryRequest) error 
 
 func (h *Handler) versionHistoryGo(c *gin.Context, req *models.CreateVersionHistoryRequest) error {
 	var (
-		current  = map[string]interface{}{"data": req.Current}
-		previous = map[string]interface{}{"data": req.Previous}
-		request  = map[string]interface{}{"data": req.Request}
-		response = map[string]interface{}{"data": req.Response}
+		current  = map[string]any{"data": req.Current}
+		previous = map[string]any{"data": req.Previous}
+		request  = map[string]any{"data": req.Request}
+		response = map[string]any{"data": req.Response}
 		user     = ""
 	)
 
 	if req.Current == nil {
-		current["data"] = make(map[string]interface{})
+		current["data"] = make(map[string]any)
 	}
 	if req.Previous == nil {
-		previous["data"] = make(map[string]interface{})
+		previous["data"] = make(map[string]any)
 	}
 	if req.Request == nil {
-		request["data"] = make(map[string]interface{})
+		request["data"] = make(map[string]any)
 	}
 	if req.Response == nil {
-		response["data"] = make(map[string]interface{})
+		response["data"] = make(map[string]any)
 	}
 
 	if util.IsValidUUID(req.UserInfo) {
@@ -131,7 +130,6 @@ func (h *Handler) versionHistoryGo(c *gin.Context, req *models.CreateVersionHist
 		},
 	)
 	if err != nil {
-		log.Println("ERROR FROM VERSION CREATE >>>>>", err)
 		return err
 	}
 	return nil
