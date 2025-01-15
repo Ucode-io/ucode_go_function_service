@@ -15,31 +15,56 @@ import (
 
 func GetFunctionLogs(req models.GetGrafanaFunctionLogRequest, token, url string) ([]string, error) {
 	var (
-		paylod   map[string]any
-		response models.GetGrafanaFunctionLogResponse
+		paylod        map[string]any
+		response      models.GetGrafanaFunctionLogResponse
+		payloadString string
 	)
 
-	payloadString := fmt.Sprintf(`{
-		"queries": [
-			{
-				"refId": "loki-data-samples",
-				"expr": "{namespace=\"%s\", app=~\"%s.*\"}",
-				"queryType": "range",
-				"datasource": {
-					"type": "loki",
-					"uid": "loki"
-				},
-				"editorMode": "code",
-				"maxLines": 1000,
-				"legendFormat": "",
-				"datasourceId": 1,
-				"intervalMs": 5000,
-				"maxDataPoints": 855
-			}
-		],
-		"from": "%s",
-		"to": "%s"
-	}`, req.Namespace, req.Function, req.From, req.To)
+	if req.Namespace == "knative-fn" {
+		payloadString = fmt.Sprintf(`{
+			"queries": [
+				{
+					"refId": "loki-data-samples",
+					"expr": "{namespace=\"%s\", app=~\"%s.*\"}",
+					"queryType": "range",
+					"datasource": {
+						"type": "loki",
+						"uid": "loki"
+					},
+					"editorMode": "code",
+					"maxLines": 1000,
+					"legendFormat": "",
+					"datasourceId": 1,
+					"intervalMs": 5000,
+					"maxDataPoints": 855
+				}
+			],
+			"from": "%s",
+			"to": "%s"
+		}`, req.Namespace, req.Function, req.From, req.To)
+	} else {
+		payloadString = fmt.Sprintf(`{
+			"queries": [
+				{
+					"refId": "loki-data-samples",
+					"expr": "{namespace=\"%s\", app=\"%s\"}",
+					"queryType": "range",
+					"datasource": {
+						"type": "loki",
+						"uid": "loki"
+					},
+					"editorMode": "code",
+					"maxLines": 1000,
+					"legendFormat": "",
+					"datasourceId": 1,
+					"intervalMs": 5000,
+					"maxDataPoints": 855
+				}
+			],
+			"from": "%s",
+			"to": "%s"
+		}`, req.Namespace, req.Function, req.From, req.To)
+	}
 
 	if err := json.Unmarshal([]byte(payloadString), &paylod); err != nil {
 		return []string{}, err
