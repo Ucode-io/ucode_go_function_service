@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/google/uuid"
 	"github.com/spf13/cast"
 
 	"ucode/ucode_go_function_service/api/models"
@@ -13,6 +15,7 @@ import (
 	pb "ucode/ucode_go_function_service/genproto/company_service"
 	nb "ucode/ucode_go_function_service/genproto/new_object_builder_service"
 	obs "ucode/ucode_go_function_service/genproto/object_builder_service"
+	"ucode/ucode_go_function_service/pkg/gitlab"
 	"ucode/ucode_go_function_service/pkg/helper"
 	"ucode/ucode_go_function_service/pkg/util"
 
@@ -38,13 +41,13 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 		response *obs.Function
 	)
 
+	ctx, cancel := context.WithCancel(c.Request.Context())
+	defer cancel()
+
 	if err := c.ShouldBindJSON(&function); err != nil {
 		h.handleResponse(c, status.BadRequest, err.Error())
 		return
 	}
-
-	ctx, cancel := context.WithCancel(c.Request.Context())
-	defer cancel()
 
 	if !util.IsValidFunctionName(function.Path) {
 		h.handleResponse(c, status.InvalidArgument, "function path must be contains [a-z] and hyphen and numbers")
@@ -78,7 +81,9 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 	}
 
 	environment, err := h.services.CompanyService().Environment().GetById(
-		ctx, &pb.EnvironmentPrimaryKey{Id: environmentId.(string)},
+		ctx, &pb.EnvironmentPrimaryKey{
+			Id: environmentId.(string),
+		},
 	)
 	if err != nil {
 		h.handleResponse(c, status.GRPCError, err.Error())
@@ -86,7 +91,9 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 	}
 
 	project, err := h.services.CompanyService().Project().GetById(
-		ctx, &pb.GetProjectByIdRequest{ProjectId: environment.GetProjectId()},
+		ctx, &pb.GetProjectByIdRequest{
+			ProjectId: environment.GetProjectId(),
+		},
 	)
 	if err != nil {
 		h.handleResponse(c, status.GRPCError, err.Error())
@@ -98,137 +105,80 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 		return
 	}
 
-	if len(project.GetFareId()) != 0 {
-		var count int32
-		switch resource.ResourceType {
-		case pb.ResourceType_MONGODB:
-			response, err := h.services.GetBuilderServiceByType(resource.NodeType).Function().GetCountByType(ctx, &obs.GetCountByTypeRequest{
-				ProjectId: resource.ResourceEnvironmentId,
-				Type:      []string{config.MICROFE},
-			})
-			if err != nil {
-				h.handleResponse(c, status.GRPCError, err.Error())
-				return
-			}
-			count = response.Count
-		case pb.ResourceType_POSTGRESQL:
-			response, err := h.services.GoObjectBuilderService().Function().GetCountByType(ctx, &nb.GetCountByTypeRequest{
-				ProjectId: resource.ResourceEnvironmentId,
-				Type:      []string{config.MICROFE},
-			})
-			if err != nil {
-				h.handleResponse(c, status.GRPCError, err.Error())
-				return
-			}
-			count = response.Count
-		}
-
-		response, err := h.services.CompanyService().Billing().CompareFunction(ctx, &pb.CompareFunctionRequest{
-			Type:   config.FARE_MICROFRONTEND,
-			FareId: project.GetFareId(),
-			Count:  count,
-		})
-		if err != nil {
-			h.handleResponse(c, status.GRPCError, err.Error())
-			return
-		}
-
-		if !response.HasAccess {
-			h.handleResponse(c, status.GRPCError, "you have reach limit of openfass")
-			return
-		}
-	}
-
-	projectName := strings.ReplaceAll(strings.TrimSpace(project.Title), " ", "-")
+	var projectName = strings.ReplaceAll(strings.TrimSpace(project.Title), " ", "-")
 	projectName = strings.ToLower(projectName)
-	var functionPath = projectName + "_" + strings.ReplaceAll(function.Path, "-", "_")
-
-	// @TODO:: Uncommet This
-	// var respCreateFork models.GitlabIntegrationResponse
-	// if function.FrameworkType == "REACT" {
-	// 	respCreateFork, err = gitlab.CreateProjectFork(functionPath, gitlab.IntegrationData{
-	// 		GitlabIntegrationUrl:   h.baseConf.GitlabIntegrationURL,
-	// 		GitlabIntegrationToken: h.baseConf.GitlabIntegrationToken,
-	// 		GitlabProjectId:        h.baseConf.GitlabProjectIdMicroFEReact,
-	// 		GitlabGroupId:          h.baseConf.GitlabGroupIdMicroFE,
-	// 	})
-	// 	if err != nil {
-	// 		h.handleResponse(c, status.InvalidArgument, err.Error())
-	// 		return
-	// 	}
-	// } else if function.FrameworkType == "VUE" {
-	// 	respCreateFork, err = gitlab.CreateProjectFork(functionPath, gitlab.IntegrationData{
-	// 		GitlabIntegrationUrl:   h.baseConf.GitlabIntegrationURL,
-	// 		GitlabIntegrationToken: h.baseConf.GitlabIntegrationToken,
-	// 		GitlabProjectId:        h.baseConf.GitlabProjectIdMicroFEVue,
-	// 		GitlabGroupId:          h.baseConf.GitlabGroupIdMicroFE,
-	// 	})
-	// 	if err != nil {
-	// 		h.handleResponse(c, status.InvalidArgument, err.Error())
-	// 		return
-	// 	}
-	// } else if function.FrameworkType == "ANGULAR" {
-	// 	respCreateFork, err = gitlab.CreateProjectFork(functionPath, gitlab.IntegrationData{
-	// 		GitlabIntegrationUrl:   h.baseConf.GitlabIntegrationURL,
-	// 		GitlabIntegrationToken: h.baseConf.GitlabIntegrationToken,
-	// 		GitlabProjectId:        h.baseConf.GitlabProjectIdMicroFEAngular,
-	// 		GitlabGroupId:          h.baseConf.GitlabGroupIdMicroFE,
-	// 	})
-	// 	if err != nil {
-	// 		h.handleResponse(c, status.InvalidArgument, err.Error())
-	// 		return
-	// 	}
-	// } else {
-	// 	h.handleResponse(c, status.InvalidArgument, "framework type is not valid, it should be [REACT, VUE or ANGULAR]")
-	// 	return
-	// }
-
-	// _, err = gitlab.UpdateProject(gitlab.IntegrationData{
-	// 	GitlabIntegrationUrl:   h.baseConf.GitlabIntegrationURL,
-	// 	GitlabIntegrationToken: h.baseConf.GitlabIntegrationToken,
-	// 	GitlabProjectId:        int(respCreateFork.Message["id"].(float64)),
-	// 	GitlabGroupId:          h.baseConf.GitlabGroupIdMicroFE,
-	// }, map[string]interface{}{
-	// 	"ci_config_path": ".gitlab-ci.yml",
-	// })
-	// if err != nil {
-	// 	h.handleResponse(c, status.InvalidArgument, err.Error())
-	// 	return
-	// }
 
 	var (
-		// id, _ = uuid.NewRandom()
-		// repoHost = fmt.Sprintf("%s-%s", id.String(), h.cfg.GitlabHostMicroFE)
-		// data = make([]map[string]interface{}, 0)
-		host = make(map[string]interface{})
+		functionPath   = projectName + "_" + strings.ReplaceAll(function.Path, "-", "_")
+		respCreateFork gitlab.GitlabIntegrationResponse
 	)
+
+	if function.FrameworkType == "REACT" {
+		respCreateFork, err = gitlab.CreateProjectFork(functionPath, gitlab.IntegrationData{
+			GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
+			GitlabIntegrationToken: h.cfg.GitlabIntegrationTokenMicroFront,
+			GitlabProjectId:        h.cfg.GitlabProjectIdMicroFeReact,
+			GitlabGroupId:          h.cfg.GitlabGroupIdMicroFE,
+		})
+		if err != nil {
+			h.handleResponse(c, status.InvalidArgument, err.Error())
+			return
+		}
+	} else {
+		h.handleResponse(c, status.NotImplemented, "framework type is not valid, it should be [REACT]")
+		return
+	}
+
+	_, err = gitlab.UpdateProject(
+		gitlab.IntegrationData{
+			GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
+			GitlabIntegrationToken: h.cfg.GitlabIntegrationTokenMicroFront,
+			GitlabProjectId:        int(respCreateFork.Message["id"].(float64)),
+			GitlabGroupId:          h.cfg.GitlabGroupIdMicroFE,
+		}, map[string]any{
+			"ci_config_path": ".gitlab-ci.yml",
+		})
+	if err != nil {
+		h.handleResponse(c, status.InvalidArgument, err.Error())
+		return
+	}
+
+	var (
+		id       = uuid.New().String()
+		repoHost = fmt.Sprintf("%s-%s", id, h.cfg.GitlabHostMicroFE)
+		data     = make([]map[string]interface{}, 0)
+		host     = make(map[string]interface{})
+	)
+
 	host["key"] = "INGRESS_HOST"
-	// host["value"] = repoHost
-	// data = append(data, host)
+	host["value"] = repoHost
+	data = append(data, host)
 
-	// _, err = gitlab.CreateProjectVariable(gitlab.IntegrationData{
-	// 	GitlabIntegrationUrl:   h.baseConf.GitlabIntegrationURL,
-	// 	GitlabIntegrationToken: h.baseConf.GitlabIntegrationToken,
-	// 	GitlabProjectId:        int(respCreateFork.Message["id"].(float64)),
-	// 	GitlabGroupId:          h.baseConf.GitlabGroupIdMicroFE,
-	// }, host)
-	// if err != nil {
-	// 	h.handleResponse(c, status.InvalidArgument, err.Error())
-	// 	return
-	// }
+	_, err = gitlab.CreateProjectVariable(gitlab.IntegrationData{
+		GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
+		GitlabIntegrationToken: h.cfg.GitlabIntegrationTokenMicroFront,
+		GitlabProjectId:        int(respCreateFork.Message["id"].(float64)),
+		GitlabGroupId:          h.cfg.GitlabGroupIdMicroFE,
+	}, host)
+	if err != nil {
+		h.handleResponse(c, status.InvalidArgument, err.Error())
+		return
+	}
 
-	// _, err = gitlab.CreatePipeline(gitlab.IntegrationData{
-	// 	GitlabIntegrationUrl:   h.baseConf.GitlabIntegrationURL,
-	// 	GitlabIntegrationToken: h.baseConf.GitlabIntegrationToken,
-	// 	GitlabProjectId:        int(respCreateFork.Message["id"].(float64)),
-	// 	GitlabGroupId:          h.baseConf.GitlabGroupIdMicroFE,
-	// }, map[string]interface{}{
-	// 	"variables": data,
-	// })
-	// if err != nil {
-	// 	h.handleResponse(c, status.InvalidArgument, err.Error())
-	// 	return
-	// }
+	_, err = gitlab.CreatePipeline(
+		gitlab.IntegrationData{
+			GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
+			GitlabIntegrationToken: h.cfg.GitlabIntegrationTokenMicroFront,
+			GitlabProjectId:        int(respCreateFork.Message["id"].(float64)),
+			GitlabGroupId:          h.cfg.GitlabGroupIdMicroFE,
+		}, map[string]any{
+			"variables": data,
+		},
+	)
+	if err != nil {
+		h.handleResponse(c, status.InvalidArgument, err.Error())
+		return
+	}
 
 	var (
 		createFunction = &obs.CreateFunctionRequest{
@@ -239,18 +189,18 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 			EnvironmentId:    environmentId.(string),
 			FunctionFolderId: function.FunctionFolderId,
 			Type:             config.MICROFE,
+			Url:              repoHost,
 			FrameworkType:    function.FrameworkType,
 		}
 
 		logReq = &models.CreateVersionHistoryRequest{
-			Services:     h.services,
 			NodeType:     resource.NodeType,
 			ProjectId:    resource.ResourceEnvironmentId,
 			ActionSource: c.Request.URL.String(),
 			ActionType:   config.CREATE,
 			UserInfo:     cast.ToString(userId),
 			Request:      createFunction,
-			TableSlug:    config.FUNCTION,
+			Services:     h.services,
 		}
 	)
 
@@ -267,7 +217,6 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 			h.handleResponse(c, status.OK, response)
 		}
 		go h.versionHistory(logReq)
-		h.handleResponse(c, status.Created, response)
 	case pb.ResourceType_POSTGRESQL:
 		var newCreateFunc = &nb.CreateFunctionRequest{}
 
@@ -276,7 +225,9 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 			return
 		}
 
-		response, err := h.services.GoObjectBuilderService().Function().Create(ctx, newCreateFunc)
+		response, err := h.services.GoObjectBuilderService().Function().Create(
+			ctx, newCreateFunc,
+		)
 		if err != nil {
 			logReq.Response = err.Error()
 			h.handleResponse(c, status.GRPCError, err.Error())
@@ -284,9 +235,7 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 			logReq.Response = response
 			h.handleResponse(c, status.OK, response)
 		}
-
 		go h.versionHistoryGo(c, logReq)
-		h.handleResponse(c, status.Created, response)
 	}
 
 }
@@ -323,7 +272,7 @@ func (h *Handler) GetMicroFrontEndByID(c *gin.Context) {
 
 	environmentId, ok := c.Get("environment_id")
 	if !ok || !util.IsValidUUID(environmentId.(string)) {
-		h.handleResponse(c, status.BadRequest, "error getting environment id | not valid")
+		h.handleResponse(c, status.InvalidArgument, "error getting environment id | not valid")
 		return
 	}
 
@@ -361,7 +310,7 @@ func (h *Handler) GetMicroFrontEndByID(c *gin.Context) {
 			},
 		)
 		if err != nil {
-			h.handleResponse(c, status.InvalidArgument, err.Error())
+			h.handleResponse(c, status.GRPCError, err.Error())
 			return
 		}
 
@@ -390,6 +339,7 @@ func (h *Handler) GetAllMicroFrontEnd(c *gin.Context) {
 		h.handleResponse(c, status.InvalidArgument, err.Error())
 		return
 	}
+
 	offset, err := h.getOffsetParam(c)
 	if err != nil {
 		h.handleResponse(c, status.InvalidArgument, err.Error())
@@ -407,7 +357,7 @@ func (h *Handler) GetAllMicroFrontEnd(c *gin.Context) {
 
 	environmentId, ok := c.Get("environment_id")
 	if !ok || !util.IsValidUUID(environmentId.(string)) {
-		h.handleResponse(c, status.BadRequest, "error getting environment id | not valid")
+		h.handleResponse(c, status.InvalidArgument, "error getting environment id | not valid")
 		return
 	}
 
@@ -495,7 +445,7 @@ func (h *Handler) UpdateMicroFrontEnd(c *gin.Context) {
 
 	environmentId, ok := c.Get("environment_id")
 	if !ok || !util.IsValidUUID(environmentId.(string)) {
-		h.handleResponse(c, status.BadRequest, "error getting environment id | not valid")
+		h.handleResponse(c, status.InvalidArgument, "error getting environment id | not valid")
 		return
 	}
 
@@ -611,7 +561,7 @@ func (h *Handler) DeleteMicroFrontEnd(c *gin.Context) {
 
 	environmentId, ok := c.Get("environment_id")
 	if !ok || !util.IsValidUUID(environmentId.(string)) {
-		h.handleResponse(c, status.BadRequest, "error getting environment id | not valid")
+		h.handleResponse(c, status.InvalidArgument, "error getting environment id | not valid")
 		return
 	}
 
@@ -660,27 +610,11 @@ func (h *Handler) DeleteMicroFrontEnd(c *gin.Context) {
 		}
 	}
 
-	// @TODO:: Uncomment this
-	// delete code server
-	// err = code_server.DeleteCodeServerByPath(resp.Path, h.baseConf)
-	// if err != nil {
-	// 	h.handleResponse(c, status.GRPCError, err.Error())
-	// 	return
-	// }
-
-	// delete cloned repo
-	//err = gitlab.DeletedClonedRepoByPath(resp.Path, h.baseConf)
-	//if err != nil {
-	//	h.handleResponse(c, status.GRPCError, err.Error())
-	//	return
-	//}
-
-	// delete repo by path from gitlab
-	// _, err = gitlab.DeleteForkedProject(resp.Path, h.baseConf)
-	// if err != nil {
-	// 	h.handleResponse(c, status.GRPCError, err.Error())
-	// 	return
-	// }
+	_, err = gitlab.DeleteForkedProject(resp.Path, h.cfg)
+	if err != nil {
+		h.handleResponse(c, status.GRPCError, err.Error())
+		return
+	}
 
 	var (
 		logReq = &models.CreateVersionHistoryRequest{

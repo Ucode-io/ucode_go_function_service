@@ -13,4 +13,3 @@ deploy-staging:
     - master
 
 
-# Build the whole stack using only the faas-cli

@@ -55,7 +55,6 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 	{
 		grafana.POST("/loki", h.GetGrafanaFunctionLogs)
 		grafana.GET("/function", h.GetGrafanaFunctionList)
-
 	}
 
 	v2.Use(h.AuthMiddleware(cfg))
@@ -70,14 +69,14 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 
 	}
 
-	microFe := functions.Group("/micro-frontend")
+	microFe := v2.Group("/functions")
 	{
-		// MICROFRONTEND (React, Vue, Angular)
-		microFe.POST("", h.CreateMicroFrontEnd)
-		microFe.GET("/:micro-frontend-id", h.GetMicroFrontEndByID)
-		microFe.GET("", h.GetAllMicroFrontEnd)
-		microFe.PUT("", h.UpdateMicroFrontEnd)
-		microFe.DELETE("/:micro-frontend-id", h.DeleteMicroFrontEnd)
+		// MICROFRONTEND (React)
+		microFe.POST("/micro-frontend", h.CreateMicroFrontEnd)
+		microFe.GET("/micro-frontend/:micro-frontend-id", h.GetMicroFrontEndByID)
+		microFe.GET("/micro-frontend", h.GetAllMicroFrontEnd)
+		microFe.PUT("/micro-frontend", h.UpdateMicroFrontEnd)
+		microFe.DELETE("/micro-frontend/:micro-frontend-id", h.DeleteMicroFrontEnd)
 	}
 
 	knativeFunc := v2.Group("invoke_function")

@@ -1,5 +1,7 @@
 package status_http
 
+import "net/http"
+
 // Status ...
 type Status struct {
 	Code          int    `json:"code"`
@@ -10,65 +12,71 @@ type Status struct {
 
 var (
 	OK = Status{
-		Code:        200,
+		Code:        http.StatusOK,
 		Status:      "OK",
 		Description: "The request has succeeded",
 	}
 	Created = Status{
-		Code:        201,
+		Code:        http.StatusCreated,
 		Status:      "CREATED",
 		Description: "The request has been fulfilled and has resulted in one or more new resources being created",
 	}
 	NoContent = Status{
-		Code:        204,
+		Code:        http.StatusNoContent,
 		Status:      "NO_CONTENT",
 		Description: "There is no content to send for this request, but the headers may be useful",
 	}
 	BadEnvironment = Status{
-		Code:        400,
+		Code:        http.StatusBadRequest,
 		Status:      "BAD_ENVIRONMENT",
 		Description: "The service has an invalid environment value",
 	}
 	BadRequest = Status{
-		Code:        400,
+		Code:        http.StatusBadRequest,
 		Status:      "BAD_REQUEST",
 		Description: "The server could not understand the request due to invalid syntax",
 	}
 	InvalidArgument = Status{
-		Code:        400,
+		Code:        http.StatusBadRequest,
 		Status:      "INVALID_ARGUMENT",
 		Description: "Invalid argument value passed",
 	}
 	Unauthorized = Status{
-		Code:        401,
+		Code:        http.StatusUnauthorized,
 		Status:      "UNAUTHORIZED",
 		Description: "...",
 	}
 	Forbidden = Status{
-		Code:        403,
+		Code:        http.StatusForbidden,
 		Status:      "FORBIDDEN",
 		Description: "...",
 	}
 	TooManyRequests = Status{
-		Code:        429,
+		Code:        http.StatusTooManyRequests,
 		Status:      "TOO_MANY_REQUESTS",
 		Description: "The user has sent too many requests in a given amount of time",
 	}
 	InternalServerError = Status{
-		Code:        500,
+		Code:        http.StatusInternalServerError,
 		Status:      "INTERNAL_SERVER_ERROR",
 		Description: "The server encountered an unexpected condition that prevented it from fulfilling the request",
 	}
 	GRPCError = Status{
-		Code:        500,
+		Code:        http.StatusInternalServerError,
 		Status:      "GRPC_ERROR",
 		Description: "The gRPC request failed",
 	}
 	NotFound = Status{
-		Code:        404,
+		Code:        http.StatusNotFound,
 		Status:      "NOT_FOUND",
 		Description: "The user not found",
 	}
+	NotImplemented = Status{
+		Code:        http.StatusNotImplemented,
+		Status:      "NOT_IMPLEMENTED",
+		Description: "Not implemented",
+	}
+
 	GrpcStatusToHTTP = map[string]Status{
 		"Created":         Created,
 		"Ok":              OK,

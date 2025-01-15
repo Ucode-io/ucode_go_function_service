@@ -10,7 +10,7 @@ import (
 
 	"ucode/ucode_go_function_service/api/models"
 	status "ucode/ucode_go_function_service/api/status_http"
-	"ucode/ucode_go_function_service/config"
+	cfg "ucode/ucode_go_function_service/config"
 	pb "ucode/ucode_go_function_service/genproto/company_service"
 	nb "ucode/ucode_go_function_service/genproto/new_object_builder_service"
 	obs "ucode/ucode_go_function_service/genproto/object_builder_service"
@@ -27,6 +27,9 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 		createWebhookRequest models.CreateWebhook
 		createFunction       *obs.CreateFunctionRequest
 	)
+
+	ctx, cancel := context.WithCancel(c.Request.Context())
+	defer cancel()
 
 	if err := c.ShouldBindJSON(&createWebhookRequest); err != nil {
 		h.handleResponse(c, status.BadRequest, err.Error())
@@ -46,7 +49,7 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 	}
 
 	resource, err := h.services.CompanyService().ServiceResource().GetSingle(
-		c.Request.Context(), &pb.GetSingleServiceResourceReq{
+		ctx, &pb.GetSingleServiceResourceReq{
 			ProjectId:     projectId.(string),
 			EnvironmentId: environmentId.(string),
 			ServiceType:   pb.ServiceType_BUILDER_SERVICE,
@@ -58,7 +61,7 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 	}
 
 	githubResource, err := h.services.CompanyService().Resource().GetSingleProjectResouece(
-		c.Request.Context(), &pb.PrimaryKeyProjectResource{
+		ctx, &pb.PrimaryKeyProjectResource{
 			Id:            createWebhookRequest.Resource,
 			EnvironmentId: environmentId.(string),
 			ProjectId:     projectId.(string),
@@ -69,7 +72,7 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 	}
 
 	project, err := h.services.CompanyService().Project().GetById(
-		c.Request.Context(), &pb.GetProjectByIdRequest{
+		ctx, &pb.GetProjectByIdRequest{
 			ProjectId: projectId.(string),
 		},
 	)
@@ -127,7 +130,7 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 	switch resource.ResourceType {
 	case pb.ResourceType_MONGODB:
 		_, err = h.services.GetBuilderServiceByType(resource.NodeType).Function().Create(
-			c.Request.Context(), createFunction,
+			ctx, createFunction,
 		)
 
 		if err != nil {
@@ -143,7 +146,7 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 		}
 
 		_, err = h.services.GoObjectBuilderService().Function().Create(
-			c.Request.Context(), newCreateFunction,
+			ctx, newCreateFunction,
 		)
 		if err != nil {
 			h.handleResponse(c, status.GRPCError, err.Error())
@@ -174,7 +177,7 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 }
 
 func (h *Handler) HandleWebhook(c *gin.Context) {
-	var payload map[string]interface{}
+	var payload map[string]any
 
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
@@ -182,8 +185,7 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		return
 	}
 
-	err = json.Unmarshal(body, &payload)
-	if err != nil {
+	if err = json.Unmarshal(body, &payload); err != nil {
 		h.handleResponse(c, status.BadRequest, "Failed to unmarshal JSON inside handle webhook")
 		return
 	}
@@ -315,7 +317,7 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 						Description:    repoDescription,
 						ProjectId:      resource.ResourceEnvironmentId,
 						EnvironmentId:  resource.EnvironmentId,
-						Type:           "KNATIVE",
+						Type:           cfg.KNATIVE,
 						SourceUrl:      htmlUrl,
 						Branch:         branch,
 						PipelineStatus: "running",
@@ -329,18 +331,92 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 			}
 			function.PipelineStatus = "running"
 
-			go h.deployFunction(models.DeployFunctionRequest{
-				GithubToken:     token,
+			go h.deployFunction(
+				models.DeployFunctionRequest{
+					GithubToken:     token,
+					RepoId:          repoId,
+					ResourceType:    resource.NodeType,
+					Function:        function,
+					TargetNamespace: "ucode/knative",
+				},
+			)
+		}
+	case pb.ResourceType_POSTGRESQL:
+		function, functionErr := h.services.GoObjectBuilderService().Function().GetSingle(
+			c.Request.Context(), &nb.FunctionPrimaryKey{
+				ProjectId: resource.ResourceEnvironmentId,
+				SourceUrl: htmlUrl,
+				Branch:    branch,
+			},
+		)
+		if function != nil {
+			functionType = function.Type
+		}
+
+		switch functionType {
+		case "FUNCTION":
+			if functionErr != nil {
+				function, err = h.services.GoObjectBuilderService().Function().Create(
+					c.Request.Context(), &nb.CreateFunctionRequest{
+						Path:           repoName,
+						Name:           name,
+						Description:    repoDescription,
+						ProjectId:      resource.ResourceEnvironmentId,
+						EnvironmentId:  resource.EnvironmentId,
+						Type:           cfg.FUNCTION,
+						SourceUrl:      htmlUrl,
+						Branch:         branch,
+						PipelineStatus: "running",
+						Resource:       resourceType,
+					},
+				)
+				if err != nil {
+					h.handleResponse(c, status.GRPCError, err.Error())
+					return
+				}
+			}
+			function.PipelineStatus = "running"
+
+			go h.deployFunctionGo(models.DeployFunctionRequestGo{
+				GithubToken:     "glpat-SA8FqtKh8u7hyV_SdLzh",
 				RepoId:          repoId,
 				ResourceType:    resource.NodeType,
 				Function:        function,
-				TargetNamespace: "ucode/knative",
+				TargetNamespace: "ucode_functions_group",
 			})
-		default:
+		case "KNATIVE":
+			if functionErr != nil {
+				function, err = h.services.GoObjectBuilderService().Function().Create(
+					c.Request.Context(), &nb.CreateFunctionRequest{
+						Path:           repoName,
+						Name:           name,
+						Description:    repoDescription,
+						ProjectId:      resource.ResourceEnvironmentId,
+						EnvironmentId:  resource.EnvironmentId,
+						Type:           cfg.KNATIVE,
+						SourceUrl:      htmlUrl,
+						Branch:         branch,
+						PipelineStatus: "running",
+						Resource:       resourceType,
+					},
+				)
+				if err != nil {
+					h.handleResponse(c, status.InvalidArgument, err.Error())
+					return
+				}
+			}
+			function.PipelineStatus = "running"
+
+			go h.deployFunctionGo(
+				models.DeployFunctionRequestGo{
+					GithubToken:     token,
+					RepoId:          repoId,
+					ResourceType:    resource.NodeType,
+					Function:        function,
+					TargetNamespace: "ucode/knative",
+				},
+			)
 		}
-
-	case pb.ResourceType_POSTGRESQL:
-
 	}
 }
 
@@ -359,14 +435,14 @@ func (h *Handler) deployFunction(req models.DeployFunctionRequest) (github.Impor
 	time.Sleep(10 * time.Second)
 	switch req.Function.Type {
 	case "KNATIVE":
-		err = github.AddCiFileKnative(h.cfg.GitlabIntegrationToken, importResponse.ID, req.Function.Branch, config.PathToCloneKnative)
+		err = github.AddCiFileKnative(h.cfg.GitlabIntegrationToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneKnative)
 		if err != nil {
 			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
 				return github.ImportResponse{}, err
 			}
 		}
 	case "FUNCTION":
-		err = github.AddCiFileFunction(h.cfg.GitlabIntegrationToken, importResponse.ID, req.Function.Branch, config.PathToCloneFunction)
+		err = github.AddCiFileFunction(h.cfg.GitlabIntegrationToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneFunction)
 		if err != nil {
 			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
 				return github.ImportResponse{}, err
@@ -472,13 +548,141 @@ func (h *Handler) deployFunction(req models.DeployFunctionRequest) (github.Impor
 	}
 }
 
-// func (h *Handler) deployMicrofrontend(githubToken, repoId string, function *obs.Function) (github.ImportResponse, error) {
+func (h *Handler) deployFunctionGo(req models.DeployFunctionRequestGo) (github.ImportResponse, error) {
+	importResponse, err := github.ImportFromGithub(github.ImportData{
+		PersonalAccessToken: req.GithubToken,
+		RepoId:              req.RepoId,
+		TargetNamespace:     req.TargetNamespace,
+		NewName:             req.Function.Path,
+		GitlabToken:         h.cfg.GitlabIntegrationToken,
+	})
+	if err != nil {
+		return github.ImportResponse{}, err
+	}
+
+	time.Sleep(10 * time.Second)
+	switch req.Function.Type {
+	case "KNATIVE":
+		err = github.AddCiFileKnative(h.cfg.GitlabIntegrationToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneKnative)
+		if err != nil {
+			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
+				return github.ImportResponse{}, err
+			}
+		}
+	case "FUNCTION":
+		err = github.AddCiFileFunction(h.cfg.GitlabIntegrationToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneFunction)
+		if err != nil {
+			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
+				return github.ImportResponse{}, err
+			}
+		}
+	}
+
+	for {
+		time.Sleep(60 * time.Second)
+		pipeline, err := github.GetLatestPipeline(h.cfg.GitlabIntegrationToken, req.Function.Branch, importResponse.ID)
+		if err != nil {
+			h.services.GoObjectBuilderService().Function().Update(
+				context.Background(), &nb.Function{
+					Id:             req.Function.Id,
+					Path:           req.Function.Path,
+					Name:           req.Function.Name,
+					Description:    req.Function.Description,
+					ProjectId:      req.Function.ProjectId,
+					EnvironmentId:  req.Function.EnvironmentId,
+					Type:           req.Function.Type,
+					Url:            req.Function.Url,
+					SourceUrl:      req.Function.SourceUrl,
+					Branch:         req.Function.Branch,
+					PipelineStatus: "failed",
+					RepoId:         fmt.Sprintf("%v", importResponse.ID),
+					ErrorMessage:   "Failed to get pipeline status",
+					JobName:        "",
+					Resource:       req.Function.Resource,
+					ProvidedName:   req.Function.ProvidedName,
+				},
+			)
+
+			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
+				return github.ImportResponse{}, err
+			}
+			return github.ImportResponse{}, err
+		}
+
+		if pipeline.Status == "failed" {
+			logResp, err := github.GetPipelineLog(fmt.Sprintf("%v", importResponse.ID), h.cfg.GitlabIntegrationURL, h.cfg.GitlabIntegrationToken)
+			if err != nil {
+				return github.ImportResponse{}, err
+			}
+
+			h.services.GoObjectBuilderService().Function().Update(
+				context.Background(), &nb.Function{
+					Id:               req.Function.Id,
+					Path:             req.Function.Path,
+					Name:             req.Function.Name,
+					Description:      req.Function.Description,
+					FunctionFolderId: req.Function.FunctionFolderId,
+					ProjectId:        req.Function.ProjectId,
+					EnvironmentId:    req.Function.EnvironmentId,
+					Type:             req.Function.Type,
+					Url:              req.Function.Url,
+					FrameworkType:    req.Function.FrameworkType,
+					SourceUrl:        req.Function.SourceUrl,
+					Branch:           req.Function.Branch,
+					PipelineStatus:   pipeline.Status,
+					RepoId:           fmt.Sprintf("%v", importResponse.ID),
+					ErrorMessage:     logResp.Log,
+					JobName:          logResp.JobName,
+					Resource:         req.Function.Resource,
+					ProvidedName:     req.Function.ProvidedName,
+				},
+			)
+
+			err = github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID)
+			if err != nil {
+				return github.ImportResponse{}, err
+			}
+			return github.ImportResponse{}, err
+		}
+
+		h.services.GoObjectBuilderService().Function().Update(
+			context.Background(), &nb.Function{
+				Id:               req.Function.Id,
+				Path:             req.Function.Path,
+				Name:             req.Function.Name,
+				Description:      req.Function.Description,
+				FunctionFolderId: req.Function.FunctionFolderId,
+				ProjectId:        req.Function.ProjectId,
+				EnvironmentId:    req.Function.EnvironmentId,
+				Type:             req.Function.Type,
+				Url:              req.Function.Url,
+				FrameworkType:    req.Function.FrameworkType,
+				SourceUrl:        req.Function.SourceUrl,
+				Branch:           req.Function.Branch,
+				PipelineStatus:   pipeline.Status,
+				RepoId:           fmt.Sprintf("%v", importResponse.ID),
+				ErrorMessage:     "",
+				JobName:          "",
+				Resource:         req.Function.Resource,
+				ProvidedName:     req.Function.ProvidedName,
+			},
+		)
+		if pipeline.Status == "success" || pipeline.Status == "skipped" {
+			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
+				return github.ImportResponse{}, err
+			}
+			return github.ImportResponse{}, nil
+		}
+	}
+}
+
+// func (h *Handler) deployMicrofrontend(req models.DeployFunctionRequest) (github.ImportResponse, error) {
 // 	importResponse, err := github.ImportFromGithub(github.ImportData{
-// 		PersonalAccessToken: githubToken,
-// 		RepoId:              repoId,
-// 		TargetNamespace:     "ucode/ucode_micro_frontend",
-// 		NewName:             function.Path,
-// 		GitlabToken:         h.cfg.GitlabIntegrationToken,
+// 		PersonalAccessToken: req.GithubToken,
+// 		RepoId:              req.RepoId,
+// 		TargetNamespace:     req.TargetNamespace,
+// 		NewName:             req.Function.Path,
+// 		GitlabToken:         h.cfg.GitlabIntegrationTokenMicroFront,
 // 	})
 // 	if err != nil {
 // 		return github.ImportResponse{}, err
@@ -489,16 +693,16 @@ func (h *Handler) deployFunction(req models.DeployFunctionRequest) (github.Impor
 // 		GitlabIntegrationToken: h.cfg.GitlabIntegrationToken,
 // 		GitlabProjectId:        importResponse.ID,
 // 		GitlabGroupId:          h.cfg.GitlabGroupIdMicroFE,
-// 	}, map[string]interface{}{
+// 	}, map[string]any{
 // 		"ci_config_path": ".gitlab-ci.yml",
 // 	})
 // 	if err != nil {
 // 		return github.ImportResponse{}, err
 // 	}
 
-// 	host := make(map[string]interface{})
+// 	var host = make(map[string]any)
 // 	host["key"] = "INGRESS_HOST"
-// 	host["value"] = function.Url
+// 	host["value"] = req.Function.Url
 
 // 	_, err = gitlab.CreateProjectVariable(gitlab.IntegrationData{
 // 		GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
@@ -517,105 +721,4 @@ func (h *Handler) deployFunction(req models.DeployFunctionRequest) (github.Impor
 // 		return github.ImportResponse{}, err
 // 	}
 
-// 	return
-// }
-
-// func (h *Handler) pipelineStatus(services services.ServiceManagerI, function *fn.Function, repoId int) error {
-// 	time.Sleep(10 * time.Second)
-// 	err := github.AddCiFile(h.cfg.GitlabIntegrationToken, h.cfg.PathToClone, repoId, function.Branch, "github_integration")
-// 	if err != nil {
-// 		err = github.DeleteRepository(h.cfg.GitlabIntegrationToken, repoId)
-// 		if err != nil {
-// 			return err
-// 		}
-// 		return err
-// 	}
-
-// 	for {
-// 		time.Sleep(70 * time.Second)
-// 		pipeline, err := github.GetLatestPipeline(h.cfg.GitlabIntegrationToken, function.Branch, repoId)
-// 		if err != nil {
-// 			err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, repoId)
-// 			if err != nil {
-// 				return err
-// 			}
-// 			return err
-// 		}
-
-// 		if pipeline.Status == "failed" {
-// 			logResponse, err := github.GetPipelineLog(fmt.Sprintf("%v", repoId))
-// 			if err != nil {
-// 				return err
-// 			}
-
-// 			services.FunctionService().FunctionService().Update(
-// 				context.Background(),
-// 				&fn.Function{
-// 					Id:               function.Id,
-// 					Path:             function.Path,
-// 					Name:             function.Name,
-// 					Description:      function.Description,
-// 					FunctionFolderId: function.FunctionFolderId,
-// 					ProjectId:        function.ProjectId,
-// 					EnvironmentId:    function.EnvironmentId,
-// 					Type:             function.Type,
-// 					Url:              function.Url,
-// 					FrameworkType:    function.FrameworkType,
-// 					SourceUrl:        function.SourceUrl,
-// 					Branch:           function.Branch,
-// 					PipelineStatus:   pipeline.Status,
-// 					RepoId:           fmt.Sprintf("%v", repoId),
-// 					ErrorMessage:     logResponse.Log,
-// 					JobName:          logResponse.JobName,
-// 					Resource:         function.Resource,
-// 					ProvidedName:     function.ProvidedName,
-// 				},
-// 			)
-// 			err = github.DeleteRepository(h.cfg.GitlabIntegrationToken, repoId)
-// 			if err != nil {
-// 				return err
-// 			}
-
-// 			return nil
-// 		}
-
-// 		_, err = services.FunctionService().FunctionService().Update(
-// 			context.Background(),
-// 			&fn.Function{
-// 				Id:               function.Id,
-// 				Path:             function.Path,
-// 				Name:             function.Name,
-// 				Description:      function.Description,
-// 				FunctionFolderId: function.FunctionFolderId,
-// 				ProjectId:        function.ProjectId,
-// 				EnvironmentId:    function.EnvironmentId,
-// 				Type:             function.Type,
-// 				Url:              function.Url,
-// 				FrameworkType:    function.FrameworkType,
-// 				SourceUrl:        function.SourceUrl,
-// 				Branch:           function.Branch,
-// 				PipelineStatus:   pipeline.Status,
-// 				RepoId:           fmt.Sprintf("%v", repoId),
-// 				ErrorMessage:     "",
-// 				JobName:          "",
-// 				Resource:         function.Resource,
-// 				ProvidedName:     function.ProvidedName,
-// 			},
-// 		)
-// 		if err != nil {
-// 			err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, repoId)
-// 			if err != nil {
-// 				return err
-// 			}
-// 			return err
-// 		}
-
-// 		if pipeline.Status == "success" || pipeline.Status == "skipped" {
-// 			err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, repoId)
-// 			if err != nil {
-// 				return err
-// 			}
-// 			return nil
-// 		}
-// 	}
 // }

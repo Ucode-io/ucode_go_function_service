@@ -8,8 +8,8 @@ type IntegrationData struct {
 }
 
 type GitlabIntegrationResponse struct {
-	Code    int                    `json:"code"`
-	Message map[string]interface{} `json:""`
+	Code    int            `json:"code"`
+	Message map[string]any `json:""`
 }
 
 type CreateProject struct {
