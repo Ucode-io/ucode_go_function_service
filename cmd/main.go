@@ -5,6 +5,7 @@ import (
 	"ucode/ucode_go_function_service/api"
 	"ucode/ucode_go_function_service/api/handlers"
 	"ucode/ucode_go_function_service/config"
+	"ucode/ucode_go_function_service/pkg/caching"
 	"ucode/ucode_go_function_service/pkg/logger"
 	"ucode/ucode_go_function_service/services"
 
@@ -44,8 +45,13 @@ func main() {
 		return
 	}
 
+	cache, err := caching.NewExpiringLRUCache(config.LRU_CACHE_SIZE)
+	if err != nil {
+		log.Error("Error adding caching.", logger.Error(err))
+	}
+
 	var (
-		h = handlers.NewHandler(cfg, log, grpcSvcs)
+		h = handlers.NewHandler(cfg, log, grpcSvcs, cache)
 		r = gin.New()
 	)
 
