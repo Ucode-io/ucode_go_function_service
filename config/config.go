@@ -63,18 +63,18 @@ type Config struct {
 	WebhookSecret        string
 
 	// Knative Gitlab Creds
-	GitlabIntegrationToken           string
-	GitlabIntegrationTokenMicroFront string
-	GitlabGroupId                    int
-	GitlabProjectId                  int
+	GitlabIntegrationToken string
+	GitlabGroupId          int
+	GitlabProjectId        int
 
 	// Microfront Gitlab Creds
-	GitlabGroupIdMicroFE          int
-	GitlabProjectIdMicroFE        int
-	GitlabHostMicroFE             string
-	GitlabProjectIdMicroFeReact   int
-	GitlabProjectIdMicroFeVue     int
-	GitlabProjectIdMicroFeAngular int
+	GitlabHostMicroFE                string
+	GitlabIntegrationTokenMicroFront string
+	GitlabGroupIdMicroFE             int
+	GitlabProjectIdMicroFE           int
+	GitlabProjectIdMicroFeReact      int
+	GitlabProjectIdMicroFeVue        int
+	GitlabProjectIdMicroFeAngular    int
 
 	// Grafana
 	GrafanaBaseUrl string

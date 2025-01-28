@@ -667,8 +667,7 @@ func (h *Handler) DeleteFunction(c *gin.Context) {
 		}
 	case pb.ResourceType_POSTGRESQL:
 		_, err = h.services.GoObjectBuilderService().Function().Delete(
-			ctx,
-			&nb.FunctionPrimaryKey{
+			ctx, &nb.FunctionPrimaryKey{
 				Id:        functionID,
 				ProjectId: resource.ResourceEnvironmentId,
 			},

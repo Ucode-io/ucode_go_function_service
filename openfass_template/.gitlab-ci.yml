@@ -6,25 +6,23 @@ stages:
   - benchmark
   - build
 
-
 variables:
-  GO111MODULE: "on" # Enable Go modules
+  GO111MODULE: "on"
 
 unit_test:
   stage: test
-  image: golang:latest # Use an official Go Docker image
+  image: golang:latest
   before_script: []
   script:
     - cd $CI_PROJECT_NAME && go test
 
 benchmark_test:
   stage: benchmark
-  image: golang:latest # Use an official Go Docker image
+  image: golang:latest
   before_script: []
   script:
     - cd $CI_PROJECT_NAME && go test -run ^$ -bench . -count=1 -benchtime=5x
 
-# Build the whole stack using only the faas-cli
 docker-build-prod:
   stage: build
   image: gitlab.udevs.io:5050/docker/openfaas:dind
@@ -38,9 +36,6 @@ docker-build-prod:
   only:
     - /^prod-.*/
 
-
-
-# Build the whole stack using only the faas-cli
 docker-build-staging:
   stage: build
   image: gitlab.udevs.io:5050/docker/openfaas:dind

@@ -26,14 +26,16 @@ const (
 	LRU_CACHE_SIZE                   = 10000
 
 	// Path
-	PathToCloneKnative  string = "knative_template"
-	PathToCloneFunction string = "openfass_template"
+	PathToCloneKnative    string = "knative_template"
+	PathToCloneFunction   string = "openfass_template"
+	PathToCloneMicroFront string = "react_template"
+
+	// Gitlab Namespaces
+	KnativeNamespace    string = "ucode/knative"
+	OpenFassNamespace   string = "ucode_functions_group"
+	MicroFrontNamaspece string = "ucode/ucode_micro_frontend"
 
 	// Fare Types
 	FARE_FUNCTION      string = "function"
 	FARE_MICROFRONTEND string = "microfrontend"
 )
-
-var FunctionResource = map[string]bool{
-	"ucode_gitlab": true,
-}

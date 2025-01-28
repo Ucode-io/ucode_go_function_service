@@ -3,15 +3,11 @@
   image: gitlab.udevs.io:5050/docker/knative:dind
   before_script:
     - docker login $CI_REGISTRY --username $CI_REGISTRY_USER --password $CI_REGISTRY_PASSWORD
-    - wget https://github.com/knative/func/releases/download/knative-v1.16.1/func_linux_amd64 -O /usr/local/bin/func
-    - chmod +x /usr/local/bin/func
   script:
     - echo $K8SCONFIGJSON > tmp
-    - echo $K8SCONFIGJSON
     - yq -P tmp > /root/.kube/config
     - chmod 600 /root/.kube/config
     - cd $CI_PROJECT_NAME
-    - func deploy --registry gitlab.udevs.io:5050/ucode/knative/$CI_PROJECT_NAME/ -n knative-fn
-    - cat func.yaml
+    - func deploy --registry gitlab.udevs.io:5050/ucode/knative/$CI_PROJECT_NAME/ -n knative-fn --verbose
 
 

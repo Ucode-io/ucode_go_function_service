@@ -129,9 +129,7 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 
 	switch resource.ResourceType {
 	case pb.ResourceType_MONGODB:
-		_, err = h.services.GetBuilderServiceByType(resource.NodeType).Function().Create(
-			ctx, createFunction,
-		)
+		_, err = h.services.GetBuilderServiceByType(resource.NodeType).Function().Create(ctx, createFunction)
 
 		if err != nil {
 			h.handleResponse(c, status.GRPCError, err.Error())
@@ -278,7 +276,7 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		}
 
 		switch functionType {
-		case "FUNCTION":
+		case cfg.FUNCTION:
 			if functionErr != nil {
 				function, err = builderService.Function().Create(
 					c.Request.Context(), &obs.CreateFunctionRequest{
@@ -287,7 +285,7 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 						Description:    repoDescription,
 						ProjectId:      resource.ResourceEnvironmentId,
 						EnvironmentId:  resource.EnvironmentId,
-						Type:           "FUNCTION",
+						Type:           cfg.FUNCTION,
 						SourceUrl:      htmlUrl,
 						Branch:         branch,
 						PipelineStatus: "running",
@@ -302,13 +300,45 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 			function.PipelineStatus = "running"
 
 			go h.deployFunction(models.DeployFunctionRequest{
-				GithubToken:     "glpat-SA8FqtKh8u7hyV_SdLzh",
+				GithubToken:     token,
 				RepoId:          repoId,
 				ResourceType:    resource.NodeType,
 				Function:        function,
 				TargetNamespace: "ucode_functions_group",
 			})
-		case "KNATIVE":
+		case cfg.KNATIVE:
+			if functionErr != nil {
+				function, err = builderService.Function().Create(
+					c.Request.Context(), &obs.CreateFunctionRequest{
+						Path:           repoName,
+						Name:           name,
+						Description:    repoDescription,
+						ProjectId:      resource.ResourceEnvironmentId,
+						EnvironmentId:  resource.EnvironmentId,
+						Type:           cfg.KNATIVE,
+						SourceUrl:      htmlUrl,
+						Branch:         branch,
+						PipelineStatus: "running",
+						Resource:       resourceType,
+					},
+				)
+				if err != nil {
+					h.handleResponse(c, status.InvalidArgument, err.Error())
+					return
+				}
+			}
+			function.PipelineStatus = "running"
+
+			go h.deployFunction(
+				models.DeployFunctionRequest{
+					GithubToken:     token,
+					RepoId:          repoId,
+					ResourceType:    resource.NodeType,
+					Function:        function,
+					TargetNamespace: cfg.KnativeNamespace,
+				},
+			)
+		case cfg.MICROFE:
 			if functionErr != nil {
 				function, err = builderService.Function().Create(
 					c.Request.Context(), &obs.CreateFunctionRequest{
@@ -354,7 +384,7 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		}
 
 		switch functionType {
-		case "FUNCTION":
+		case cfg.FUNCTION:
 			if functionErr != nil {
 				function, err = h.services.GoObjectBuilderService().Function().Create(
 					c.Request.Context(), &nb.CreateFunctionRequest{
@@ -378,13 +408,13 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 			function.PipelineStatus = "running"
 
 			go h.deployFunctionGo(models.DeployFunctionRequestGo{
-				GithubToken:     "glpat-SA8FqtKh8u7hyV_SdLzh",
+				GithubToken:     token,
 				RepoId:          repoId,
 				ResourceType:    resource.NodeType,
 				Function:        function,
 				TargetNamespace: "ucode_functions_group",
 			})
-		case "KNATIVE":
+		case cfg.KNATIVE:
 			if functionErr != nil {
 				function, err = h.services.GoObjectBuilderService().Function().Create(
 					c.Request.Context(), &nb.CreateFunctionRequest{
@@ -434,15 +464,22 @@ func (h *Handler) deployFunction(req models.DeployFunctionRequest) (github.Impor
 
 	time.Sleep(10 * time.Second)
 	switch req.Function.Type {
-	case "KNATIVE":
+	case cfg.KNATIVE:
 		err = github.AddCiFileKnative(h.cfg.GitlabIntegrationToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneKnative)
 		if err != nil {
 			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
 				return github.ImportResponse{}, err
 			}
 		}
-	case "FUNCTION":
+	case cfg.FUNCTION:
 		err = github.AddCiFileFunction(h.cfg.GitlabIntegrationToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneFunction)
+		if err != nil {
+			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
+				return github.ImportResponse{}, err
+			}
+		}
+	case cfg.MICROFE:
+		err = github.AddFilesMicroFront(h.cfg.GitlabIntegrationToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneMicroFront)
 		if err != nil {
 			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
 				return github.ImportResponse{}, err
@@ -562,15 +599,22 @@ func (h *Handler) deployFunctionGo(req models.DeployFunctionRequestGo) (github.I
 
 	time.Sleep(10 * time.Second)
 	switch req.Function.Type {
-	case "KNATIVE":
+	case cfg.KNATIVE:
 		err = github.AddCiFileKnative(h.cfg.GitlabIntegrationToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneKnative)
 		if err != nil {
 			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
 				return github.ImportResponse{}, err
 			}
 		}
-	case "FUNCTION":
+	case cfg.FUNCTION:
 		err = github.AddCiFileFunction(h.cfg.GitlabIntegrationToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneFunction)
+		if err != nil {
+			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
+				return github.ImportResponse{}, err
+			}
+		}
+	case cfg.MICROFE:
+		err = github.AddFilesMicroFront(h.cfg.GitlabIntegrationToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneMicroFront)
 		if err != nil {
 			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
 				return github.ImportResponse{}, err
@@ -597,7 +641,6 @@ func (h *Handler) deployFunctionGo(req models.DeployFunctionRequestGo) (github.I
 					PipelineStatus: "failed",
 					RepoId:         fmt.Sprintf("%v", importResponse.ID),
 					ErrorMessage:   "Failed to get pipeline status",
-					JobName:        "",
 					Resource:       req.Function.Resource,
 					ProvidedName:   req.Function.ProvidedName,
 				},

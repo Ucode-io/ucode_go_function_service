@@ -159,6 +159,66 @@ func AddCiFileFunction(gitlabToken string, gitlabRepoId int, branch, localFolder
 	return nil
 }
 
+func AddFilesMicroFront(gitlabToken string, gitlabRepoId int, branch, localFolderPath string) error {
+	dir, err := os.Getwd()
+	if err != nil {
+		return errors.New("failed to get current directory")
+	}
+
+	var (
+		reactTemplatePath = fmt.Sprintf("%s/%s", dir, localFolderPath)
+		commitActions     = []map[string]any{}
+	)
+
+	// Template files
+	err = filepath.Walk(reactTemplatePath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !info.IsDir() {
+			relPath, err := filepath.Rel(dir, path)
+			if err != nil {
+				return err
+			}
+
+			relPath = strings.TrimPrefix(relPath, "react_template/")
+
+			fileContent, err := os.ReadFile(path)
+			if err != nil {
+				return errors.New("failed to read a file in the .gitlab/ci directory")
+			}
+
+			commitActions = append(commitActions, map[string]any{
+				"action":    "create",
+				"file_path": relPath,
+				"content":   string(fileContent),
+			})
+
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	var (
+		commitURL     = fmt.Sprintf("https://gitlab.udevs.io/api/v4/projects/%v/repository/commits", gitlabRepoId)
+		commitPayload = map[string]any{
+			"branch":         branch,
+			"commit_message": "Added Template files",
+			"actions":        commitActions,
+		}
+	)
+
+	_, err = DoRequest(http.MethodPost, commitURL, commitPayload, gitlabToken)
+	if err != nil {
+		return errors.New("failed to make GitLab request")
+	}
+
+	return nil
+}
+
 func DeleteRepository(token string, projectID int) error {
 	var apiURL = fmt.Sprintf("%s/projects/%v", "https://gitlab.udevs.io/api/v4", projectID)
 
