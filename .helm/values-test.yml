@@ -36,7 +36,7 @@ serviceAccount:
 podAnnotations:
   vault.hashicorp.com/agent-inject: "true"
   vault.hashicorp.com/auth-path: "auth/kubernetes-ucode-hzn"
-  vault.hashicorp.com/agent-inject-secret-.env: "secret/data/k8s/ucode-test/go_function_service"
+  vault.hashicorp.com/agent-inject-secret-.env: "secret/data/k8s/ucode-test/go-function-service"
   vault.hashicorp.com/secret-volume-path-.env: "/app"
   vault.hashicorp.com/role: "ucode-test"
   vault.hashicorp.com/agent-inject-template-.env: |
@@ -51,6 +51,11 @@ podAnnotations:
     {{- end }}
     {{ end -}}
     {{- with secret "secret/data/k8s/ucode-test/services" -}}
+    {{- range $key, $value := .Data.data }}
+    {{ $key }}: {{ $value }}
+    {{- end }}
+    {{ end -}}
+    {{- with secret "secret/data/k8s/ucode-test/go-function-service" -}}
     {{- range $key, $value := .Data.data }}
     {{ $key }}: {{ $value }}
     {{- end }}
