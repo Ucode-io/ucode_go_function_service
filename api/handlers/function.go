@@ -14,6 +14,7 @@ import (
 	nb "ucode/ucode_go_function_service/genproto/new_object_builder_service"
 	obs "ucode/ucode_go_function_service/genproto/object_builder_service"
 
+	"ucode/ucode_go_function_service/pkg/github"
 	"ucode/ucode_go_function_service/pkg/gitlab"
 	"ucode/ucode_go_function_service/pkg/helper"
 
@@ -571,15 +572,14 @@ func (h *Handler) DeleteFunction(c *gin.Context) {
 
 	environmentId, ok := c.Get("environment_id")
 	if !ok || !util.IsValidUUID(environmentId.(string)) {
-		h.handleResponse(c, status.BadRequest, "error getting environment id | not valid")
+		h.handleResponse(c, status.InvalidArgument, "error getting environment id | not valid")
 		return
 	}
 
 	userId, _ := c.Get("user_id")
 
 	resource, err := h.services.CompanyService().ServiceResource().GetSingle(
-		ctx,
-		&pb.GetSingleServiceResourceReq{
+		ctx, &pb.GetSingleServiceResourceReq{
 			ProjectId:     projectId.(string),
 			EnvironmentId: environmentId.(string),
 			ServiceType:   pb.ServiceType_BUILDER_SERVICE,
@@ -595,7 +595,7 @@ func (h *Handler) DeleteFunction(c *gin.Context) {
 		resp, err = h.services.GetBuilderServiceByType(resource.NodeType).Function().GetSingle(
 			ctx, &obs.FunctionPrimaryKey{
 				Id:        functionID,
-				ProjectId: environmentId.(string),
+				ProjectId: resource.ResourceEnvironmentId,
 			},
 		)
 
@@ -605,10 +605,9 @@ func (h *Handler) DeleteFunction(c *gin.Context) {
 		}
 	case pb.ResourceType_POSTGRESQL:
 		goResp, err := h.services.GoObjectBuilderService().Function().GetSingle(
-			ctx,
-			&nb.FunctionPrimaryKey{
+			ctx, &nb.FunctionPrimaryKey{
 				Id:        functionID,
-				ProjectId: environmentId.(string),
+				ProjectId: resource.ResourceEnvironmentId,
 			},
 		)
 		if err != nil {
@@ -622,27 +621,20 @@ func (h *Handler) DeleteFunction(c *gin.Context) {
 		}
 	}
 
-	// @TODO::Should Be Un commented
-	// // delete code server
-	// err = code_server.DeleteCodeServerByPath(resp.Path, h.baseConf)
-	// if err != nil {
-	// 	h.handleResponse(c, status.GRPCError, err.Error())
-	// 	return
-	// }
-
-	// // delete cloned repo
-	// err = gitlab.DeletedClonedRepoByPath(resp.Path, h.baseConf)
-	// if err != nil {
-	// 	h.handleResponse(c, status.GRPCError, err.Error())
-	// 	return
-	// }
-
-	// // delete repo by path from gitlab
-	// _, err = gitlab.DeleteForkedProject(resp.Path, h.baseConf)
-	// if err != nil {
-	// 	h.handleResponse(c, status.GRPCError, err.Error())
-	// 	return
-	// }
+	switch resp.Type {
+	case config.FUNCTION:
+		err = github.DeleteRepository(h.cfg.GitlabOpenFassToken, cast.ToInt(resp.RepoId))
+		if err != nil {
+			h.handleResponse(c, status.InternalServerError, err.Error())
+			return
+		}
+	case config.KNATIVE:
+		err = github.DeleteRepository(h.cfg.GitlabKnativeToken, cast.ToInt(resp.RepoId))
+		if err != nil {
+			h.handleResponse(c, status.InternalServerError, err.Error())
+			return
+		}
+	}
 
 	var (
 		logReq = &models.CreateVersionHistoryRequest{

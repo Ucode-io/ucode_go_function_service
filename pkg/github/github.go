@@ -236,10 +236,6 @@ func DeleteRepository(token string, projectID int) error {
 
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusNoContent {
-		return fmt.Errorf("failed to delete project: status %d", resp.StatusCode)
-	}
-
 	return nil
 }
 

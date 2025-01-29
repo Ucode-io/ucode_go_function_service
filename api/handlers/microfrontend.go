@@ -15,6 +15,7 @@ import (
 	pb "ucode/ucode_go_function_service/genproto/company_service"
 	nb "ucode/ucode_go_function_service/genproto/new_object_builder_service"
 	obs "ucode/ucode_go_function_service/genproto/object_builder_service"
+	"ucode/ucode_go_function_service/pkg/github"
 	"ucode/ucode_go_function_service/pkg/gitlab"
 	"ucode/ucode_go_function_service/pkg/helper"
 	"ucode/ucode_go_function_service/pkg/util"
@@ -580,7 +581,7 @@ func (h *Handler) DeleteMicroFrontEnd(c *gin.Context) {
 		resp, err = h.services.GetBuilderServiceByType(resource.NodeType).Function().GetSingle(
 			ctx, &obs.FunctionPrimaryKey{
 				Id:        functionID,
-				ProjectId: environmentId.(string),
+				ProjectId: resource.ResourceEnvironmentId,
 			},
 		)
 		if err != nil {
@@ -591,7 +592,7 @@ func (h *Handler) DeleteMicroFrontEnd(c *gin.Context) {
 		goResp, err := h.services.GoObjectBuilderService().Function().GetSingle(
 			ctx, &nb.FunctionPrimaryKey{
 				Id:        functionID,
-				ProjectId: environmentId.(string),
+				ProjectId: resource.ResourceEnvironmentId,
 			},
 		)
 		if err != nil {
@@ -637,6 +638,12 @@ func (h *Handler) DeleteMicroFrontEnd(c *gin.Context) {
 			go h.versionHistoryGo(c, logReq)
 		}
 	}()
+
+	err = github.DeleteRepository(h.cfg.GitlabTokenMicroFront, cast.ToInt(resp.RepoId))
+	if err != nil {
+		h.handleResponse(c, status.InternalServerError, err.Error())
+		return
+	}
 
 	switch resource.ResourceType {
 	case pb.ResourceType_MONGODB:
