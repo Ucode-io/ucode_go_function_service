@@ -252,7 +252,7 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		c.Request.Context(), &pb.GetSingleServiceResourceReq{
 			ProjectId:     projectId,
 			EnvironmentId: environmentId,
-			ServiceType:   pb.ServiceType_FUNCTION_SERVICE,
+			ServiceType:   pb.ServiceType_BUILDER_SERVICE,
 		},
 	)
 	if err != nil {

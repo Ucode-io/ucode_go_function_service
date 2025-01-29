@@ -67,7 +67,7 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 		ctx, &pb.GetSingleServiceResourceReq{
 			ProjectId:     projectId.(string),
 			EnvironmentId: environmentId.(string),
-			ServiceType:   pb.ServiceType_FUNCTION_SERVICE,
+			ServiceType:   pb.ServiceType_BUILDER_SERVICE,
 		},
 	)
 	if err != nil {
@@ -75,23 +75,19 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 		return
 	}
 
-	environment, err := h.services.CompanyService().Environment().GetById(
-		ctx, &pb.EnvironmentPrimaryKey{Id: environmentId.(string)},
-	)
+	environment, err := h.services.CompanyService().Environment().GetById(ctx, &pb.EnvironmentPrimaryKey{Id: environmentId.(string)})
 	if err != nil {
 		h.handleResponse(c, status.GRPCError, err.Error())
 		return
 	}
 
-	project, err := h.services.CompanyService().Project().GetById(
-		ctx, &pb.GetProjectByIdRequest{ProjectId: environment.GetProjectId()},
-	)
+	project, err := h.services.CompanyService().Project().GetById(ctx, &pb.GetProjectByIdRequest{ProjectId: environment.GetProjectId()})
 	if err != nil {
 		h.handleResponse(c, status.InternalServerError, err.Error())
 		return
 	}
 
-	if project.GetTitle() == "" {
+	if len(project.GetTitle()) == 0 {
 		h.handleResponse(c, status.BadRequest, "error project name is required")
 		return
 	}
@@ -122,7 +118,7 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 		}
 
 		response, err := h.services.CompanyService().Billing().CompareFunction(ctx, &pb.CompareFunctionRequest{
-			Type:   config.FUNCTION,
+			Type:   config.FARE_FUNCTION,
 			FareId: project.GetFareId(),
 			Count:  count,
 		})
@@ -144,31 +140,9 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 		functionPath = projectName + "-" + function.Path
 		uuid         = uuid.New()
 		url          = "https://" + uuid.String() + ".u-code.io"
-
-		createFunction = &obs.CreateFunctionRequest{
-			Path:             functionPath,
-			Name:             function.Name,
-			Description:      function.Description,
-			ProjectId:        resource.ResourceEnvironmentId,
-			EnvironmentId:    environmentId.(string),
-			FunctionFolderId: function.FunctionFolderId,
-			Url:              url,
-			Type:             function.Type,
-		}
-
-		logReq = &models.CreateVersionHistoryRequest{
-			Services:     h.services,
-			NodeType:     resource.NodeType,
-			ProjectId:    resource.ResourceEnvironmentId,
-			ActionSource: c.Request.URL.String(),
-			ActionType:   config.CREATE,
-			UserInfo:     cast.ToString(userId),
-			Request:      createFunction,
-			TableSlug:    config.FUNCTION,
-		}
 	)
 
-	switch createFunction.Type {
+	switch function.Type {
 	case config.FUNCTION:
 		_, err = gitlab.CreateProjectFork(functionPath, gitlab.IntegrationData{
 			GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
@@ -196,12 +170,34 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 		return
 	}
 
+	var (
+		createFunction = &obs.CreateFunctionRequest{
+			Path:             functionPath,
+			Name:             function.Name,
+			Description:      function.Description,
+			ProjectId:        resource.ResourceEnvironmentId,
+			EnvironmentId:    environmentId.(string),
+			FunctionFolderId: function.FunctionFolderId,
+			Url:              url,
+			Type:             function.Type,
+			Resource:         function.ResourceId,
+		}
+
+		logReq = &models.CreateVersionHistoryRequest{
+			Services:     h.services,
+			NodeType:     resource.NodeType,
+			ProjectId:    resource.ResourceEnvironmentId,
+			ActionSource: c.Request.URL.String(),
+			ActionType:   config.CREATE,
+			UserInfo:     cast.ToString(userId),
+			Request:      createFunction,
+			TableSlug:    config.FUNCTION,
+		}
+	)
+
 	switch resource.ResourceType {
 	case pb.ResourceType_MONGODB:
-		response, err := h.services.GetBuilderServiceByType(resource.NodeType).Function().Create(
-			ctx, createFunction,
-		)
-
+		response, err := h.services.GetBuilderServiceByType(resource.NodeType).Function().Create(ctx, createFunction)
 		if err != nil {
 			logReq.Response = err.Error()
 			h.handleResponse(c, status.GRPCError, err.Error())
@@ -209,6 +205,7 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 			logReq.Response = response
 			h.handleResponse(c, status.Created, response)
 		}
+
 		go h.versionHistory(logReq)
 	case pb.ResourceType_POSTGRESQL:
 		var newCreateFunction = &nb.CreateFunctionRequest{}
@@ -226,6 +223,7 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 			logReq.Response = response
 			h.handleResponse(c, status.Created, response)
 		}
+
 		go h.versionHistoryGo(c, logReq)
 	}
 }
@@ -270,7 +268,7 @@ func (h *Handler) GetFunctionByID(c *gin.Context) {
 		ctx, &pb.GetSingleServiceResourceReq{
 			ProjectId:     projectId.(string),
 			EnvironmentId: environmentId.(string),
-			ServiceType:   pb.ServiceType_FUNCTION_SERVICE,
+			ServiceType:   pb.ServiceType_BUILDER_SERVICE,
 		},
 	)
 	if err != nil {
@@ -361,7 +359,7 @@ func (h *Handler) GetAllFunctions(c *gin.Context) {
 		&pb.GetSingleServiceResourceReq{
 			ProjectId:     projectId.(string),
 			EnvironmentId: environmentId.(string),
-			ServiceType:   pb.ServiceType_FUNCTION_SERVICE,
+			ServiceType:   pb.ServiceType_BUILDER_SERVICE,
 		},
 	)
 	if err != nil {
@@ -459,7 +457,7 @@ func (h *Handler) UpdateFunction(c *gin.Context) {
 		&pb.GetSingleServiceResourceReq{
 			ProjectId:     projectId.(string),
 			EnvironmentId: environmentId.(string),
-			ServiceType:   pb.ServiceType_FUNCTION_SERVICE,
+			ServiceType:   pb.ServiceType_BUILDER_SERVICE,
 		},
 	)
 	if err != nil {
@@ -581,7 +579,7 @@ func (h *Handler) DeleteFunction(c *gin.Context) {
 		&pb.GetSingleServiceResourceReq{
 			ProjectId:     projectId.(string),
 			EnvironmentId: environmentId.(string),
-			ServiceType:   pb.ServiceType_FUNCTION_SERVICE,
+			ServiceType:   pb.ServiceType_BUILDER_SERVICE,
 		},
 	)
 	if err != nil {
@@ -744,7 +742,7 @@ func (h *Handler) GetAllFunctionsForApp(c *gin.Context) {
 		&pb.GetSingleServiceResourceReq{
 			ProjectId:     projectId.(string),
 			EnvironmentId: environmentId.(string),
-			ServiceType:   pb.ServiceType_FUNCTION_SERVICE,
+			ServiceType:   pb.ServiceType_BUILDER_SERVICE,
 		},
 	)
 	if err != nil {
@@ -830,7 +828,7 @@ func (h *Handler) InvokeFunctionByPath(c *gin.Context) {
 		ctx, &pb.GetSingleServiceResourceReq{
 			ProjectId:     projectId.(string),
 			EnvironmentId: environmentId.(string),
-			ServiceType:   pb.ServiceType_FUNCTION_SERVICE,
+			ServiceType:   pb.ServiceType_BUILDER_SERVICE,
 		},
 	)
 	if err != nil {
@@ -1072,7 +1070,7 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 		&pb.GetSingleServiceResourceReq{
 			ProjectId:     projectId.(string),
 			EnvironmentId: environmentId.(string),
-			ServiceType:   pb.ServiceType_FUNCTION_SERVICE,
+			ServiceType:   pb.ServiceType_BUILDER_SERVICE,
 		},
 	)
 	if err != nil {

@@ -53,7 +53,6 @@ func (c *ExpiringLRUCache) Get(key interface{}) ([]byte, bool) {
 
 	cacheEntry := entry.(cacheEntry)
 	if cacheEntry.expiration.Before(time.Now()) {
-		// Entry has expired, remove it
 		c.cache.Remove(key)
 		return nil, false
 	}
@@ -84,7 +83,6 @@ func (c *ExpiringLRUCache) GetValue(key interface{}) (bool, bool) {
 
 	cacheEntry := entry.(cache)
 	if cacheEntry.expiration.Before(time.Now()) {
-		// Entry has expired, remove it
 		c.cache.Remove(key)
 		return false, false
 	}

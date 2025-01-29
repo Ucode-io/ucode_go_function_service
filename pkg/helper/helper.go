@@ -17,8 +17,7 @@ func MarshalToStruct(data interface{}, resp interface{}) error {
 		return err
 	}
 
-	err = json.Unmarshal(js, resp)
-	if err != nil {
+	if err = json.Unmarshal(js, resp); err != nil {
 		return err
 	}
 
@@ -47,13 +46,13 @@ func GetURLWithTableSlug(c *gin.Context) string {
 }
 
 func ConvertStructToMap(s *structpb.Struct) (map[string]interface{}, error) {
-
-	newMap := make(map[string]interface{})
+	var newMap = make(map[string]interface{})
 
 	body, err := json.Marshal(s)
 	if err != nil {
 		return map[string]interface{}{}, err
 	}
+
 	if err := json.Unmarshal(body, &newMap); err != nil {
 		return map[string]interface{}{}, err
 	}

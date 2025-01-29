@@ -12,13 +12,14 @@ import (
 	"ucode/ucode_go_function_service/config"
 )
 
-func CreateProjectFork(projectName string, data IntegrationData) (response GitlabIntegrationResponse, err error) {
+func CreateProjectFork(projectName string, data IntegrationData) (response ForkResponse, err error) {
 	var (
 		projectId    = data.GitlabProjectId
 		strProjectId = strconv.Itoa(projectId)
+		resp         ForkResponse
 	)
 
-	resp, err := DoRequest(data.GitlabIntegrationUrl+"/api/v4/projects/"+strProjectId+"/fork", data.GitlabIntegrationToken, http.MethodPost, CreateProject{
+	respByte, err := DoRequestV1(data.GitlabIntegrationUrl+"/api/v4/projects/"+strProjectId+"/fork", data.GitlabIntegrationToken, http.MethodPost, CreateProject{
 		NamespaceID:          data.GitlabGroupId,
 		Name:                 projectName,
 		Path:                 projectName,
@@ -26,11 +27,16 @@ func CreateProjectFork(projectName string, data IntegrationData) (response Gitla
 		DefaultBranch:        "master",
 		Visibility:           "private",
 	})
+	if err != nil {
+		return
+	}
 
-	if resp.Code >= 400 {
-		return GitlabIntegrationResponse{}, errors.New(status.BadRequest.Description)
-	} else if resp.Code >= 500 {
-		return GitlabIntegrationResponse{}, errors.New(status.InternalServerError.Description)
+	if err = json.Unmarshal(respByte, &resp); err != nil {
+		return
+	}
+
+	if len(resp.Message.Name) != 0 {
+		return ForkResponse{}, errors.New(resp.Message.Name[0])
 	}
 
 	return resp, err
@@ -75,6 +81,40 @@ func DoRequest(url, token string, method string, body interface{}) (responseMode
 	responseModel.Code = resp.StatusCode
 
 	return
+}
+
+func DoRequestV1(url, token string, method string, body interface{}) ([]byte, error) {
+	data, err := json.Marshal(&body)
+	if err != nil {
+		return nil, err
+	}
+
+	client := &http.Client{
+		Timeout: time.Duration(15 * time.Second),
+	}
+
+	url += "?access_token=" + token
+
+	req, err := http.NewRequest(method, url, bytes.NewBuffer(data))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	respByte, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return respByte, nil
 }
 
 func UpdateProject(cfg IntegrationData, data map[string]any) (response GitlabIntegrationResponse, err error) {

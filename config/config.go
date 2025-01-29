@@ -68,9 +68,9 @@ type Config struct {
 	GitlabKnativeProjectId int
 
 	// Openfass Gitlab Creds
-	GitlabOpenFassToken     string //
-	GitlabOpenFassGroupId   int    // 2008
-	GitlabOpenFassProjectId int    // 1467
+	GitlabOpenFassToken     string
+	GitlabOpenFassGroupId   int
+	GitlabOpenFassProjectId int
 
 	// Microfront Gitlab Creds
 	GitlabHostMicroFront             string
@@ -105,11 +105,11 @@ func Load() Config {
 	config.Environment = cast.ToString(getOrReturnDefaultValue("ENVIRONMENT", DebugMode))
 	config.Version = cast.ToString(getOrReturnDefaultValue("VERSION", "1.0"))
 	config.DefaultOffset = cast.ToString(getOrReturnDefaultValue("DEFAULT_OFFSET", "0"))
-	config.DefaultLimit = "60"
+	config.DefaultLimit = cast.ToString(getOrReturnDefaultValue("DEFAULT_LIMIT", "10"))
 
 	// Company Service Creds
-	config.CompanyServiceHost = cast.ToString(getOrReturnDefaultValue("COMPANY_SERVICE_HOST", "localhost"))
-	config.CompanyServicePort = cast.ToString(getOrReturnDefaultValue("COMPANY_GRPC_PORT", ":8092"))
+	config.CompanyServiceHost = cast.ToString(getOrReturnDefaultValue("COMPANY_SERVICE_HOST", ""))
+	config.CompanyServicePort = cast.ToString(getOrReturnDefaultValue("COMPANY_GRPC_PORT", ""))
 
 	// Obs Low Service Creds
 	config.ObjectBuilderServiceHost = cast.ToString(getOrReturnDefaultValue("OBJECT_BUILDER_SERVICE_LOW_HOST", ""))
@@ -120,16 +120,16 @@ func Load() Config {
 	config.HighObjectBuilderGRPCPort = cast.ToString(getOrReturnDefaultValue("OBJECT_BUILDER_HIGH_GRPC_PORT", ""))
 
 	// Go obs Service Creds
-	config.GoObjectBuilderServiceHost = cast.ToString(getOrReturnDefaultValue("GO_OBJECT_BUILDER_SERVICE_GRPC_HOST", "localhost"))
-	config.GoObjectBuilderGRPCPort = cast.ToString(getOrReturnDefaultValue("GO_OBJECT_BUILDER_SERVICE_GRPC_PORT", ":7107"))
+	config.GoObjectBuilderServiceHost = cast.ToString(getOrReturnDefaultValue("GO_OBJECT_BUILDER_SERVICE_GRPC_HOST", ""))
+	config.GoObjectBuilderGRPCPort = cast.ToString(getOrReturnDefaultValue("GO_OBJECT_BUILDER_SERVICE_GRPC_PORT", ""))
 
 	// Auth Service Creds
-	config.AuthServiceHost = cast.ToString(getOrReturnDefaultValue("AUTH_SERVICE_HOST", "localhost"))
-	config.AuthGRPCPort = cast.ToString(getOrReturnDefaultValue("AUTH_GRPC_PORT", ":9103"))
+	config.AuthServiceHost = cast.ToString(getOrReturnDefaultValue("AUTH_SERVICE_HOST", ""))
+	config.AuthGRPCPort = cast.ToString(getOrReturnDefaultValue("AUTH_GRPC_PORT", ""))
 
 	// Fass Urls
-	config.OpeFassBaseUrl = cast.ToString(getOrReturnDefaultValue("OPENFASS_BASE_URL", "https://ofs.u-code.io/function/"))
-	config.KnativeBaseUrl = cast.ToString(getOrReturnDefaultValue("KNATIVE_BASE_URL", "knative-fn.u-code.io"))
+	config.OpeFassBaseUrl = cast.ToString(getOrReturnDefaultValue("OPENFASS_BASE_URL", ""))
+	config.KnativeBaseUrl = cast.ToString(getOrReturnDefaultValue("KNATIVE_BASE_URL", ""))
 
 	// Github Creds
 	config.GithubBaseUrl = cast.ToString(getOrReturnDefaultValue("GITHUB_BASE_URL", "https://github.com"))
@@ -144,27 +144,27 @@ func Load() Config {
 	config.WebhookSecret = cast.ToString(getOrReturnDefaultValue("WEBHOOK_SECRET", "X8kJnsNHD9f4nRQfjs72YLSfPqxjG+PWRjxN3KBuDhE="))
 
 	// Knative Gitlab Creds
-	config.GitlabKnativeToken = cast.ToString(getOrReturnDefaultValue("GITLAB_KNATIVE_TOKEN", "glpat-yfiNvrJqYWczk4Y2dnsq"))
-	config.GitlabKnativeGroupId = cast.ToInt(getOrReturnDefaultValue("GITLAB_KNATIVE_GROUP_ID", 5466))
-	config.GitlabKnativeProjectId = cast.ToInt(getOrReturnDefaultValue("GITLAB_KNATIVE_PROJECT_ID", 4622))
+	config.GitlabKnativeToken = cast.ToString(getOrReturnDefaultValue("GITLAB_KNATIVE_TOKEN", ""))
+	config.GitlabKnativeGroupId = cast.ToInt(getOrReturnDefaultValue("GITLAB_KNATIVE_GROUP_ID", 0))
+	config.GitlabKnativeProjectId = cast.ToInt(getOrReturnDefaultValue("GITLAB_KNATIVE_PROJECT_ID", 0))
 
 	// OpenFass Gitlab Creds
-	config.GitlabOpenFassToken = cast.ToString(getOrReturnDefaultValue("GITLAB_OPENFASS_TOKEN", "glpat-HimXjgzaysg2EeiqLB_S"))
-	config.GitlabOpenFassGroupId = cast.ToInt(getOrReturnDefaultValue("GITLAB_OPENFASS_GROUP_ID", 2008))
-	config.GitlabOpenFassProjectId = cast.ToInt(getOrReturnDefaultValue("GITLAB_OPENFASS_PROJECT_ID", 1467))
+	config.GitlabOpenFassToken = cast.ToString(getOrReturnDefaultValue("GITLAB_OPENFASS_TOKEN", ""))
+	config.GitlabOpenFassGroupId = cast.ToInt(getOrReturnDefaultValue("GITLAB_OPENFASS_GROUP_ID", 0))
+	config.GitlabOpenFassProjectId = cast.ToInt(getOrReturnDefaultValue("GITLAB_OPENFASS_PROJECT_ID", 0))
 
 	// Microfront Gitlab Creds
-	config.GitlabGroupIdMicroFront = cast.ToInt(getOrReturnDefaultValue("GITLAB_MICROFRONT_GROUP_ID", 2604))
+	config.GitlabGroupIdMicroFront = cast.ToInt(getOrReturnDefaultValue("GITLAB_MICROFRONT_GROUP_ID", 0))
 	config.GitlabProjectIdMicroFront = cast.ToInt(getOrReturnDefaultValue("GITLAB_MICROFRONT_PROJECT_ID", 0))
-	config.GitlabTokenMicroFront = cast.ToString(getOrReturnDefaultValue("GITLAB_MICROFRONT_TOKEN", "glpat-wT2-JCyqDx4pWPzAXy12"))
-	config.GitlabHostMicroFront = cast.ToString(getOrReturnDefaultValue("GITLAB_MICROFRONT_HOST", "test-page.u-code.io"))
-	config.GitlabProjectIdMicroFrontReact = cast.ToInt(getOrReturnDefaultValue("GITLAB_MICROFRONT_REACT_PROJECT_ID", 1993))
+	config.GitlabTokenMicroFront = cast.ToString(getOrReturnDefaultValue("GITLAB_MICROFRONT_TOKEN", ""))
+	config.GitlabHostMicroFront = cast.ToString(getOrReturnDefaultValue("GITLAB_MICROFRONT_HOST", ""))
+	config.GitlabProjectIdMicroFrontReact = cast.ToInt(getOrReturnDefaultValue("GITLAB_MICROFRONT_REACT_PROJECT_ID", 0))
 	config.GitlabProjectIdMicroFrontVue = cast.ToInt(getOrReturnDefaultValue("GITLAB_MICROFRONT_VUE_PROJECT_ID", 0))
 	config.GitlabProjectIdMicroFrontAngular = cast.ToInt(getOrReturnDefaultValue("GITLAB_MICROFRONT_ANGULAR_PROJECT_ID", 0))
 
 	// Grafana Creds
-	config.GrafanaBaseUrl = cast.ToString(getOrReturnDefaultValue("GRAFANA_BASE_URL", "https://grafana.u-code.io"))
-	config.GrafanaAuth = cast.ToString(getOrReturnDefaultValue("GRAFANA_AUTH", "ucode-dev:sie0eeBuZ3Neigageejo"))
+	config.GrafanaBaseUrl = cast.ToString(getOrReturnDefaultValue("GRAFANA_BASE_URL", ""))
+	config.GrafanaAuth = cast.ToString(getOrReturnDefaultValue("GRAFANA_AUTH", ""))
 
 	return config
 }
