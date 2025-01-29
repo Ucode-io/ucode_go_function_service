@@ -20,21 +20,22 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	BillingService_CreateFare_FullMethodName        = "/company_service.BillingService/CreateFare"
-	BillingService_GetFare_FullMethodName           = "/company_service.BillingService/GetFare"
-	BillingService_ListFares_FullMethodName         = "/company_service.BillingService/ListFares"
-	BillingService_UpdateFare_FullMethodName        = "/company_service.BillingService/UpdateFare"
-	BillingService_DeleteFare_FullMethodName        = "/company_service.BillingService/DeleteFare"
-	BillingService_CreateFareItem_FullMethodName    = "/company_service.BillingService/CreateFareItem"
-	BillingService_GetFareItem_FullMethodName       = "/company_service.BillingService/GetFareItem"
-	BillingService_ListFareItems_FullMethodName     = "/company_service.BillingService/ListFareItems"
-	BillingService_UpdateFareItem_FullMethodName    = "/company_service.BillingService/UpdateFareItem"
-	BillingService_DeleteFareItem_FullMethodName    = "/company_service.BillingService/DeleteFareItem"
-	BillingService_CreateTransaction_FullMethodName = "/company_service.BillingService/CreateTransaction"
-	BillingService_GetTransaction_FullMethodName    = "/company_service.BillingService/GetTransaction"
-	BillingService_ListTransactions_FullMethodName  = "/company_service.BillingService/ListTransactions"
-	BillingService_UpdateTransaction_FullMethodName = "/company_service.BillingService/UpdateTransaction"
-	BillingService_CompareFunction_FullMethodName   = "/company_service.BillingService/CompareFunction"
+	BillingService_CreateFare_FullMethodName           = "/company_service.BillingService/CreateFare"
+	BillingService_GetFare_FullMethodName              = "/company_service.BillingService/GetFare"
+	BillingService_ListFares_FullMethodName            = "/company_service.BillingService/ListFares"
+	BillingService_UpdateFare_FullMethodName           = "/company_service.BillingService/UpdateFare"
+	BillingService_DeleteFare_FullMethodName           = "/company_service.BillingService/DeleteFare"
+	BillingService_CreateFareItem_FullMethodName       = "/company_service.BillingService/CreateFareItem"
+	BillingService_GetFareItem_FullMethodName          = "/company_service.BillingService/GetFareItem"
+	BillingService_ListFareItems_FullMethodName        = "/company_service.BillingService/ListFareItems"
+	BillingService_UpdateFareItem_FullMethodName       = "/company_service.BillingService/UpdateFareItem"
+	BillingService_DeleteFareItem_FullMethodName       = "/company_service.BillingService/DeleteFareItem"
+	BillingService_CreateTransaction_FullMethodName    = "/company_service.BillingService/CreateTransaction"
+	BillingService_GetTransaction_FullMethodName       = "/company_service.BillingService/GetTransaction"
+	BillingService_ListTransactions_FullMethodName     = "/company_service.BillingService/ListTransactions"
+	BillingService_UpdateTransaction_FullMethodName    = "/company_service.BillingService/UpdateTransaction"
+	BillingService_CompareFunction_FullMethodName      = "/company_service.BillingService/CompareFunction"
+	BillingService_UpsertMonthlyRequest_FullMethodName = "/company_service.BillingService/UpsertMonthlyRequest"
 )
 
 // BillingServiceClient is the client API for BillingService service.
@@ -60,6 +61,7 @@ type BillingServiceClient interface {
 	UpdateTransaction(ctx context.Context, in *Transaction, opts ...grpc.CallOption) (*Transaction, error)
 	// Compare
 	CompareFunction(ctx context.Context, in *CompareFunctionRequest, opts ...grpc.CallOption) (*CompareFunctionResponse, error)
+	UpsertMonthlyRequest(ctx context.Context, in *MonthlyRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
 type billingServiceClient struct {
@@ -220,6 +222,16 @@ func (c *billingServiceClient) CompareFunction(ctx context.Context, in *CompareF
 	return out, nil
 }
 
+func (c *billingServiceClient) UpsertMonthlyRequest(ctx context.Context, in *MonthlyRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, BillingService_UpsertMonthlyRequest_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BillingServiceServer is the server API for BillingService service.
 // All implementations must embed UnimplementedBillingServiceServer
 // for forward compatibility.
@@ -243,6 +255,7 @@ type BillingServiceServer interface {
 	UpdateTransaction(context.Context, *Transaction) (*Transaction, error)
 	// Compare
 	CompareFunction(context.Context, *CompareFunctionRequest) (*CompareFunctionResponse, error)
+	UpsertMonthlyRequest(context.Context, *MonthlyRequest) (*empty.Empty, error)
 	mustEmbedUnimplementedBillingServiceServer()
 }
 
@@ -297,6 +310,9 @@ func (UnimplementedBillingServiceServer) UpdateTransaction(context.Context, *Tra
 }
 func (UnimplementedBillingServiceServer) CompareFunction(context.Context, *CompareFunctionRequest) (*CompareFunctionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CompareFunction not implemented")
+}
+func (UnimplementedBillingServiceServer) UpsertMonthlyRequest(context.Context, *MonthlyRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpsertMonthlyRequest not implemented")
 }
 func (UnimplementedBillingServiceServer) mustEmbedUnimplementedBillingServiceServer() {}
 func (UnimplementedBillingServiceServer) testEmbeddedByValue()                        {}
@@ -589,6 +605,24 @@ func _BillingService_CompareFunction_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _BillingService_UpsertMonthlyRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MonthlyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BillingServiceServer).UpsertMonthlyRequest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BillingService_UpsertMonthlyRequest_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BillingServiceServer).UpsertMonthlyRequest(ctx, req.(*MonthlyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // BillingService_ServiceDesc is the grpc.ServiceDesc for BillingService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -655,6 +689,10 @@ var BillingService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CompareFunction",
 			Handler:    _BillingService_CompareFunction_Handler,
+		},
+		{
+			MethodName: "UpsertMonthlyRequest",
+			Handler:    _BillingService_UpsertMonthlyRequest_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

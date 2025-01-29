@@ -76,6 +76,17 @@ message Project2 {
     string updated_at = 6;
     repeated ResourceEnvironmentV2MultiCompany resource_environments = 7;
     google.protobuf.Struct client_types = 8;
+    message Currency {
+        string id = 1;
+        string symbol = 2;
+        string name = 3;
+        string symbol_native = 4;
+        int32 decimal_digits = 5;
+        int32 rounding = 6;
+        string code = 7;
+        string name_plural = 8;
+    }
+    repeated Currency currencies = 9;
 }
 
 message Company2 {

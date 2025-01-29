@@ -1,8 +1,0 @@
-syntax="proto3";
-
-package notification_service;
-
-option go_package = "genproto/notification_service";
-
-import "notification.proto";
-import "notification_category.proto";

@@ -1,7 +1,0 @@
-syntax="proto3";
-
-package analytics_service;
-option go_package="genproto/analytics_service";
-
-import "query.proto";
-import "analytics_project.proto";

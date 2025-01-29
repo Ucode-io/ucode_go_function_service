@@ -168,14 +168,31 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 		}
 	)
 
-	_, err = gitlab.CreateProjectFork(functionPath, gitlab.IntegrationData{
-		GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
-		GitlabIntegrationToken: h.cfg.GitlabIntegrationToken,
-		GitlabGroupId:          h.cfg.GitlabGroupId,
-		GitlabProjectId:        h.cfg.GitlabProjectId,
-	})
-	if err != nil {
-		h.handleResponse(c, status.InvalidArgument, err.Error())
+	switch createFunction.Type {
+	case config.FUNCTION:
+		_, err = gitlab.CreateProjectFork(functionPath, gitlab.IntegrationData{
+			GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
+			GitlabIntegrationToken: h.cfg.GitlabOpenFassToken,
+			GitlabGroupId:          h.cfg.GitlabOpenFassGroupId,
+			GitlabProjectId:        h.cfg.GitlabOpenFassProjectId,
+		})
+		if err != nil {
+			h.handleResponse(c, status.InvalidArgument, err.Error())
+			return
+		}
+	case config.KNATIVE:
+		_, err = gitlab.CreateProjectFork(functionPath, gitlab.IntegrationData{
+			GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
+			GitlabIntegrationToken: h.cfg.GitlabKnativeToken,
+			GitlabGroupId:          h.cfg.GitlabKnativeGroupId,
+			GitlabProjectId:        h.cfg.GitlabKnativeProjectId,
+		})
+		if err != nil {
+			h.handleResponse(c, status.InvalidArgument, err.Error())
+			return
+		}
+	default:
+		h.handleResponse(c, status.BadRequest, "not supported function type")
 		return
 	}
 
@@ -367,7 +384,7 @@ func (h *Handler) GetAllFunctions(c *gin.Context) {
 				Offset:        int32(offset),
 				ProjectId:     resource.ResourceEnvironmentId,
 				EnvironmentId: environment.GetId(),
-				Type:          config.FUNCTION,
+				Type:          []string{config.FUNCTION, config.KNATIVE},
 			},
 		)
 		if err != nil {
@@ -743,7 +760,7 @@ func (h *Handler) GetAllFunctionsForApp(c *gin.Context) {
 				Limit:     int32(limit),
 				Offset:    int32(offset),
 				ProjectId: resource.ResourceEnvironmentId,
-				Type:      config.FUNCTION,
+				Type:      []string{config.FUNCTION, config.KNATIVE},
 			},
 		)
 		if err != nil {

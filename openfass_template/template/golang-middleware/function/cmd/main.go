@@ -23,7 +23,6 @@ func main() {
 
 	byteValue, err := json.Marshal(requestBody)
 	if err != nil {
-		fmt.Println("Error reading JSON:", err)
 		return
 	}
 
@@ -33,14 +32,12 @@ func main() {
 	}
 	err = json.Unmarshal(byteValue, &requestData)
 	if err != nil {
-		fmt.Println("Error parsing JSON:", err)
 		return
 	}
 
 	// Create a new request
 	req, err := http.NewRequest("", "", bytes.NewBuffer(requestData.Data))
 	if err != nil {
-		fmt.Println("Error creating request:", err)
 		return
 	}
 

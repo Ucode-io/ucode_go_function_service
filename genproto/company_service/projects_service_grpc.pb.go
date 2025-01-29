@@ -37,6 +37,7 @@ const (
 	ProjectService_GetProjectConfigList_FullMethodName         = "/company_service.ProjectService/GetProjectConfigList"
 	ProjectService_UpsertRecord_FullMethodName                 = "/company_service.ProjectService/UpsertRecord"
 	ProjectService_ListRecord_FullMethodName                   = "/company_service.ProjectService/ListRecord"
+	ProjectService_ListProjectsRPS_FullMethodName              = "/company_service.ProjectService/ListProjectsRPS"
 )
 
 // ProjectServiceClient is the client API for ProjectService service.
@@ -60,6 +61,7 @@ type ProjectServiceClient interface {
 	GetProjectConfigList(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*ListPorjectConfig, error)
 	UpsertRecord(ctx context.Context, in *Record, opts ...grpc.CallOption) (*EmptyProto, error)
 	ListRecord(ctx context.Context, in *ListRecordRequest, opts ...grpc.CallOption) (*EmptyProto, error)
+	ListProjectsRPS(ctx context.Context, in *GetProjectListRequest, opts ...grpc.CallOption) (*ListProjectsRPSResponse, error)
 }
 
 type projectServiceClient struct {
@@ -240,6 +242,16 @@ func (c *projectServiceClient) ListRecord(ctx context.Context, in *ListRecordReq
 	return out, nil
 }
 
+func (c *projectServiceClient) ListProjectsRPS(ctx context.Context, in *GetProjectListRequest, opts ...grpc.CallOption) (*ListProjectsRPSResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListProjectsRPSResponse)
+	err := c.cc.Invoke(ctx, ProjectService_ListProjectsRPS_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProjectServiceServer is the server API for ProjectService service.
 // All implementations must embed UnimplementedProjectServiceServer
 // for forward compatibility.
@@ -261,6 +273,7 @@ type ProjectServiceServer interface {
 	GetProjectConfigList(context.Context, *empty.Empty) (*ListPorjectConfig, error)
 	UpsertRecord(context.Context, *Record) (*EmptyProto, error)
 	ListRecord(context.Context, *ListRecordRequest) (*EmptyProto, error)
+	ListProjectsRPS(context.Context, *GetProjectListRequest) (*ListProjectsRPSResponse, error)
 	mustEmbedUnimplementedProjectServiceServer()
 }
 
@@ -321,6 +334,9 @@ func (UnimplementedProjectServiceServer) UpsertRecord(context.Context, *Record) 
 }
 func (UnimplementedProjectServiceServer) ListRecord(context.Context, *ListRecordRequest) (*EmptyProto, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListRecord not implemented")
+}
+func (UnimplementedProjectServiceServer) ListProjectsRPS(context.Context, *GetProjectListRequest) (*ListProjectsRPSResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListProjectsRPS not implemented")
 }
 func (UnimplementedProjectServiceServer) mustEmbedUnimplementedProjectServiceServer() {}
 func (UnimplementedProjectServiceServer) testEmbeddedByValue()                        {}
@@ -649,6 +665,24 @@ func _ProjectService_ListRecord_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ProjectService_ListProjectsRPS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProjectListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).ListProjectsRPS(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_ListProjectsRPS_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).ListProjectsRPS(ctx, req.(*GetProjectListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ProjectService_ServiceDesc is the grpc.ServiceDesc for ProjectService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -723,6 +757,10 @@ var ProjectService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListRecord",
 			Handler:    _ProjectService_ListRecord_Handler,
+		},
+		{
+			MethodName: "ListProjectsRPS",
+			Handler:    _ProjectService_ListProjectsRPS_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

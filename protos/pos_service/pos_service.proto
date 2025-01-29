@@ -1,8 +1,0 @@
-syntax = "proto3";
-
-package pos_service;
-
-option go_package="genproto/pos_service";
-
-import "booked_appointment.proto";
-import "offline_appointment.proto";

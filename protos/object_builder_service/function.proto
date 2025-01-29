@@ -77,7 +77,7 @@ message GetAllFunctionsRequest {
     int32 offset = 3;
     string project_id = 4;
     string environment_id = 5;
-    string type = 6;
+    repeated string type = 6;
 }
 
 message GetAllFunctionsResponse {

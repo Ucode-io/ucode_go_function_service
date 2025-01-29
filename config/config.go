@@ -63,18 +63,23 @@ type Config struct {
 	WebhookSecret        string
 
 	// Knative Gitlab Creds
-	GitlabIntegrationToken string
-	GitlabGroupId          int
-	GitlabProjectId        int
+	GitlabKnativeToken     string
+	GitlabKnativeGroupId   int
+	GitlabKnativeProjectId int
+
+	// Openfass Gitlab Creds
+	GitlabOpenFassToken     string //
+	GitlabOpenFassGroupId   int    // 2008
+	GitlabOpenFassProjectId int    // 1467
 
 	// Microfront Gitlab Creds
-	GitlabHostMicroFE                string
-	GitlabIntegrationTokenMicroFront string
-	GitlabGroupIdMicroFE             int
-	GitlabProjectIdMicroFE           int
-	GitlabProjectIdMicroFeReact      int
-	GitlabProjectIdMicroFeVue        int
-	GitlabProjectIdMicroFeAngular    int
+	GitlabHostMicroFront             string
+	GitlabTokenMicroFront            string
+	GitlabGroupIdMicroFront          int
+	GitlabProjectIdMicroFront        int
+	GitlabProjectIdMicroFrontReact   int
+	GitlabProjectIdMicroFrontVue     int
+	GitlabProjectIdMicroFrontAngular int
 
 	// Grafana
 	GrafanaBaseUrl string
@@ -124,7 +129,7 @@ func Load() Config {
 
 	// Fass Urls
 	config.OpeFassBaseUrl = cast.ToString(getOrReturnDefaultValue("OPENFASS_BASE_URL", "https://ofs.u-code.io/function/"))
-	config.KnativeBaseUrl = "knative-fn.u-code.io"
+	config.KnativeBaseUrl = cast.ToString(getOrReturnDefaultValue("KNATIVE_BASE_URL", "knative-fn.u-code.io"))
 
 	// Github Creds
 	config.GithubBaseUrl = cast.ToString(getOrReturnDefaultValue("GITHUB_BASE_URL", "https://github.com"))
@@ -139,22 +144,27 @@ func Load() Config {
 	config.WebhookSecret = cast.ToString(getOrReturnDefaultValue("WEBHOOK_SECRET", "X8kJnsNHD9f4nRQfjs72YLSfPqxjG+PWRjxN3KBuDhE="))
 
 	// Knative Gitlab Creds
-	config.GitlabProjectId = cast.ToInt(getOrReturnDefaultValue("GITLAB_PROJECT_ID", 4622))
-	config.GitlabGroupId = cast.ToInt(getOrReturnDefaultValue("GITLAB_GROUP_ID", 5466))
-	config.GitlabIntegrationToken = "glpat-pNPf-Twq4Rte3xbeDCB1"
-	config.GitlabIntegrationTokenMicroFront = "glpat-yuHQ_MwQNrKmNax_7xgR"
+	config.GitlabKnativeToken = cast.ToString(getOrReturnDefaultValue("GITLAB_KNATIVE_TOKEN", "glpat-yfiNvrJqYWczk4Y2dnsq"))
+	config.GitlabKnativeGroupId = cast.ToInt(getOrReturnDefaultValue("GITLAB_KNATIVE_GROUP_ID", 5466))
+	config.GitlabKnativeProjectId = cast.ToInt(getOrReturnDefaultValue("GITLAB_KNATIVE_PROJECT_ID", 4622))
+
+	// OpenFass Gitlab Creds
+	config.GitlabOpenFassToken = cast.ToString(getOrReturnDefaultValue("GITLAB_OPENFASS_TOKEN", "glpat-HimXjgzaysg2EeiqLB_S"))
+	config.GitlabOpenFassGroupId = cast.ToInt(getOrReturnDefaultValue("GITLAB_OPENFASS_GROUP_ID", 2008))
+	config.GitlabOpenFassProjectId = cast.ToInt(getOrReturnDefaultValue("GITLAB_OPENFASS_PROJECT_ID", 1467))
 
 	// Microfront Gitlab Creds
-	config.GitlabGroupIdMicroFE = cast.ToInt(getOrReturnDefaultValue("GITLAB_GROUP_ID_MICROFE", 2604))
-	config.GitlabProjectIdMicroFE = cast.ToInt(getOrReturnDefaultValue("GITLAB_PROJECT_ID_MICROFE", 0))
-	config.GitlabHostMicroFE = cast.ToString(getOrReturnDefaultValue("GITLAB_HOST_MICROFE", "test-page.u-code.io"))
-	config.GitlabProjectIdMicroFeReact = cast.ToInt(getOrReturnDefaultValue("GITLAB_MICROFRONT_FE_REACT", 1993))
-	config.GitlabProjectIdMicroFeVue = cast.ToInt(getOrReturnDefaultValue("GITLAB_PROJECT_ID_MICRO_FE_VUE", 0))
-	config.GitlabProjectIdMicroFeAngular = cast.ToInt(getOrReturnDefaultValue("GITLAB_PROJECT_ID_MICRO_FE_ANGULAR", 0))
+	config.GitlabGroupIdMicroFront = cast.ToInt(getOrReturnDefaultValue("GITLAB_MICROFRONT_GROUP_ID", 2604))
+	config.GitlabProjectIdMicroFront = cast.ToInt(getOrReturnDefaultValue("GITLAB_MICROFRONT_PROJECT_ID", 0))
+	config.GitlabTokenMicroFront = cast.ToString(getOrReturnDefaultValue("GITLAB_MICROFRONT_TOKEN", "glpat-wT2-JCyqDx4pWPzAXy12"))
+	config.GitlabHostMicroFront = cast.ToString(getOrReturnDefaultValue("GITLAB_MICROFRONT_HOST", "test-page.u-code.io"))
+	config.GitlabProjectIdMicroFrontReact = cast.ToInt(getOrReturnDefaultValue("GITLAB_MICROFRONT_REACT_PROJECT_ID", 1993))
+	config.GitlabProjectIdMicroFrontVue = cast.ToInt(getOrReturnDefaultValue("GITLAB_MICROFRONT_VUE_PROJECT_ID", 0))
+	config.GitlabProjectIdMicroFrontAngular = cast.ToInt(getOrReturnDefaultValue("GITLAB_MICROFRONT_ANGULAR_PROJECT_ID", 0))
 
 	// Grafana Creds
-	config.GrafanaBaseUrl = "https://grafana.u-code.io"
-	config.GrafanaAuth = "ucode-dev:sie0eeBuZ3Neigageejo"
+	config.GrafanaBaseUrl = cast.ToString(getOrReturnDefaultValue("GRAFANA_BASE_URL", "https://grafana.u-code.io"))
+	config.GrafanaAuth = cast.ToString(getOrReturnDefaultValue("GRAFANA_AUTH", "ucode-dev:sie0eeBuZ3Neigageejo"))
 
 	return config
 }

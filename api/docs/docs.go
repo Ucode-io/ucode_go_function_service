@@ -51,7 +51,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -89,7 +89,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -107,7 +107,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -151,7 +151,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -169,7 +169,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -187,7 +187,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -237,7 +237,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -275,7 +275,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -293,7 +293,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -337,13 +337,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ucode_ucode_go_function_service_api_models.GithubUser"
+                                            "$ref": "#/definitions/models.GithubUser"
                                         }
                                     }
                                 }
@@ -355,7 +355,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -373,7 +373,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -448,13 +448,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.GetCustomEventsListResponse"
+                                            "$ref": "#/definitions/object_builder_service.GetCustomEventsListResponse"
                                         }
                                     }
                                 }
@@ -466,7 +466,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -484,7 +484,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -531,7 +531,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ucode_ucode_go_function_service_api_models.CustomEvent"
+                            "$ref": "#/definitions/models.CustomEvent"
                         }
                     }
                 ],
@@ -544,7 +544,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -562,7 +562,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -609,7 +609,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.CreateCustomEventRequest"
+                            "$ref": "#/definitions/object_builder_service.CreateCustomEventRequest"
                         }
                     }
                 ],
@@ -619,13 +619,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.CustomEvent"
+                                            "$ref": "#/definitions/object_builder_service.CustomEvent"
                                         }
                                     }
                                 }
@@ -637,7 +637,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -655,7 +655,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -712,13 +712,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.CustomEvent"
+                                            "$ref": "#/definitions/object_builder_service.CustomEvent"
                                         }
                                     }
                                 }
@@ -730,7 +730,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -748,7 +748,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -806,7 +806,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -824,7 +824,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -885,13 +885,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.GetAllFunctionsResponse"
+                                            "$ref": "#/definitions/object_builder_service.GetAllFunctionsResponse"
                                         }
                                     }
                                 }
@@ -903,7 +903,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -921,7 +921,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -961,7 +961,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ucode_ucode_go_function_service_api_models.Function"
+                            "$ref": "#/definitions/models.Function"
                         }
                     }
                 ],
@@ -974,7 +974,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -992,7 +992,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1032,7 +1032,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ucode_ucode_go_function_service_api_models.CreateFunctionRequest"
+                            "$ref": "#/definitions/models.CreateFunctionRequest"
                         }
                     }
                 ],
@@ -1045,7 +1045,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1063,7 +1063,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1124,13 +1124,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.GetAllFunctionsResponse"
+                                            "$ref": "#/definitions/object_builder_service.GetAllFunctionsResponse"
                                         }
                                     }
                                 }
@@ -1142,7 +1142,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1160,7 +1160,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1210,13 +1210,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.Function"
+                                            "$ref": "#/definitions/object_builder_service.Function"
                                         }
                                     }
                                 }
@@ -1228,7 +1228,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1246,7 +1246,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1297,7 +1297,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1315,7 +1315,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1376,13 +1376,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.GetAllFunctionsResponse"
+                                            "$ref": "#/definitions/object_builder_service.GetAllFunctionsResponse"
                                         }
                                     }
                                 }
@@ -1394,7 +1394,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1412,7 +1412,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1452,7 +1452,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ucode_ucode_go_function_service_api_models.Function"
+                            "$ref": "#/definitions/models.Function"
                         }
                     }
                 ],
@@ -1465,7 +1465,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1483,7 +1483,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1523,7 +1523,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ucode_ucode_go_function_service_api_models.CreateFunctionRequest"
+                            "$ref": "#/definitions/models.CreateFunctionRequest"
                         }
                     }
                 ],
@@ -1533,13 +1533,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.Function"
+                                            "$ref": "#/definitions/object_builder_service.Function"
                                         }
                                     }
                                 }
@@ -1551,7 +1551,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1569,7 +1569,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1619,13 +1619,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.Function"
+                                            "$ref": "#/definitions/object_builder_service.Function"
                                         }
                                     }
                                 }
@@ -1637,7 +1637,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1655,7 +1655,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1706,7 +1706,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1724,7 +1724,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1766,7 +1766,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ucode_ucode_go_function_service_api_models.InvokeFunctionRequest"
+                            "$ref": "#/definitions/models.InvokeFunctionRequest"
                         }
                     }
                 ],
@@ -1776,13 +1776,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ucode_ucode_go_function_service_api_models.InvokeFunctionRequest"
+                                            "$ref": "#/definitions/models.InvokeFunctionRequest"
                                         }
                                     }
                                 }
@@ -1794,7 +1794,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1812,7 +1812,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1861,7 +1861,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ucode_ucode_go_function_service_api_models.CommonMessage"
+                            "$ref": "#/definitions/models.CommonMessage"
                         }
                     }
                 ],
@@ -1871,13 +1871,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ucode_ucode_go_function_service_api_models.InvokeFunctionRequest"
+                                            "$ref": "#/definitions/models.InvokeFunctionRequest"
                                         }
                                     }
                                 }
@@ -1889,7 +1889,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1907,7 +1907,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1966,7 +1966,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1984,7 +1984,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -2002,7 +2002,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -2039,7 +2039,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ucode_ucode_go_function_service_api_models.GetGrafanaFunctionLogRequest"
+                            "$ref": "#/definitions/models.GetGrafanaFunctionLogRequest"
                         }
                     }
                 ],
@@ -2049,7 +2049,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -2067,7 +2067,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -2085,7 +2085,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -2134,7 +2134,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ucode_ucode_go_function_service_api_models.CommonMessage"
+                            "$ref": "#/definitions/models.CommonMessage"
                         }
                     }
                 ],
@@ -2144,13 +2144,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ucode_ucode_go_function_service_api_models.InvokeFunctionRequest"
+                                            "$ref": "#/definitions/models.InvokeFunctionRequest"
                                         }
                                     }
                                 }
@@ -2162,7 +2162,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -2180,7 +2180,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -2218,7 +2218,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ucode_ucode_go_function_service_api_models.CommonMessage": {
+        "models.CommonMessage": {
             "type": "object",
             "properties": {
                 "data": {
@@ -2230,7 +2230,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ucode_ucode_go_function_service_api_models.CreateFunctionRequest": {
+        "models.CreateFunctionRequest": {
             "type": "object",
             "properties": {
                 "branch": {
@@ -2256,10 +2256,13 @@ const docTemplate = `{
                 },
                 "resource_id": {
                     "type": "string"
+                },
+                "type": {
+                    "type": "string"
                 }
             }
         },
-        "ucode_ucode_go_function_service_api_models.CustomEvent": {
+        "models.CustomEvent": {
             "type": "object",
             "properties": {
                 "action_type": {
@@ -2301,7 +2304,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ucode_ucode_go_function_service_api_models.Function": {
+        "models.Function": {
             "type": "object",
             "properties": {
                 "description": {
@@ -2321,7 +2324,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ucode_ucode_go_function_service_api_models.GetGrafanaFunctionLogRequest": {
+        "models.GetGrafanaFunctionLogRequest": {
             "type": "object",
             "properties": {
                 "from": {
@@ -2338,7 +2341,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ucode_ucode_go_function_service_api_models.GithubUser": {
+        "models.GithubUser": {
             "type": "object",
             "properties": {
                 "avatar_url": {
@@ -2414,7 +2417,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ucode_ucode_go_function_service_api_models.InvokeFunctionRequest": {
+        "models.InvokeFunctionRequest": {
             "type": "object",
             "properties": {
                 "attributes": {
@@ -2435,20 +2438,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ucode_ucode_go_function_service_api_status_http.Response": {
-            "type": "object",
-            "properties": {
-                "custom_message": {},
-                "data": {},
-                "description": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "ucode_ucode_go_function_service_genproto_object_builder_service.CreateCustomEventRequest": {
+        "object_builder_service.CreateCustomEventRequest": {
             "type": "object",
             "properties": {
                 "action_type": {
@@ -2492,7 +2482,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ucode_ucode_go_function_service_genproto_object_builder_service.CustomEvent": {
+        "object_builder_service.CustomEvent": {
             "type": "object",
             "properties": {
                 "action_permission": {
@@ -2516,7 +2506,7 @@ const docTemplate = `{
                 "functions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.Function"
+                        "$ref": "#/definitions/object_builder_service.Function"
                     }
                 },
                 "icon": {
@@ -2542,7 +2532,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ucode_ucode_go_function_service_genproto_object_builder_service.Function": {
+        "object_builder_service.Function": {
             "type": "object",
             "properties": {
                 "branch": {
@@ -2616,7 +2606,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ucode_ucode_go_function_service_genproto_object_builder_service.GetAllFunctionsResponse": {
+        "object_builder_service.GetAllFunctionsResponse": {
             "type": "object",
             "properties": {
                 "count": {
@@ -2625,12 +2615,12 @@ const docTemplate = `{
                 "functions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.Function"
+                        "$ref": "#/definitions/object_builder_service.Function"
                     }
                 }
             }
         },
-        "ucode_ucode_go_function_service_genproto_object_builder_service.GetCustomEventsListResponse": {
+        "object_builder_service.GetCustomEventsListResponse": {
             "type": "object",
             "properties": {
                 "count": {
@@ -2639,8 +2629,21 @@ const docTemplate = `{
                 "custom_events": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.CustomEvent"
+                        "$ref": "#/definitions/object_builder_service.CustomEvent"
                     }
+                }
+            }
+        },
+        "status_http.Response": {
+            "type": "object",
+            "properties": {
+                "custom_message": {},
+                "data": {},
+                "description": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
                 }
             }
         }

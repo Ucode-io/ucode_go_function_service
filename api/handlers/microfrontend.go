@@ -116,9 +116,9 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 	if function.FrameworkType == "REACT" {
 		respCreateFork, err = gitlab.CreateProjectFork(functionPath, gitlab.IntegrationData{
 			GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
-			GitlabIntegrationToken: h.cfg.GitlabIntegrationTokenMicroFront,
-			GitlabProjectId:        h.cfg.GitlabProjectIdMicroFeReact,
-			GitlabGroupId:          h.cfg.GitlabGroupIdMicroFE,
+			GitlabIntegrationToken: h.cfg.GitlabTokenMicroFront,
+			GitlabProjectId:        h.cfg.GitlabProjectIdMicroFrontReact,
+			GitlabGroupId:          h.cfg.GitlabGroupIdMicroFront,
 		})
 		if err != nil {
 			h.handleResponse(c, status.InvalidArgument, err.Error())
@@ -132,9 +132,9 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 	_, err = gitlab.UpdateProject(
 		gitlab.IntegrationData{
 			GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
-			GitlabIntegrationToken: h.cfg.GitlabIntegrationTokenMicroFront,
+			GitlabIntegrationToken: h.cfg.GitlabTokenMicroFront,
 			GitlabProjectId:        int(respCreateFork.Message["id"].(float64)),
-			GitlabGroupId:          h.cfg.GitlabGroupIdMicroFE,
+			GitlabGroupId:          h.cfg.GitlabGroupIdMicroFront,
 		}, map[string]any{
 			"ci_config_path": ".gitlab-ci.yml",
 		})
@@ -145,7 +145,7 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 
 	var (
 		id       = uuid.New().String()
-		repoHost = fmt.Sprintf("%s-%s", id, h.cfg.GitlabHostMicroFE)
+		repoHost = fmt.Sprintf("%s-%s", id, h.cfg.GitlabHostMicroFront)
 		data     = make([]map[string]interface{}, 0)
 		host     = make(map[string]interface{})
 	)
@@ -156,9 +156,9 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 
 	_, err = gitlab.CreateProjectVariable(gitlab.IntegrationData{
 		GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
-		GitlabIntegrationToken: h.cfg.GitlabIntegrationTokenMicroFront,
+		GitlabIntegrationToken: h.cfg.GitlabTokenMicroFront,
 		GitlabProjectId:        int(respCreateFork.Message["id"].(float64)),
-		GitlabGroupId:          h.cfg.GitlabGroupIdMicroFE,
+		GitlabGroupId:          h.cfg.GitlabGroupIdMicroFront,
 	}, host)
 	if err != nil {
 		h.handleResponse(c, status.InvalidArgument, err.Error())
@@ -168,9 +168,9 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 	_, err = gitlab.CreatePipeline(
 		gitlab.IntegrationData{
 			GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
-			GitlabIntegrationToken: h.cfg.GitlabIntegrationTokenMicroFront,
+			GitlabIntegrationToken: h.cfg.GitlabTokenMicroFront,
 			GitlabProjectId:        int(respCreateFork.Message["id"].(float64)),
-			GitlabGroupId:          h.cfg.GitlabGroupIdMicroFE,
+			GitlabGroupId:          h.cfg.GitlabGroupIdMicroFront,
 		}, map[string]any{
 			"variables": data,
 		},
@@ -381,7 +381,7 @@ func (h *Handler) GetAllMicroFrontEnd(c *gin.Context) {
 				Limit:     int32(limit),
 				Offset:    int32(offset),
 				ProjectId: resource.ResourceEnvironmentId,
-				Type:      config.MICROFE,
+				Type:      []string{config.MICROFE},
 			},
 		)
 		if err != nil {

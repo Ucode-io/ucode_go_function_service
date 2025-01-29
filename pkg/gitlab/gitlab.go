@@ -4,16 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strconv"
 	"time"
 	status "ucode/ucode_go_function_service/api/status_http"
 	"ucode/ucode_go_function_service/config"
-	"ucode/ucode_go_function_service/pkg/helper"
 )
 
 func CreateProjectFork(projectName string, data IntegrationData) (response GitlabIntegrationResponse, err error) {
@@ -82,7 +78,6 @@ func DoRequest(url, token string, method string, body interface{}) (responseMode
 }
 
 func UpdateProject(cfg IntegrationData, data map[string]any) (response GitlabIntegrationResponse, err error) {
-	// create repo in given group by existing project in gitlab
 	var (
 		projectId    = cfg.GitlabProjectId
 		strProjectId = strconv.Itoa(projectId)
@@ -100,7 +95,6 @@ func UpdateProject(cfg IntegrationData, data map[string]any) (response GitlabInt
 }
 
 func CreateProjectVariable(cfg IntegrationData, data map[string]any) (response GitlabIntegrationResponse, err error) {
-	// create repo in given group by existing project in gitlab
 	var (
 		projectId    = cfg.GitlabProjectId
 		strProjectId = strconv.Itoa(projectId)
@@ -115,50 +109,6 @@ func CreateProjectVariable(cfg IntegrationData, data map[string]any) (response G
 	}
 
 	return resp, err
-}
-
-func AddFilesToRepo(gitlabToken string, path string, gitlabRepoId int, branch string) error {
-	localFolderPath := "/go/src/gitlab.udevs.io/ucode/ucode_go_admin_api_gateway/github_integration"
-
-	files, err := helper.ListFiles(localFolderPath)
-	if err != nil {
-		return errors.New("error listing files")
-	}
-
-	var actions []map[string]any
-
-	for _, file := range files {
-		if file == ".gitlab-ci.yml" {
-			continue
-		}
-		filePath := filepath.Join(localFolderPath, file)
-		fileContent, err := os.ReadFile(filePath)
-		if err != nil {
-			return errors.New("failed to read file")
-		}
-
-		action := map[string]any{
-			"action":    "create",
-			"file_path": file,
-			"content":   string(fileContent),
-		}
-
-		actions = append(actions, action)
-	}
-
-	commitURL := fmt.Sprintf("%s/projects/%v/repository/commits", "https://gitlab.udevs.io/api/v4", gitlabRepoId)
-	commitPayload := map[string]any{
-		"branch":         branch,
-		"commit_message": "Added devops files",
-		"actions":        actions,
-	}
-
-	_, err = MakeGitLabRequest(http.MethodPost, commitURL, commitPayload, gitlabToken)
-	if err != nil {
-		return errors.New("failed to make GitLab request")
-	}
-
-	return nil
 }
 
 func MakeGitLabRequest(method, url string, payload map[string]any, token string) (map[string]any, error) {
@@ -196,7 +146,7 @@ func MakeGitLabRequest(method, url string, payload map[string]any, token string)
 }
 
 func DeleteForkedProject(repoName string, cfg config.Config) (response GitlabIntegrationResponse, err error) {
-	resp, _ := DoRequest(cfg.GitlabIntegrationURL+"/api/v4/projects/ucode_functions_group%2"+"F"+repoName, cfg.GitlabIntegrationTokenMicroFront, http.MethodDelete, nil)
+	resp, _ := DoRequest(cfg.GitlabIntegrationURL+"/api/v4/projects/ucode_functions_group%2"+"F"+repoName, cfg.GitlabTokenMicroFront, http.MethodDelete, nil)
 
 	if resp.Code >= 400 {
 		return GitlabIntegrationResponse{}, errors.New(status.BadRequest.Description)

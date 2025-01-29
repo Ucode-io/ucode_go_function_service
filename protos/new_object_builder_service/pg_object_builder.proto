@@ -21,6 +21,7 @@ service ObjectBuilderService {
     rpc GetListForDocx(CommonForDocxMessage) returns (CommonMessage) {}
     rpc GetAllForDocx(CommonMessage) returns (CommonMessage) {}
     rpc GetAllFieldsForDocx(CommonMessage) returns (CommonMessage) {}
+    rpc AgGridTree(CommonMessage) returns (CommonMessage) {}
 }
 
 message CommonMessage {

@@ -15,10 +15,12 @@ import (
 	nb "ucode/ucode_go_function_service/genproto/new_object_builder_service"
 	obs "ucode/ucode_go_function_service/genproto/object_builder_service"
 	"ucode/ucode_go_function_service/pkg/github"
+	"ucode/ucode_go_function_service/pkg/gitlab"
 	"ucode/ucode_go_function_service/pkg/helper"
 	"ucode/ucode_go_function_service/pkg/util"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/spf13/cast"
 )
 
@@ -72,9 +74,7 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 	}
 
 	project, err := h.services.CompanyService().Project().GetById(
-		ctx, &pb.GetProjectByIdRequest{
-			ProjectId: projectId.(string),
-		},
+		ctx, &pb.GetProjectByIdRequest{ProjectId: projectId.(string)},
 	)
 	if err != nil {
 		h.handleResponse(c, status.GRPCError, err.Error())
@@ -206,10 +206,10 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		return
 	}
 
-	if !(github.VerifySignature(c.GetHeader("X-Hub-Signature"), body, []byte(h.cfg.WebhookSecret))) {
-		h.handleResponse(c, status.BadRequest, "failed to verify signature")
-		return
-	}
+	// if !(github.VerifySignature(c.GetHeader("X-Hub-Signature"), body, []byte(h.cfg.WebhookSecret))) {
+	// 	h.handleResponse(c, status.BadRequest, "failed to verify signature")
+	// 	return
+	// }
 
 	projectResource, err := h.services.CompanyService().Resource().GetSingleProjectResouece(
 		c.Request.Context(), &pb.PrimaryKeyProjectResource{
@@ -347,7 +347,7 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 						Description:    repoDescription,
 						ProjectId:      resource.ResourceEnvironmentId,
 						EnvironmentId:  resource.EnvironmentId,
-						Type:           cfg.KNATIVE,
+						Type:           cfg.MICROFE,
 						SourceUrl:      htmlUrl,
 						Branch:         branch,
 						PipelineStatus: "running",
@@ -360,14 +360,13 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 				}
 			}
 			function.PipelineStatus = "running"
-
 			go h.deployFunction(
 				models.DeployFunctionRequest{
 					GithubToken:     token,
 					RepoId:          repoId,
-					ResourceType:    resource.NodeType,
 					Function:        function,
-					TargetNamespace: "ucode/knative",
+					ResourceType:    resource.NodeType,
+					TargetNamespace: cfg.MicroFrontNamaspece,
 				},
 			)
 		}
@@ -412,7 +411,7 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 				RepoId:          repoId,
 				ResourceType:    resource.NodeType,
 				Function:        function,
-				TargetNamespace: "ucode_functions_group",
+				TargetNamespace: cfg.OpenFassNamespace,
 			})
 		case cfg.KNATIVE:
 			if functionErr != nil {
@@ -443,7 +442,38 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 					RepoId:          repoId,
 					ResourceType:    resource.NodeType,
 					Function:        function,
-					TargetNamespace: "ucode/knative",
+					TargetNamespace: cfg.KnativeNamespace,
+				},
+			)
+		case cfg.MICROFE:
+			if functionErr != nil {
+				function, err = h.services.GoObjectBuilderService().Function().Create(
+					c.Request.Context(), &nb.CreateFunctionRequest{
+						Path:           repoName,
+						Name:           name,
+						Description:    repoDescription,
+						ProjectId:      resource.ResourceEnvironmentId,
+						EnvironmentId:  resource.EnvironmentId,
+						Type:           cfg.MICROFE,
+						SourceUrl:      htmlUrl,
+						Branch:         branch,
+						PipelineStatus: "running",
+						Resource:       resourceType,
+					},
+				)
+				if err != nil {
+					h.handleResponse(c, status.InvalidArgument, err.Error())
+					return
+				}
+			}
+			function.PipelineStatus = "running"
+			go h.deployFunctionGo(
+				models.DeployFunctionRequestGo{
+					GithubToken:     token,
+					RepoId:          repoId,
+					ResourceType:    resource.NodeType,
+					Function:        function,
+					TargetNamespace: cfg.MicroFrontNamaspece,
 				},
 			)
 		}
@@ -451,45 +481,92 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 }
 
 func (h *Handler) deployFunction(req models.DeployFunctionRequest) (github.ImportResponse, error) {
+	var gitlabToken string
+
+	switch req.Function.Type {
+	case cfg.FUNCTION:
+		gitlabToken = h.cfg.GitlabOpenFassToken
+	case cfg.KNATIVE:
+		gitlabToken = h.cfg.GitlabKnativeToken
+	case cfg.MICROFE:
+		gitlabToken = h.cfg.GitlabTokenMicroFront
+	}
+
 	importResponse, err := github.ImportFromGithub(github.ImportData{
 		PersonalAccessToken: req.GithubToken,
 		RepoId:              req.RepoId,
 		TargetNamespace:     req.TargetNamespace,
 		NewName:             req.Function.Path,
-		GitlabToken:         h.cfg.GitlabIntegrationToken,
+		GitlabToken:         gitlabToken,
 	})
 	if err != nil {
 		return github.ImportResponse{}, err
 	}
 
 	time.Sleep(10 * time.Second)
+
 	switch req.Function.Type {
 	case cfg.KNATIVE:
-		err = github.AddCiFileKnative(h.cfg.GitlabIntegrationToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneKnative)
+		err = github.AddCiFileKnative(gitlabToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneKnative)
 		if err != nil {
-			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
+			if err := github.DeleteRepository(gitlabToken, importResponse.ID); err != nil {
 				return github.ImportResponse{}, err
 			}
 		}
 	case cfg.FUNCTION:
-		err = github.AddCiFileFunction(h.cfg.GitlabIntegrationToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneFunction)
+		err = github.AddCiFileFunction(gitlabToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneFunction)
 		if err != nil {
-			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
+			if err := github.DeleteRepository(gitlabToken, importResponse.ID); err != nil {
 				return github.ImportResponse{}, err
 			}
 		}
 	case cfg.MICROFE:
-		err = github.AddFilesMicroFront(h.cfg.GitlabIntegrationToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneMicroFront)
+		var (
+			id       = uuid.New().String()
+			repoHost = fmt.Sprintf("%s-%s", id, h.cfg.GitlabHostMicroFront)
+			data     = make([]map[string]interface{}, 0)
+			host     = make(map[string]interface{})
+		)
+
+		host["key"] = "INGRESS_HOST"
+		host["value"] = repoHost
+		data = append(data, host)
+
+		_, err = gitlab.CreateProjectVariable(gitlab.IntegrationData{
+			GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
+			GitlabIntegrationToken: gitlabToken,
+			GitlabProjectId:        importResponse.ID,
+			GitlabGroupId:          h.cfg.GitlabGroupIdMicroFront,
+		}, host)
 		if err != nil {
-			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
+			return github.ImportResponse{}, err
+		}
+
+		err = github.AddFilesMicroFront(gitlabToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneMicroFront)
+		if err != nil {
+			if err := github.DeleteRepository(gitlabToken, importResponse.ID); err != nil {
 				return github.ImportResponse{}, err
 			}
+		}
+
+		_, err = gitlab.CreatePipeline(
+			gitlab.IntegrationData{
+				GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
+				GitlabIntegrationToken: gitlabToken,
+				GitlabProjectId:        importResponse.ID,
+				GitlabGroupId:          h.cfg.GitlabGroupIdMicroFront,
+			}, map[string]any{
+				"variables": data,
+			},
+		)
+		if err != nil {
+			return github.ImportResponse{}, err
 		}
 	}
 
 	for {
 		time.Sleep(60 * time.Second)
-		pipeline, err := github.GetLatestPipeline(h.cfg.GitlabIntegrationToken, req.Function.Branch, importResponse.ID)
+		pipeline, err := github.GetLatestPipeline(gitlabToken, req.Function.Branch, importResponse.ID)
 		if err != nil {
 			h.services.GetBuilderServiceByType(req.ResourceType).Function().Update(
 				context.Background(), &obs.Function{
@@ -512,14 +589,14 @@ func (h *Handler) deployFunction(req models.DeployFunctionRequest) (github.Impor
 				},
 			)
 
-			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
+			if err := github.DeleteRepository(gitlabToken, importResponse.ID); err != nil {
 				return github.ImportResponse{}, err
 			}
 			return github.ImportResponse{}, err
 		}
 
 		if pipeline.Status == "failed" {
-			logResp, err := github.GetPipelineLog(fmt.Sprintf("%v", importResponse.ID), h.cfg.GitlabIntegrationURL, h.cfg.GitlabIntegrationToken)
+			logResp, err := github.GetPipelineLog(fmt.Sprintf("%v", importResponse.ID), h.cfg.GitlabIntegrationURL, gitlabToken)
 			if err != nil {
 				return github.ImportResponse{}, err
 			}
@@ -547,7 +624,7 @@ func (h *Handler) deployFunction(req models.DeployFunctionRequest) (github.Impor
 				},
 			)
 
-			err = github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID)
+			err = github.DeleteRepository(gitlabToken, importResponse.ID)
 			if err != nil {
 				return github.ImportResponse{}, err
 			}
@@ -577,7 +654,7 @@ func (h *Handler) deployFunction(req models.DeployFunctionRequest) (github.Impor
 			},
 		)
 		if pipeline.Status == "success" || pipeline.Status == "skipped" {
-			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
+			if err := github.DeleteRepository(gitlabToken, importResponse.ID); err != nil {
 				return github.ImportResponse{}, err
 			}
 			return github.ImportResponse{}, nil
@@ -586,12 +663,23 @@ func (h *Handler) deployFunction(req models.DeployFunctionRequest) (github.Impor
 }
 
 func (h *Handler) deployFunctionGo(req models.DeployFunctionRequestGo) (github.ImportResponse, error) {
+	var gitlabToken string
+
+	switch req.Function.Type {
+	case cfg.FUNCTION:
+		gitlabToken = h.cfg.GitlabOpenFassToken
+	case cfg.KNATIVE:
+		gitlabToken = h.cfg.GitlabKnativeToken
+	case cfg.MICROFE:
+		gitlabToken = h.cfg.GitlabTokenMicroFront
+	}
+
 	importResponse, err := github.ImportFromGithub(github.ImportData{
 		PersonalAccessToken: req.GithubToken,
 		RepoId:              req.RepoId,
 		TargetNamespace:     req.TargetNamespace,
 		NewName:             req.Function.Path,
-		GitlabToken:         h.cfg.GitlabIntegrationToken,
+		GitlabToken:         gitlabToken,
 	})
 	if err != nil {
 		return github.ImportResponse{}, err
@@ -600,31 +688,66 @@ func (h *Handler) deployFunctionGo(req models.DeployFunctionRequestGo) (github.I
 	time.Sleep(10 * time.Second)
 	switch req.Function.Type {
 	case cfg.KNATIVE:
-		err = github.AddCiFileKnative(h.cfg.GitlabIntegrationToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneKnative)
+		err = github.AddCiFileKnative(gitlabToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneKnative)
 		if err != nil {
-			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
+			if err := github.DeleteRepository(gitlabToken, importResponse.ID); err != nil {
 				return github.ImportResponse{}, err
 			}
 		}
 	case cfg.FUNCTION:
-		err = github.AddCiFileFunction(h.cfg.GitlabIntegrationToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneFunction)
+		err = github.AddCiFileFunction(gitlabToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneFunction)
 		if err != nil {
-			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
+			if err := github.DeleteRepository(gitlabToken, importResponse.ID); err != nil {
 				return github.ImportResponse{}, err
 			}
 		}
 	case cfg.MICROFE:
-		err = github.AddFilesMicroFront(h.cfg.GitlabIntegrationToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneMicroFront)
+		var (
+			id       = uuid.New().String()
+			repoHost = fmt.Sprintf("%s-%s", id, h.cfg.GitlabHostMicroFront)
+			data     = make([]map[string]interface{}, 0)
+			host     = make(map[string]interface{})
+		)
+
+		host["key"] = "INGRESS_HOST"
+		host["value"] = repoHost
+		data = append(data, host)
+
+		_, err = gitlab.CreateProjectVariable(gitlab.IntegrationData{
+			GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
+			GitlabIntegrationToken: gitlabToken,
+			GitlabProjectId:        importResponse.ID,
+			GitlabGroupId:          h.cfg.GitlabGroupIdMicroFront,
+		}, host)
 		if err != nil {
-			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
+			return github.ImportResponse{}, err
+		}
+
+		err = github.AddFilesMicroFront(gitlabToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneMicroFront)
+		if err != nil {
+			if err := github.DeleteRepository(gitlabToken, importResponse.ID); err != nil {
 				return github.ImportResponse{}, err
 			}
+		}
+
+		_, err = gitlab.CreatePipeline(
+			gitlab.IntegrationData{
+				GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
+				GitlabIntegrationToken: gitlabToken,
+				GitlabProjectId:        importResponse.ID,
+				GitlabGroupId:          h.cfg.GitlabGroupIdMicroFront,
+			}, map[string]any{
+				"variables": data,
+			},
+		)
+		if err != nil {
+			return github.ImportResponse{}, err
 		}
 	}
 
 	for {
 		time.Sleep(60 * time.Second)
-		pipeline, err := github.GetLatestPipeline(h.cfg.GitlabIntegrationToken, req.Function.Branch, importResponse.ID)
+		pipeline, err := github.GetLatestPipeline(gitlabToken, req.Function.Branch, importResponse.ID)
 		if err != nil {
 			h.services.GoObjectBuilderService().Function().Update(
 				context.Background(), &nb.Function{
@@ -646,14 +769,14 @@ func (h *Handler) deployFunctionGo(req models.DeployFunctionRequestGo) (github.I
 				},
 			)
 
-			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
+			if err := github.DeleteRepository(gitlabToken, importResponse.ID); err != nil {
 				return github.ImportResponse{}, err
 			}
 			return github.ImportResponse{}, err
 		}
 
 		if pipeline.Status == "failed" {
-			logResp, err := github.GetPipelineLog(fmt.Sprintf("%v", importResponse.ID), h.cfg.GitlabIntegrationURL, h.cfg.GitlabIntegrationToken)
+			logResp, err := github.GetPipelineLog(fmt.Sprintf("%v", importResponse.ID), h.cfg.GitlabIntegrationURL, gitlabToken)
 			if err != nil {
 				return github.ImportResponse{}, err
 			}
@@ -681,7 +804,7 @@ func (h *Handler) deployFunctionGo(req models.DeployFunctionRequestGo) (github.I
 				},
 			)
 
-			err = github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID)
+			err = github.DeleteRepository(gitlabToken, importResponse.ID)
 			if err != nil {
 				return github.ImportResponse{}, err
 			}
@@ -711,57 +834,10 @@ func (h *Handler) deployFunctionGo(req models.DeployFunctionRequestGo) (github.I
 			},
 		)
 		if pipeline.Status == "success" || pipeline.Status == "skipped" {
-			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
+			if err := github.DeleteRepository(gitlabToken, importResponse.ID); err != nil {
 				return github.ImportResponse{}, err
 			}
 			return github.ImportResponse{}, nil
 		}
 	}
 }
-
-// func (h *Handler) deployMicrofrontend(req models.DeployFunctionRequest) (github.ImportResponse, error) {
-// 	importResponse, err := github.ImportFromGithub(github.ImportData{
-// 		PersonalAccessToken: req.GithubToken,
-// 		RepoId:              req.RepoId,
-// 		TargetNamespace:     req.TargetNamespace,
-// 		NewName:             req.Function.Path,
-// 		GitlabToken:         h.cfg.GitlabIntegrationTokenMicroFront,
-// 	})
-// 	if err != nil {
-// 		return github.ImportResponse{}, err
-// 	}
-
-// 	_, err = gitlab.UpdateProject(gitlab.IntegrationData{
-// 		GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
-// 		GitlabIntegrationToken: h.cfg.GitlabIntegrationToken,
-// 		GitlabProjectId:        importResponse.ID,
-// 		GitlabGroupId:          h.cfg.GitlabGroupIdMicroFE,
-// 	}, map[string]any{
-// 		"ci_config_path": ".gitlab-ci.yml",
-// 	})
-// 	if err != nil {
-// 		return github.ImportResponse{}, err
-// 	}
-
-// 	var host = make(map[string]any)
-// 	host["key"] = "INGRESS_HOST"
-// 	host["value"] = req.Function.Url
-
-// 	_, err = gitlab.CreateProjectVariable(gitlab.IntegrationData{
-// 		GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
-// 		GitlabIntegrationToken: h.cfg.GitlabIntegrationToken,
-// 		GitlabProjectId:        importResponse.ID,
-// 		GitlabGroupId:          h.cfg.GitlabGroupIdMicroFE,
-// 	}, host)
-// 	if err != nil {
-// 		return github.ImportResponse{}, err
-// 	}
-
-// 	time.Sleep(3 * time.Second)
-
-// 	err = gitlab.AddFilesToRepo(h.cfg.GitlabIntegrationToken, h.cfg.PathToClone, importResponse.ID, function.Branch)
-// 	if err != nil {
-// 		return github.ImportResponse{}, err
-// 	}
-
-// }

@@ -4,6 +4,7 @@ package company_service;
 option go_package="genproto/company_service";
 
 import "google/protobuf/empty.proto";
+import "company.proto";
 
 service BillingService {
     // Fare Methods
@@ -28,6 +29,7 @@ service BillingService {
 
     // Compare
     rpc CompareFunction(CompareFunctionRequest) returns (CompareFunctionResponse);
+    rpc UpsertMonthlyRequest(MonthlyRequest) returns (google.protobuf.Empty);
 }
 
 message CompareFunctionRequest {
@@ -89,6 +91,7 @@ message Transaction {
     string fare_id = 11;
     string created_at = 12;
     string accepted_at = 13;
+    Currency currency = 14;
 }
 
 // Requests and Responses
@@ -151,4 +154,9 @@ message CreateTransactionRequest {
 message ListTransactionsResponse {
     repeated Transaction transactions = 1;
     int32 count = 2;
+}
+
+message MonthlyRequest {
+    string project_id = 1;
+    int32 count = 2; 
 }
