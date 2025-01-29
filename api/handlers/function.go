@@ -140,11 +140,12 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 		functionPath = projectName + "-" + function.Path
 		uuid         = uuid.New()
 		url          = "https://" + uuid.String() + ".u-code.io"
+		resp         gitlab.ForkResponse
 	)
 
 	switch function.Type {
 	case config.FUNCTION:
-		_, err = gitlab.CreateProjectFork(functionPath, gitlab.IntegrationData{
+		resp, err = gitlab.CreateProjectFork(functionPath, gitlab.IntegrationData{
 			GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
 			GitlabIntegrationToken: h.cfg.GitlabOpenFassToken,
 			GitlabGroupId:          h.cfg.GitlabOpenFassGroupId,
@@ -155,7 +156,7 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 			return
 		}
 	case config.KNATIVE:
-		_, err = gitlab.CreateProjectFork(functionPath, gitlab.IntegrationData{
+		resp, err = gitlab.CreateProjectFork(functionPath, gitlab.IntegrationData{
 			GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
 			GitlabIntegrationToken: h.cfg.GitlabKnativeToken,
 			GitlabGroupId:          h.cfg.GitlabKnativeGroupId,
@@ -181,6 +182,8 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 			Url:              url,
 			Type:             function.Type,
 			Resource:         function.ResourceId,
+			RepoId:           fmt.Sprintf("%d", resp.ID),
+			Branch:           resp.DefaultBranch,
 		}
 
 		logReq = &models.CreateVersionHistoryRequest{

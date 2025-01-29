@@ -38,6 +38,10 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 		return
 	}
 
+	if len(createWebhookRequest.FunctionType) == 0 {
+		h.handleResponse(c, status.BadRequest, "function type required")
+	}
+
 	projectId, ok := c.Get("project_id")
 	if !ok || !util.IsValidUUID(projectId.(string)) {
 		h.handleResponse(c, status.InvalidArgument, "project id is an invalid uuid")
@@ -73,9 +77,7 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 		return
 	}
 
-	project, err := h.services.CompanyService().Project().GetById(
-		ctx, &pb.GetProjectByIdRequest{ProjectId: projectId.(string)},
-	)
+	project, err := h.services.CompanyService().Project().GetById(ctx, &pb.GetProjectByIdRequest{ProjectId: projectId.(string)})
 	if err != nil {
 		h.handleResponse(c, status.GRPCError, err.Error())
 		return
@@ -120,6 +122,7 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 		ProjectId:      resource.ResourceEnvironmentId,
 		EnvironmentId:  resource.EnvironmentId,
 		Type:           createWebhookRequest.FunctionType,
+		FrameworkType:  createWebhookRequest.FrameworkType,
 		Url:            "",
 		SourceUrl:      fmt.Sprintf("https://github.com/%s/%s", createWebhookRequest.Username, createWebhookRequest.RepoName),
 		Branch:         createWebhookRequest.Branch,
