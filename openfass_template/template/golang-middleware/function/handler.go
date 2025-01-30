@@ -73,14 +73,14 @@ func NewHadler(in Params) http.HandlerFunc {
 	}
 }
 
-func returnError(errorResponse sdk.ResponseError) interface{} {
+func returnError(errorResponse sdk.ResponseError) any {
 	return sdk.Response{
 		Status: "error",
-		Data:   map[string]interface{}{"message": errorResponse.ClientErrorMessage, "error": errorResponse.ErrorMessage},
+		Data:   map[string]any{"message": errorResponse.ClientErrorMessage, "error": errorResponse.ErrorMessage},
 	}
 }
 
-func handleResponse(w http.ResponseWriter, body interface{}, statusCode int) {
+func handleResponse(w http.ResponseWriter, body any, statusCode int) {
 	w.Header().Set("Content-Type", "application/json")
 
 	bodyByte, err := json.Marshal(body)

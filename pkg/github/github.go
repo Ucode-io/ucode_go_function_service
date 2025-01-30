@@ -374,7 +374,7 @@ func DoRequest(method, url string, payload map[string]any, token string) (map[st
 		return nil, err
 	}
 
-	var result map[string]interface{}
+	var result map[string]any
 
 	if err = json.Unmarshal(respBody, &result); err != nil {
 		return nil, err
@@ -411,7 +411,7 @@ func MakeRequest(method, url, token string, payload map[string]any) (map[string]
 		return nil, err
 	}
 
-	var result map[string]interface{}
+	var result map[string]any
 	err = json.Unmarshal(respBody, &result)
 	if err != nil {
 		return nil, err
@@ -420,7 +420,7 @@ func MakeRequest(method, url, token string, payload map[string]any) (map[string]
 	return result, nil
 }
 
-func MakeRequestV1(method, url, token string, payload map[string]interface{}) ([]byte, error) {
+func MakeRequestV1(method, url, token string, payload map[string]any) ([]byte, error) {
 	var reqBody = new(bytes.Buffer)
 
 	if payload != nil {

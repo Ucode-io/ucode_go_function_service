@@ -135,7 +135,7 @@ func (h *Handler) versionHistoryGo(c *gin.Context, req *models.CreateVersionHist
 	return nil
 }
 
-func fromMapToString(req map[string]interface{}) string {
+func fromMapToString(req map[string]any) string {
 	reqString, err := json.Marshal(req)
 	if err != nil {
 		return ""

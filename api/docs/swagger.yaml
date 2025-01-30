@@ -15,7 +15,7 @@ definitions:
   models.CommonMessage:
     properties:
       data:
-        additionalProperties: true
+        additionalProperties: {}
         type: object
       is_cached:
         type: boolean
@@ -46,7 +46,7 @@ definitions:
       action_type:
         type: string
       attributes:
-        additionalProperties: true
+        additionalProperties: {}
         type: object
       commit_guid:
         type: string
@@ -145,10 +145,19 @@ definitions:
       user_view_type:
         type: string
     type: object
+  models.GitlabUser:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      username:
+        type: string
+    type: object
   models.InvokeFunctionRequest:
     properties:
       attributes:
-        additionalProperties: true
+        additionalProperties: {}
         type: object
       function_id:
         type: string
@@ -328,16 +337,12 @@ paths:
                 data:
                   items:
                     properties:
-                      full_name:
-                        type: string
-                      id:
-                        type: integer
                       name:
                         type: string
-                      node_id:
-                        type: string
-                      private:
+                      protected:
                         type: boolean
+                      protection_url:
+                        type: string
                     type: object
                   type: array
               type: object
@@ -511,6 +516,225 @@ paths:
       summary: Github User
       tags:
       - Github
+  /gitlab/branches:
+    get:
+      consumes:
+      - application/json
+      description: Gitlab Branches
+      operationId: gitlab_get_branches
+      parameters:
+      - description: token
+        in: query
+        name: token
+        required: true
+        type: string
+      - description: project_id
+        in: query
+        name: project_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Data
+          schema:
+            allOf:
+            - $ref: '#/definitions/status_http.Response'
+            - properties:
+                data:
+                  items:
+                    properties:
+                      name:
+                        type: string
+                    type: object
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Gitlab Branches
+      tags:
+      - Gitlab
+  /gitlab/login:
+    get:
+      consumes:
+      - application/json
+      description: Gitlab Login
+      operationId: gitlab_login
+      parameters:
+      - description: code
+        in: query
+        name: code
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Data
+          schema:
+            allOf:
+            - $ref: '#/definitions/status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Gitlab Login
+      tags:
+      - Gitlab
+  /gitlab/repos:
+    get:
+      consumes:
+      - application/json
+      description: Gitlab Repo
+      operationId: gitlab_get_repos
+      parameters:
+      - description: token
+        in: query
+        name: token
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Data
+          schema:
+            allOf:
+            - $ref: '#/definitions/status_http.Response'
+            - properties:
+                data:
+                  items:
+                    properties:
+                      created_at:
+                        type: string
+                      default_branch:
+                        type: string
+                      id:
+                        type: integer
+                      name:
+                        type: string
+                      name_with_namespace:
+                        type: string
+                      namespace:
+                        properties:
+                          full_path:
+                            type: string
+                          id:
+                            type: integer
+                          kind:
+                            type: string
+                          name:
+                            type: string
+                          path:
+                            type: string
+                          web_url:
+                            type: string
+                        type: object
+                      path:
+                        type: string
+                      path_with_namespace:
+                        type: string
+                    type: object
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Gitlab Repo
+      tags:
+      - Gitlab
+  /gitlab/user:
+    get:
+      consumes:
+      - application/json
+      description: Gitlab User
+      operationId: gitlab_get_user
+      parameters:
+      - description: token
+        in: query
+        name: token
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Data
+          schema:
+            allOf:
+            - $ref: '#/definitions/status_http.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.GitlabUser'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Gitlab User
+      tags:
+      - Gitlab
   /v1/collections/{collection}/automation:
     get:
       consumes:

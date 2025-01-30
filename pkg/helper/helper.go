@@ -11,7 +11,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-func MarshalToStruct(data interface{}, resp interface{}) error {
+func MarshalToStruct(data any, resp any) error {
 	js, err := json.Marshal(data)
 	if err != nil {
 		return err
@@ -24,7 +24,7 @@ func MarshalToStruct(data interface{}, resp interface{}) error {
 	return nil
 }
 
-func ConvertMapToStruct(inputMap map[string]interface{}) (*structpb.Struct, error) {
+func ConvertMapToStruct(inputMap map[string]any) (*structpb.Struct, error) {
 	marshledInputMap, err := json.Marshal(inputMap)
 	outputStruct := &structpb.Struct{}
 	if err != nil {
@@ -45,16 +45,16 @@ func GetURLWithTableSlug(c *gin.Context) string {
 	return url
 }
 
-func ConvertStructToMap(s *structpb.Struct) (map[string]interface{}, error) {
-	var newMap = make(map[string]interface{})
+func ConvertStructToMap(s *structpb.Struct) (map[string]any, error) {
+	var newMap = make(map[string]any)
 
 	body, err := json.Marshal(s)
 	if err != nil {
-		return map[string]interface{}{}, err
+		return map[string]any{}, err
 	}
 
 	if err := json.Unmarshal(body, &newMap); err != nil {
-		return map[string]interface{}{}, err
+		return map[string]any{}, err
 	}
 
 	return newMap, nil

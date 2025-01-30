@@ -139,8 +139,8 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 	var (
 		id       = uuid.New().String()
 		repoHost = fmt.Sprintf("%s-%s", id, h.cfg.GitlabHostMicroFront)
-		data     = make([]map[string]interface{}, 0)
-		host     = make(map[string]interface{})
+		data     = make([]map[string]any, 0)
+		host     = make(map[string]any)
 	)
 
 	host["key"] = "INGRESS_HOST"

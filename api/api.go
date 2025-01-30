@@ -48,6 +48,14 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 		github.GET("/branches", h.GithubGetBranches)
 	}
 
+	gitlab := r.Group("/gitlab")
+	{
+		gitlab.GET("/login", h.GitlabLogin)
+		gitlab.GET("/user", h.GitlabGetUser)
+		gitlab.GET("/repos", h.GitlabGetRepos)
+		gitlab.GET("/branches", h.GitlabGetBranches)
+	}
+
 	v2 := r.Group("/v2")
 	v2.POST("/webhook/handle", h.HandleWebhook)
 

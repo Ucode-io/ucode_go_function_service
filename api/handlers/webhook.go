@@ -527,8 +527,8 @@ func (h *Handler) deployFunction(req models.DeployFunctionRequest) (github.Impor
 		var (
 			id       = uuid.New().String()
 			repoHost = fmt.Sprintf("%s-%s", id, h.cfg.GitlabHostMicroFront)
-			data     = make([]map[string]interface{}, 0)
-			host     = make(map[string]interface{})
+			data     = make([]map[string]any, 0)
+			host     = make(map[string]any)
 		)
 
 		host["key"] = "INGRESS_HOST"
@@ -708,8 +708,8 @@ func (h *Handler) deployFunctionGo(req models.DeployFunctionRequestGo) (github.I
 		var (
 			id       = uuid.New().String()
 			repoHost = fmt.Sprintf("%s-%s", id, h.cfg.GitlabHostMicroFront)
-			data     = make([]map[string]interface{}, 0)
-			host     = make(map[string]interface{})
+			data     = make([]map[string]any, 0)
+			host     = make(map[string]any)
 		)
 
 		host["key"] = "INGRESS_HOST"

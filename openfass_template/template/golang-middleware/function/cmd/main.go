@@ -14,8 +14,8 @@ import (
 // this part is to test the function locally
 func main() {
 	// Open and read the JSON file
-	requestBody := map[string]interface{}{
-		"data": map[string]interface{}{
+	requestBody := map[string]any{
+		"data": map[string]any{
 			"key":  "value",
 			"key2": "value2",
 		},

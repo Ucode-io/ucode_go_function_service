@@ -128,7 +128,7 @@ func parseIntOrDurationValue(val string, fallback time.Duration) time.Duration {
 	return duration
 }
 
-func getOrDefault(key string, def interface{}) interface{} {
+func getOrDefault(key string, def any) any {
 	val := os.Getenv(key)
 	if val == "" {
 		return def

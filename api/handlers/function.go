@@ -964,13 +964,13 @@ func (h *Handler) InvokeFunction(c *gin.Context) {
 	}
 
 	if invokeFunction.Attributes == nil {
-		invokeFunction.Attributes = make(map[string]interface{}, 0)
+		invokeFunction.Attributes = make(map[string]any, 0)
 	}
 
 	authInfo, _ := h.GetAuthInfo(c)
 
 	resp, err := util.DoRequest("https://ofs.u-code.io/function/"+function.Path, "POST", models.NewInvokeFunctionRequest{
-		Data: map[string]interface{}{
+		Data: map[string]any{
 			"object_ids":     invokeFunction.ObjectIDs,
 			"app_id":         apiKeys.GetData()[0].GetAppId(),
 			"attributes":     invokeFunction.Attributes,

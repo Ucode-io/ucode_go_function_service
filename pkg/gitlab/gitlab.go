@@ -42,7 +42,7 @@ func CreateProjectFork(projectName string, data IntegrationData) (response ForkR
 	return resp, err
 }
 
-func DoRequest(url, token string, method string, body interface{}) (responseModel GitlabIntegrationResponse, err error) {
+func DoRequest(url, token string, method string, body any) (responseModel GitlabIntegrationResponse, err error) {
 	data, err := json.Marshal(&body)
 	if err != nil {
 		return
@@ -83,7 +83,7 @@ func DoRequest(url, token string, method string, body interface{}) (responseMode
 	return
 }
 
-func DoRequestV1(url, token string, method string, body interface{}) ([]byte, error) {
+func DoRequestV1(url, token string, method string, body any) ([]byte, error) {
 	data, err := json.Marshal(&body)
 	if err != nil {
 		return nil, err

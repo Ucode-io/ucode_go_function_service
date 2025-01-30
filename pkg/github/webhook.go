@@ -33,17 +33,17 @@ func ListWebhooks(cfg ListWebhookRequest) (bool, error) {
 		return false, err
 	}
 
-	var webhooks []interface{}
+	var webhooks []any
 	if err := json.Unmarshal(body, &webhooks); err != nil {
 		return false, err
 	}
 
 	for _, webhook := range webhooks {
-		webhookMap := webhook.(map[string]interface{})
+		webhookMap := webhook.(map[string]any)
 		if webhookMap["config"] == nil {
 			continue
 		}
-		config := webhookMap["config"].(map[string]interface{})
+		config := webhookMap["config"].(map[string]any)
 		if config["url"] == nil {
 			continue
 		}

@@ -26,20 +26,20 @@ type Function struct {
 }
 
 type InvokeFunctionResponse struct {
-	Status      string                 `json:"status"`
-	Data        map[string]interface{} `json:"data"`
-	Attributes  map[string]interface{} `json:"attributes"`
-	ServerError string                 `json:"server_error"`
+	Status      string         `json:"status"`
+	Data        map[string]any `json:"data"`
+	Attributes  map[string]any `json:"attributes"`
+	ServerError string         `json:"server_error"`
 }
 
 type NewInvokeFunctionRequest struct {
-	Data map[string]interface{} `json:"data"`
+	Data map[string]any `json:"data"`
 }
 
 type InvokeFunctionRequest struct {
 	FunctionID string   `json:"function_id"`
 	ObjectIDs  []string `json:"object_ids"`
-	Attributes map[string]interface{}
+	Attributes map[string]any
 	TableSlug  string `json:"table_slug"`
 }
 
