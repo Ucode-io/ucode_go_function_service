@@ -329,3 +329,39 @@ func CreateWebhook(cfg WebhookConfig) error {
 
 	return nil
 }
+
+func ImportFromGitlabCom(cfg ImportData) (response ImportResponse, err error) {
+	gitlabBodyJSON, err := json.Marshal(cfg)
+	if err != nil {
+		return ImportResponse{}, errors.New("failed to marshal JSON")
+	}
+
+	gitlabUrl := "https://gitlab.udevs.io/api/v4/import/gitlab"
+	req, err := http.NewRequest(http.MethodPost, gitlabUrl, bytes.NewBuffer(gitlabBodyJSON))
+	if err != nil {
+		return ImportResponse{}, errors.New("failed to create request")
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("PRIVATE-TOKEN", cfg.GitlabToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return ImportResponse{}, errors.New("failed to send request")
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return ImportResponse{}, errors.New("failed to read response body")
+	}
+
+	var importResponse ImportResponse
+
+	if err = json.Unmarshal(respBody, &importResponse); err != nil {
+		return ImportResponse{}, errors.New("failed to unmarshal response body")
+	}
+
+	return importResponse, nil
+}

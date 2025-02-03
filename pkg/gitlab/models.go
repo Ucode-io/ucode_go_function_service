@@ -82,3 +82,18 @@ type (
 		WikiPageEvents           bool   `json:"wiki_page_events"`
 	}
 )
+
+type ImportData struct {
+	PersonalAccessToken string `json:"personal_access_token"` // Token from GitLab.com
+	GitlabToken         string `json:"gitlab_token"`          // Token for self-hosted GitLab
+	SourceFullPath      string `json:"source_full_path"`      // Path of the repo in GitLab.com (e.g., "username/repo")
+	TargetNamespace     string `json:"target_namespace"`      // Namespace in self-hosted GitLab
+}
+
+type ImportResponse struct {
+	ID       int    `json:"id"`
+	Name     string `json:"name"`
+	FullPath string `json:"full_path"`
+	FullName string `json:"full_name"`
+	RefsURL  string `json:"refs_url"`
+}

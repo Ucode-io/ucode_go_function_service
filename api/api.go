@@ -118,32 +118,3 @@ func customCORSMiddleware() gin.HandlerFunc {
 	}
 }
 
-func MaxAllowed(n int) gin.HandlerFunc {
-	var (
-		countReq int64
-		sem      = make(chan struct{}, n)
-		acquire  = func() {
-			sem <- struct{}{}
-			countReq++
-		}
-		release = func() {
-			select {
-			case <-sem:
-			default:
-			}
-			countReq--
-		}
-	)
-
-	return func(c *gin.Context) {
-		go func() {
-			acquire()       // before request
-			defer release() // after request
-
-			c.Set("sem", sem)
-			c.Set("count_request", countReq)
-		}()
-
-		c.Next()
-	}
-}
