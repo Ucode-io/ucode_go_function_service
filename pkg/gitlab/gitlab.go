@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -156,7 +155,7 @@ func CreateProjectVariable(cfg IntegrationData, data map[string]any) (response G
 	return resp, err
 }
 
-func MakeGitLabRequest(method, url string, payload map[string]any, token string) (map[string]any, error) {
+func MakeGitLabRequest(method, url string, payload map[string]any, token string) (*http.Response, error) {
 	reqBody := new(bytes.Buffer)
 	if payload != nil {
 		json.NewEncoder(reqBody).Encode(payload)
@@ -174,20 +173,8 @@ func MakeGitLabRequest(method, url string, payload map[string]any, token string)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	var result map[string]any
-	err = json.Unmarshal(respBody, &result)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return resp, nil
 }
 
 func DeleteForkedProject(repoName string, cfg config.Config) (response GitlabIntegrationResponse, err error) {
@@ -323,7 +310,7 @@ func CreateWebhook(cfg WebhookConfig) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusCreated {
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("failed to create webhook: %s", string(body))
 	}
 

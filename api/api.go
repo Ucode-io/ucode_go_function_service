@@ -19,7 +19,7 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 
 	r.Use(customCORSMiddleware())
 
-	v1 := r.Group("/v")
+	v1 := r.Group("/v1")
 	v1.Use(h.AuthMiddleware(cfg))
 
 	// @securityDefinitions.apikey ApiKeyAuth
@@ -40,7 +40,7 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 		invokeFunction.POST("/:function-path", h.InvokeFunctionByPath)
 	}
 
-	github := r.Group("/github")
+	github := v1.Group("/github")
 	{
 		github.GET("/login", h.GithubLogin)
 		github.GET("/user", h.GithubGetUser)
@@ -48,7 +48,7 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 		github.GET("/branches", h.GithubGetBranches)
 	}
 
-	gitlab := r.Group("/gitlab")
+	gitlab := v1.Group("/gitlab")
 	{
 		gitlab.GET("/login", h.GitlabLogin)
 		gitlab.GET("/user", h.GitlabGetUser)
@@ -117,4 +117,3 @@ func customCORSMiddleware() gin.HandlerFunc {
 		c.Next()
 	}
 }
-

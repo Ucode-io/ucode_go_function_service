@@ -3,10 +3,15 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"ucode/ucode_go_function_service/api/models"
 	"ucode/ucode_go_function_service/api/status_http"
+	status "ucode/ucode_go_function_service/api/status_http"
+	pb "ucode/ucode_go_function_service/genproto/company_service"
 	"ucode/ucode_go_function_service/pkg/github"
+	"ucode/ucode_go_function_service/pkg/gitlab"
+	"ucode/ucode_go_function_service/pkg/util"
 
 	"github.com/gin-gonic/gin"
 )
@@ -97,16 +102,73 @@ func (h *Handler) GitlabGetUser(c *gin.Context) {
 // @Failure 500 {object} status_http.Response{data=string} "Server Error"
 func (h *Handler) GitlabGetRepos(c *gin.Context) {
 	var (
-		token    = c.Query("token")
-		url      = fmt.Sprintf("%s/api/v4/projects?membership=true", h.cfg.GitlabBaseUrlIntegration)
-		response = models.GitlabProjectResponse{}
+		token      = c.Query("token")
+		url        = fmt.Sprintf("%s/api/v4/projects?membership=true", h.cfg.GitlabBaseUrlIntegration)
+		response   = models.GitlabProjectResponse{}
+		resourceId = c.Query("resource_id")
+		resp       *http.Response
 	)
 
-	resultByte, err := github.MakeRequestV1(http.MethodGet, url, token, map[string]any{})
+	projectId, ok := c.Get("project_id")
+	if !ok || !util.IsValidUUID(projectId.(string)) {
+		h.handleResponse(c, status.InvalidArgument, "project id is an invalid uuid")
+		return
+	}
+
+	environmentId, ok := c.Get("environment_id")
+	if !ok || !util.IsValidUUID(environmentId.(string)) {
+		h.handleResponse(c, status.BadRequest, "error getting environment id | not valid")
+		return
+	}
+
+	resp, err := gitlab.MakeGitLabRequest(http.MethodGet, url, map[string]any{}, token)
 	if err != nil {
 		h.handleResponse(c, status_http.InternalServerError, err.Error())
 		return
 	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusUnauthorized {
+		projectResource, err := h.services.CompanyService().Resource().GetSingleProjectResouece(
+			c.Request.Context(), &pb.PrimaryKeyProjectResource{
+				Id:            resourceId,
+				ProjectId:     projectId.(string),
+				EnvironmentId: environmentId.(string),
+			},
+		)
+		if err != nil {
+			h.handleResponse(c, status.InternalServerError, err.Error())
+			return
+		}
+
+		refreshToken := projectResource.GetSettings().GetGitlab().GetRefreshToken()
+		fmt.Println("REFRESh1", refreshToken)
+
+		retoken, err := gitlab.RefreshGitLabToken(gitlab.GitLabTokenRequest{
+			ClinetId:     h.cfg.GitlabClientIdIntegration,
+			ClientSecret: h.cfg.GitlabClientSecretIntegration,
+			RefreshToken: refreshToken,
+		})
+		if err != nil {
+			h.handleResponse(c, status.InternalServerError, err.Error())
+			return
+		}
+
+		fmt.Println("REFRESh", retoken.RefreshToken)
+
+		resp, err = gitlab.MakeGitLabRequest(http.MethodGet, url, map[string]any{}, retoken.AccessToken)
+		if err != nil {
+			h.handleResponse(c, status_http.InternalServerError, err.Error())
+			return
+		}
+	}
+
+	resultByte, err := io.ReadAll(resp.Body)
+	if err != nil {
+		h.handleResponse(c, status_http.InternalServerError, err.Error())
+		return
+	}
+	fmt.Print("resultByte", string(resultByte))
 
 	if err := json.Unmarshal(resultByte, &response); err != nil {
 		h.handleResponse(c, status_http.InternalServerError, err.Error())
