@@ -58,7 +58,7 @@ type Config struct {
 	PathToClone        string
 
 	// Gitlab Creds
-	GitlabUrlIntegration          string
+	GitlabBaseUrlIntegration      string
 	GitlabClientIdIntegration     string
 	GitlabClientSecretIntegration string
 	GitlabRedirectUriIntegration  string
@@ -145,7 +145,7 @@ func Load() Config {
 	config.PathToClone = cast.ToString(getOrReturnDefaultValue("CLONE_PATH", "./app"))
 
 	// Gitlab Creds
-	config.GitlabUrlIntegration = cast.ToString(getOrReturnDefaultValue("GITLAB_URL_INTEGRATION", "https://gitlab.com"))
+	config.GitlabBaseUrlIntegration = cast.ToString(getOrReturnDefaultValue("GITLAB_BASE_URL_INTEGRATION", "https://gitlab.com"))
 	config.GitlabClientIdIntegration = cast.ToString(getOrReturnDefaultValue("GITLAB_CLIENT_ID_INTEGRATION", "c5991735bbefa46b6335ba1f3a25862bff1d6b086cf9284cd44788c5675b27e3"))
 	config.GitlabClientSecretIntegration = cast.ToString(getOrReturnDefaultValue("GITLAB_CLIENT_SECRET_INTEGRATION", "gloas-f2c06316acd8cb971c2da69ddb5cd8ba1b948fc03504b7e1c512c74a80192889"))
 	config.GitlabRedirectUriIntegration = cast.ToString(getOrReturnDefaultValue("GITLAB_REDIRECT_URI_INTEGRATION", "https://app.ucode.run/main/c57eedc3-a954-4262-a0af-376c65b5a280/resources/create"))

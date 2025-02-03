@@ -4,13 +4,18 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 	status "ucode/ucode_go_function_service/api/status_http"
 	"ucode/ucode_go_function_service/config"
 )
+
+// Integration gitlab.udevs.io
 
 func CreateProjectFork(projectName string, data IntegrationData) (response ForkResponse, err error) {
 	var (
@@ -198,4 +203,129 @@ func DeleteForkedProject(repoName string, cfg config.Config) (response GitlabInt
 		Code:    200,
 		Message: map[string]any{"message": "Successfully deleted"},
 	}, nil
+}
+
+// Integration gitlab.com
+
+func RefreshGitLabToken(request GitLabTokenRequest) (*GitLabTokenResponse, error) {
+	client := &http.Client{}
+
+	requestBody, err := json.Marshal(map[string]string{
+		"grant_type":    "refresh_token",
+		"refresh_token": request.RefreshToken,
+		"client_id":     request.ClinetId,
+		"client_secret": request.ClientSecret,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, "https://gitlab.com/oauth/token", bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var tokenResponse GitLabTokenResponse
+
+	if err = json.Unmarshal(body, &tokenResponse); err != nil {
+		return nil, err
+	}
+
+	return &tokenResponse, nil
+}
+
+func ListWebhooks(cfg WebhookConfig) (bool, error) {
+	var apiURL = fmt.Sprintf("%s/api/v4/projects/%s/hooks", cfg.BaseUrl, cfg.ProjectId)
+
+	req, err := http.NewRequest(http.MethodGet, apiURL, nil)
+	if err != nil {
+		return false, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+cfg.Token)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		jshdjs, _ := io.ReadAll(resp.Body)
+		fmt.Println(string(jshdjs))
+		return false, fmt.Errorf("failed to list webhooks")
+	}
+
+	var webhooks []Webhook
+	err = json.NewDecoder(resp.Body).Decode(&webhooks)
+	if err != nil {
+		return false, err
+	}
+
+	for _, webhook := range webhooks {
+		if strings.HasPrefix(webhook.URL, cfg.ProjectUrl) {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func CreateWebhook(cfg WebhookConfig) error {
+	var (
+		apiURL  = fmt.Sprintf("%s/api/v4/projects/%s/hooks", cfg.BaseUrl, cfg.GitlabProjectId)
+		webhook = WebhookRequest{
+			URL:                    fmt.Sprintf("%s/v2/webhook/handle?project_id=%s&resource_id=%s&environment_id=%s", cfg.ProjectUrl, cfg.ProjectId, cfg.ResourceId, cfg.EnvironmentId),
+			PushEvents:             true,
+			MergeRequestsEvents:    true,
+			TagPushEvents:          true,
+			EnableSSLVerification:  true,
+			ConfidentialNoteEvents: false,
+			IssuesEvents:           false,
+			NoteEvents:             false,
+			PipelineEvents:         false,
+			WikiPageEvents:         false,
+		}
+	)
+
+	payload, err := json.Marshal(webhook)
+	if err != nil {
+		return fmt.Errorf("failed to marshal webhook payload: %v", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, apiURL, bytes.NewBuffer(payload))
+	if err != nil {
+		return fmt.Errorf("failed to create HTTP request: %v", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+cfg.Token)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to send HTTP request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		body, _ := ioutil.ReadAll(resp.Body)
+		return fmt.Errorf("failed to create webhook: %s", string(body))
+	}
+
+	return nil
 }

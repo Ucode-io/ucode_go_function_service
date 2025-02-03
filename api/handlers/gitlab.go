@@ -26,7 +26,7 @@ import (
 func (h *Handler) GitlabLogin(c *gin.Context) {
 	var (
 		code                  = c.Query("code")
-		accessTokenUrl string = h.cfg.GitlabUrlIntegration + "/oauth/token"
+		accessTokenUrl string = h.cfg.GitlabBaseUrlIntegration + "/oauth/token"
 		params                = map[string]any{
 			"client_id":     h.cfg.GitlabClientIdIntegration,
 			"client_secret": h.cfg.GitlabClientSecretIntegration,
@@ -65,7 +65,7 @@ func (h *Handler) GitlabLogin(c *gin.Context) {
 func (h *Handler) GitlabGetUser(c *gin.Context) {
 	var (
 		token      = c.Query("token")
-		getUserUrl = h.cfg.GitlabUrlIntegration + "/api/v4/user"
+		getUserUrl = h.cfg.GitlabBaseUrlIntegration + "/api/v4/user"
 		response   models.GitlabUser
 	)
 
@@ -98,7 +98,7 @@ func (h *Handler) GitlabGetUser(c *gin.Context) {
 func (h *Handler) GitlabGetRepos(c *gin.Context) {
 	var (
 		token    = c.Query("token")
-		url      = fmt.Sprintf("%s/api/v4/projects?membership=true", h.cfg.GitlabUrlIntegration)
+		url      = fmt.Sprintf("%s/api/v4/projects?membership=true", h.cfg.GitlabBaseUrlIntegration)
 		response = models.GitlabProjectResponse{}
 	)
 
@@ -133,7 +133,7 @@ func (h *Handler) GitlabGetBranches(c *gin.Context) {
 	var (
 		projectId = c.Query("project_id")
 		token     = c.Query("token")
-		url       = fmt.Sprintf("%s/api/v4/projects/%s/repository/branches", h.cfg.GitlabUrlIntegration, projectId)
+		url       = fmt.Sprintf("%s/api/v4/projects/%s/repository/branches", h.cfg.GitlabBaseUrlIntegration, projectId)
 		response  models.GitlabBranch
 	)
 

@@ -34,7 +34,7 @@ func (h *Handler) GithubLogin(c *gin.Context) {
 		}
 	)
 
-	result, err := github.MakeRequest("POST", accessTokenUrl, "", params)
+	result, err := github.MakeRequest(http.MethodPost, accessTokenUrl, "", params)
 	if err != nil {
 		h.handleResponse(c, status_http.InternalServerError, err.Error())
 		return

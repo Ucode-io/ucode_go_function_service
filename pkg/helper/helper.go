@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -76,4 +77,13 @@ func ListFiles(folderPath string) ([]string, error) {
 		return nil
 	})
 	return files, err
+}
+
+func IsExpired(createdAt, expiresIn int64) bool {
+	var (
+		createdTime    = time.Unix(createdAt, 0)
+		expirationTime = createdTime.Add(time.Duration(expiresIn) * time.Second)
+	)
+
+	return time.Now().After(expirationTime)
 }

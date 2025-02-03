@@ -28,6 +28,7 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 	var (
 		createWebhookRequest models.CreateWebhook
 		createFunction       *obs.CreateFunctionRequest
+		exists               bool
 	)
 
 	ctx, cancel := context.WithCancel(c.Request.Context())
@@ -66,7 +67,7 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 		return
 	}
 
-	githubResource, err := h.services.CompanyService().Resource().GetSingleProjectResouece(
+	integrationResource, err := h.services.CompanyService().Resource().GetSingleProjectResouece(
 		ctx, &pb.PrimaryKeyProjectResource{
 			Id:            createWebhookRequest.Resource,
 			EnvironmentId: environmentId.(string),
@@ -91,27 +92,20 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 		return
 	}
 
-	createWebhookRequest.Username = githubResource.GetSettings().GetGithub().GetUsername()
-	createWebhookRequest.GithubToken = githubResource.GetSettings().GetGithub().GetToken()
+	switch integrationResource.Type {
+	case pb.ResourceType_GITHUB.String():
+		createWebhookRequest.Username = integrationResource.GetSettings().GetGithub().GetUsername()
+		createWebhookRequest.GithubToken = integrationResource.GetSettings().GetGithub().GetToken()
+	case pb.ResourceType_GITLAB.String():
+		createWebhookRequest.Username = integrationResource.GetSettings().GetGitlab().GetUsername()
+		createWebhookRequest.GithubToken = integrationResource.GetSettings().GetGitlab().GetToken()
+		createWebhookRequest.RefreshToken = integrationResource.GetSettings().GetGitlab().GetRefreshToken()
+		createWebhookRequest.ExpiresIn = integrationResource.GetSettings().GetGitlab().GetExpiresIn()
+		createWebhookRequest.CreatedAt = integrationResource.GetSettings().GetGitlab().GetCreatedAt()
+	}
 
 	if createWebhookRequest.RepoName == "" || createWebhookRequest.Username == "" {
 		h.handleResponse(c, status.BadRequest, "Username or RepoName is empty")
-		return
-	}
-
-	exists, err := github.ListWebhooks(github.ListWebhookRequest{
-		Username:    createWebhookRequest.Username,
-		RepoName:    createWebhookRequest.RepoName,
-		GithubToken: createWebhookRequest.GithubToken,
-		ProjectUrl:  h.cfg.ProjectUrl,
-	})
-	if err != nil {
-		h.handleResponse(c, status.InternalServerError, err.Error())
-		return
-	}
-
-	if exists {
-		h.handleResponse(c, status.OK, nil)
 		return
 	}
 
@@ -119,15 +113,46 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 		Path:           createWebhookRequest.RepoName,
 		Name:           createWebhookRequest.RepoName,
 		Description:    createWebhookRequest.RepoName,
+		RepoId:         createWebhookRequest.RepoId,
 		ProjectId:      resource.ResourceEnvironmentId,
 		EnvironmentId:  resource.EnvironmentId,
 		Type:           createWebhookRequest.FunctionType,
 		FrameworkType:  createWebhookRequest.FrameworkType,
 		Url:            "",
-		SourceUrl:      fmt.Sprintf("https://github.com/%s/%s", createWebhookRequest.Username, createWebhookRequest.RepoName),
 		Branch:         createWebhookRequest.Branch,
 		PipelineStatus: "running",
 		Resource:       createWebhookRequest.Resource,
+	}
+
+	switch integrationResource.Type {
+	case pb.ResourceType_GITHUB.String():
+		exists, err = github.ListWebhooks(github.ListWebhookRequest{
+			Username:    createWebhookRequest.Username,
+			RepoName:    createWebhookRequest.RepoName,
+			GithubToken: createWebhookRequest.GithubToken,
+			ProjectUrl:  h.cfg.ProjectUrl,
+		})
+		if err != nil {
+			h.handleResponse(c, status.InternalServerError, err.Error())
+			return
+		}
+		createFunction.SourceUrl = fmt.Sprintf("https://github.com/%s/%s", createWebhookRequest.Username, createWebhookRequest.RepoName)
+	case pb.ResourceType_GITLAB.String():
+		exists, err = gitlab.ListWebhooks(gitlab.WebhookConfig{
+			Token:      createWebhookRequest.GithubToken,
+			ProjectId:  createWebhookRequest.RepoId,
+			ProjectUrl: h.cfg.ProjectUrl,
+			BaseUrl:    h.cfg.GitlabBaseUrlIntegration,
+		})
+		if err != nil {
+			h.handleResponse(c, status.InternalServerError, err.Error())
+			return
+		}
+	}
+
+	if exists {
+		h.handleResponse(c, status.OK, nil)
+		return
 	}
 
 	switch resource.ResourceType {
@@ -155,23 +180,40 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 		}
 	}
 
-	err = github.CreateWebhook(github.CreateWebhookRequest{
-		Username:      createWebhookRequest.Username,
-		RepoName:      createWebhookRequest.RepoName,
-		WebhookSecret: h.cfg.WebhookSecret,
-		FrameworkType: createWebhookRequest.FrameworkType,
-		Branch:        createWebhookRequest.Branch,
-		FunctionType:  createWebhookRequest.FunctionType,
-		GithubToken:   createWebhookRequest.GithubToken,
-		ProjectUrl:    h.cfg.ProjectUrl,
-		Name:          createWebhookRequest.Name,
-		ResourceId:    createWebhookRequest.Resource,
-		ProjectId:     projectId.(string),
-		EnvironmentId: environmentId.(string),
-	})
-	if err != nil {
-		h.handleResponse(c, status.InternalServerError, err.Error())
-		return
+	switch integrationResource.Type {
+	case pb.ResourceType_GITHUB.String():
+		err = github.CreateWebhook(github.CreateWebhookRequest{
+			Username:      createWebhookRequest.Username,
+			RepoName:      createWebhookRequest.RepoName,
+			WebhookSecret: h.cfg.WebhookSecret,
+			FrameworkType: createWebhookRequest.FrameworkType,
+			Branch:        createWebhookRequest.Branch,
+			FunctionType:  createWebhookRequest.FunctionType,
+			GithubToken:   createWebhookRequest.GithubToken,
+			ProjectUrl:    h.cfg.ProjectUrl,
+			Name:          createWebhookRequest.Name,
+			ResourceId:    createWebhookRequest.Resource,
+			ProjectId:     projectId.(string),
+			EnvironmentId: environmentId.(string),
+		})
+		if err != nil {
+			h.handleResponse(c, status.InternalServerError, err.Error())
+			return
+		}
+	case pb.ResourceType_GITLAB.String():
+		err = gitlab.CreateWebhook(gitlab.WebhookConfig{
+			ProjectUrl:      h.cfg.ProjectUrl,
+			BaseUrl:         h.cfg.GitlabBaseUrlIntegration,
+			GitlabProjectId: createWebhookRequest.RepoId,
+			ResourceId:      createWebhookRequest.Resource,
+			ProjectId:       projectId.(string),
+			EnvironmentId:   environmentId.(string),
+			Token:           createWebhookRequest.GithubToken,
+		})
+		if err != nil {
+			h.handleResponse(c, status.InternalServerError, err.Error())
+			return
+		}
 	}
 
 	h.handleResponse(c, status.Created, nil)
@@ -209,10 +251,10 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		return
 	}
 
-	// if !(github.VerifySignature(c.GetHeader("X-Hub-Signature"), body, []byte(h.cfg.WebhookSecret))) {
-	// 	h.handleResponse(c, status.BadRequest, "failed to verify signature")
-	// 	return
-	// }
+	if !(github.VerifySignature(c.GetHeader("X-Hub-Signature"), body, []byte(h.cfg.WebhookSecret))) {
+		h.handleResponse(c, status.BadRequest, "failed to verify signature")
+		return
+	}
 
 	projectResource, err := h.services.CompanyService().Resource().GetSingleProjectResouece(
 		c.Request.Context(), &pb.PrimaryKeyProjectResource{
@@ -223,6 +265,29 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 	)
 	if err != nil {
 		h.handleResponse(c, status.InternalServerError, err.Error())
+		return
+	}
+
+	resource, err := h.services.CompanyService().ServiceResource().GetSingle(
+		c.Request.Context(), &pb.GetSingleServiceResourceReq{
+			ProjectId:     projectId,
+			EnvironmentId: environmentId,
+			ServiceType:   pb.ServiceType_BUILDER_SERVICE,
+		},
+	)
+	if err != nil {
+		h.handleResponse(c, status.InternalServerError, err.Error())
+		return
+	}
+
+	switch projectResource.Type {
+	case pb.ResourceType_GITLAB.String():
+		err = h.HandleWebHookGitlab(projectResource, resource, payload)
+		if err != nil {
+			h.handleResponse(c, status.InternalServerError, err.Error())
+			return
+		}
+		h.handleResponse(c, status.OK, nil)
 		return
 	}
 
@@ -249,18 +314,6 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 	if branchFromWebhook != "" {
 		parts := strings.Split(branchFromWebhook, "/")
 		branch = parts[len(parts)-1]
-	}
-
-	resource, err := h.services.CompanyService().ServiceResource().GetSingle(
-		c.Request.Context(), &pb.GetSingleServiceResourceReq{
-			ProjectId:     projectId,
-			EnvironmentId: environmentId,
-			ServiceType:   pb.ServiceType_BUILDER_SERVICE,
-		},
-	)
-	if err != nil {
-		h.handleResponse(c, status.InternalServerError, err.Error())
-		return
 	}
 
 	builderService := h.services.GetBuilderServiceByType(resource.NodeType)
@@ -481,6 +534,239 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 			)
 		}
 	}
+}
+
+func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.ProjectResource, resource *pb.ServiceResourceModel, payload map[string]any) error {
+	var (
+		gitlabProjectId = cast.ToString(payload["project_id"])
+		gitlabProject   = cast.ToStringMap(payload["project"])
+
+		sourceFullPath = cast.ToString(gitlabProject["path_with_namespace"])
+		functionType   string
+		resourceType   string
+		name           string
+	)
+
+	builderService := h.services.GetBuilderServiceByType(resource.NodeType)
+
+	switch resource.ResourceType {
+	case pb.ResourceType_MONGODB:
+		function, functionErr := builderService.Function().GetSingle(
+			c.Request.Context(), &obs.FunctionPrimaryKey{
+				ProjectId: resource.ResourceEnvironmentId,
+				SourceUrl: htmlUrl,
+				Branch:    branch,
+			},
+		)
+		if function != nil {
+			functionType = function.Type
+		}
+
+		switch functionType {
+		case cfg.FUNCTION:
+			if functionErr != nil {
+				function, err = builderService.Function().Create(
+					c.Request.Context(), &obs.CreateFunctionRequest{
+						Path:           repoName,
+						Name:           name,
+						Description:    repoDescription,
+						ProjectId:      resource.ResourceEnvironmentId,
+						EnvironmentId:  resource.EnvironmentId,
+						Type:           cfg.FUNCTION,
+						SourceUrl:      htmlUrl,
+						Branch:         branch,
+						PipelineStatus: "running",
+						Resource:       resourceType,
+					},
+				)
+				if err != nil {
+					h.handleResponse(c, status.GRPCError, err.Error())
+					return
+				}
+			}
+			function.PipelineStatus = "running"
+
+			go h.deployFunction(models.DeployFunctionRequest{
+				GithubToken:     token,
+				RepoId:          repoId,
+				ResourceType:    resource.NodeType,
+				Function:        function,
+				TargetNamespace: "ucode_functions_group",
+			})
+		case cfg.KNATIVE:
+			if functionErr != nil {
+				function, err = builderService.Function().Create(
+					c.Request.Context(), &obs.CreateFunctionRequest{
+						Path:           repoName,
+						Name:           name,
+						Description:    repoDescription,
+						ProjectId:      resource.ResourceEnvironmentId,
+						EnvironmentId:  resource.EnvironmentId,
+						Type:           cfg.KNATIVE,
+						SourceUrl:      htmlUrl,
+						Branch:         branch,
+						PipelineStatus: "running",
+						Resource:       resourceType,
+					},
+				)
+				if err != nil {
+					h.handleResponse(c, status.InvalidArgument, err.Error())
+					return
+				}
+			}
+			function.PipelineStatus = "running"
+
+			go h.deployFunction(
+				models.DeployFunctionRequest{
+					GithubToken:     token,
+					RepoId:          repoId,
+					ResourceType:    resource.NodeType,
+					Function:        function,
+					TargetNamespace: cfg.KnativeNamespace,
+				},
+			)
+		case cfg.MICROFE:
+			if functionErr != nil {
+				function, err = builderService.Function().Create(
+					c.Request.Context(), &obs.CreateFunctionRequest{
+						Path:           repoName,
+						Name:           name,
+						Description:    repoDescription,
+						ProjectId:      resource.ResourceEnvironmentId,
+						EnvironmentId:  resource.EnvironmentId,
+						Type:           cfg.MICROFE,
+						SourceUrl:      htmlUrl,
+						Branch:         branch,
+						PipelineStatus: "running",
+						Resource:       resourceType,
+					},
+				)
+				if err != nil {
+					h.handleResponse(c, status.InvalidArgument, err.Error())
+					return
+				}
+			}
+			function.PipelineStatus = "running"
+			go h.deployFunction(
+				models.DeployFunctionRequest{
+					GithubToken:     token,
+					RepoId:          repoId,
+					Function:        function,
+					ResourceType:    resource.NodeType,
+					TargetNamespace: cfg.MicroFrontNamaspece,
+				},
+			)
+		}
+	case pb.ResourceType_POSTGRESQL:
+		function, functionErr := h.services.GoObjectBuilderService().Function().GetSingle(
+			c.Request.Context(), &nb.FunctionPrimaryKey{
+				ProjectId: resource.ResourceEnvironmentId,
+				SourceUrl: htmlUrl,
+				Branch:    branch,
+			},
+		)
+		if function != nil {
+			functionType = function.Type
+		}
+
+		switch functionType {
+		case cfg.FUNCTION:
+			if functionErr != nil {
+				function, err = h.services.GoObjectBuilderService().Function().Create(
+					c.Request.Context(), &nb.CreateFunctionRequest{
+						Path:           repoName,
+						Name:           name,
+						Description:    repoDescription,
+						ProjectId:      resource.ResourceEnvironmentId,
+						EnvironmentId:  resource.EnvironmentId,
+						Type:           cfg.FUNCTION,
+						SourceUrl:      htmlUrl,
+						Branch:         branch,
+						PipelineStatus: "running",
+						Resource:       resourceType,
+					},
+				)
+				if err != nil {
+					h.handleResponse(c, status.GRPCError, err.Error())
+					return
+				}
+			}
+			function.PipelineStatus = "running"
+
+			go h.deployFunctionGo(models.DeployFunctionRequestGo{
+				GithubToken:     token,
+				RepoId:          repoId,
+				ResourceType:    resource.NodeType,
+				Function:        function,
+				TargetNamespace: cfg.OpenFassNamespace,
+			})
+		case cfg.KNATIVE:
+			if functionErr != nil {
+				function, err = h.services.GoObjectBuilderService().Function().Create(
+					c.Request.Context(), &nb.CreateFunctionRequest{
+						Path:           repoName,
+						Name:           name,
+						Description:    repoDescription,
+						ProjectId:      resource.ResourceEnvironmentId,
+						EnvironmentId:  resource.EnvironmentId,
+						Type:           cfg.KNATIVE,
+						SourceUrl:      htmlUrl,
+						Branch:         branch,
+						PipelineStatus: "running",
+						Resource:       resourceType,
+					},
+				)
+				if err != nil {
+					h.handleResponse(c, status.InvalidArgument, err.Error())
+					return
+				}
+			}
+			function.PipelineStatus = "running"
+
+			go h.deployFunctionGo(
+				models.DeployFunctionRequestGo{
+					GithubToken:     token,
+					RepoId:          repoId,
+					ResourceType:    resource.NodeType,
+					Function:        function,
+					TargetNamespace: cfg.KnativeNamespace,
+				},
+			)
+		case cfg.MICROFE:
+			if functionErr != nil {
+				function, err = h.services.GoObjectBuilderService().Function().Create(
+					c.Request.Context(), &nb.CreateFunctionRequest{
+						Path:           repoName,
+						Name:           name,
+						Description:    repoDescription,
+						ProjectId:      resource.ResourceEnvironmentId,
+						EnvironmentId:  resource.EnvironmentId,
+						Type:           cfg.MICROFE,
+						SourceUrl:      htmlUrl,
+						Branch:         branch,
+						PipelineStatus: "running",
+						Resource:       resourceType,
+					},
+				)
+				if err != nil {
+					h.handleResponse(c, status.InvalidArgument, err.Error())
+					return
+				}
+			}
+			function.PipelineStatus = "running"
+			go h.deployFunctionGo(
+				models.DeployFunctionRequestGo{
+					GithubToken:     token,
+					RepoId:          repoId,
+					ResourceType:    resource.NodeType,
+					Function:        function,
+					TargetNamespace: cfg.MicroFrontNamaspece,
+				},
+			)
+		}
+	}
+
+	return nil
 }
 
 func (h *Handler) deployFunction(req models.DeployFunctionRequest) (github.ImportResponse, error) {

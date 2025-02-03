@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"ucode/ucode_go_function_service/api"
 	"ucode/ucode_go_function_service/api/handlers"
 	"ucode/ucode_go_function_service/config"
+	"ucode/ucode_go_function_service/genproto/company_service"
 	"ucode/ucode_go_function_service/pkg/caching"
 	"ucode/ucode_go_function_service/pkg/logger"
 	"ucode/ucode_go_function_service/services"
@@ -54,6 +56,8 @@ func main() {
 		h = handlers.NewHandler(cfg, log, grpcSvcs, cache)
 		r = gin.New()
 	)
+
+	fmt.Println(company_service.ResourceType_GITHUB.String())
 
 	r.Use(gin.Logger(), gin.Recovery())
 	api.SetUpAPI(r, h, cfg)

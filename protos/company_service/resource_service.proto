@@ -334,6 +334,7 @@ message Settings {
     SmsCredentials sms = 1;
     SMTPCredentials smtp = 2;
     Github github = 3;
+    Gitlab gitlab = 4;
 }
 
 message SmsCredentials {
@@ -355,4 +356,12 @@ message SMTPCredentials {
 message Github {
     string username = 1;
     string token = 2;
+}
+
+message Gitlab {
+    string username = 1;
+    string token = 2;
+    string refresh_token = 3;
+    int64 created_at = 4;
+    int32 expires_in = 5; 
 }

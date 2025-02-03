@@ -54,6 +54,7 @@ message Fare {
     repeated FareItemPrice fare_item_prices = 8;
     string created_at = 9;
     string updated_at = 10;
+    bool is_public = 11;
 }
 
 // FareItem
@@ -92,6 +93,7 @@ message Transaction {
     string created_at = 12;
     string accepted_at = 13;
     Currency currency = 14;
+    string receipt_file = 15;
 }
 
 // Requests and Responses
@@ -105,6 +107,7 @@ message CreateFareRequest {
     int32 disactivate_day = 5;
     string description = 6;
     repeated FareItemPrice fare_item_prices = 7;
+    bool is_public = 8;
 }
 
 message PrimaryKey {
@@ -149,6 +152,7 @@ message CreateTransactionRequest {
     string currency_id = 8;
     string acceptor_id = 9;
     string fare_id = 10;
+    string receipt_file = 11;
 }
 
 message ListTransactionsResponse {
