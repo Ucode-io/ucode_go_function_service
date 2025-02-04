@@ -187,13 +187,13 @@ func (h *Handler) GitlabGetRepos(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param token query string true "token"
-// @Param project_id query string true "project_id"
+// @Param repo_id query string true "repo_id"
 // @Success 201 {object} status_http.Response{data=models.GitlabBranch} "Data"
 // @Response 400 {object} status_http.Response{data=string} "Bad Request"
 // @Failure 500 {object} status_http.Response{data=string} "Server Error"
 func (h *Handler) GitlabGetBranches(c *gin.Context) {
 	var (
-		projectId = c.Query("project_id")
+		projectId = c.Query("repo_id")
 		token     = c.Query("token")
 		url       = fmt.Sprintf("%s/api/v4/projects/%s/repository/branches", h.cfg.GitlabBaseUrlIntegration, projectId)
 		response  models.GitlabBranch
@@ -204,6 +204,8 @@ func (h *Handler) GitlabGetBranches(c *gin.Context) {
 		h.handleResponse(c, status_http.InternalServerError, err.Error())
 		return
 	}
+
+	fmt.Println("resultByte", string(resultByte))
 
 	if err := json.Unmarshal(resultByte, &response); err != nil {
 		h.handleResponse(c, status_http.InternalServerError, err.Error())
