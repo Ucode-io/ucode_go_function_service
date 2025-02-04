@@ -11,6 +11,7 @@ import (
 	pb "ucode/ucode_go_function_service/genproto/company_service"
 	"ucode/ucode_go_function_service/pkg/github"
 	"ucode/ucode_go_function_service/pkg/gitlab"
+	"ucode/ucode_go_function_service/pkg/logger"
 	"ucode/ucode_go_function_service/pkg/util"
 
 	"github.com/gin-gonic/gin"
@@ -128,6 +129,8 @@ func (h *Handler) GitlabGetRepos(c *gin.Context) {
 	}
 	defer resp.Body.Close()
 
+	fmt.Println("STATUS", resp.StatusCode)
+
 	if resp.StatusCode == http.StatusUnauthorized {
 		projectResource, err := h.services.CompanyService().Resource().GetSingleProjectResouece(
 			c.Request.Context(), &pb.PrimaryKeyProjectResource{
@@ -142,7 +145,6 @@ func (h *Handler) GitlabGetRepos(c *gin.Context) {
 		}
 
 		refreshToken := projectResource.GetSettings().GetGitlab().GetRefreshToken()
-		fmt.Println("REFRESh1", refreshToken)
 
 		retoken, err := gitlab.RefreshGitLabToken(gitlab.GitLabTokenRequest{
 			ClinetId:     h.cfg.GitlabClientIdIntegration,
@@ -154,7 +156,26 @@ func (h *Handler) GitlabGetRepos(c *gin.Context) {
 			return
 		}
 
-		fmt.Println("REFRESh", retoken.RefreshToken)
+		go func() {
+			_, err := h.services.CompanyService().Resource().UpdateProjectResource(
+				c.Request.Context(), &pb.ProjectResource{
+					Id:   resourceId,
+					Name: projectResource.GetName(),
+					Settings: &pb.Settings{
+						Gitlab: &pb.Gitlab{
+							Token:        retoken.AccessToken,
+							RefreshToken: retoken.RefreshToken,
+							Username:     projectResource.GetSettings().GetGitlab().GetUsername(),
+							CreatedAt:    projectResource.GetSettings().GetGitlab().GetCreatedAt(),
+							ExpiresIn:    projectResource.GetSettings().GetGitlab().GetExpiresIn(),
+						},
+					},
+				},
+			)
+			if err != nil {
+				h.log.Error("error updating project resource", logger.Error(err))
+			}
+		}()
 
 		resp, err = gitlab.MakeGitLabRequest(http.MethodGet, url, map[string]any{}, retoken.AccessToken)
 		if err != nil {
@@ -168,7 +189,6 @@ func (h *Handler) GitlabGetRepos(c *gin.Context) {
 		h.handleResponse(c, status_http.InternalServerError, err.Error())
 		return
 	}
-	fmt.Print("resultByte", string(resultByte))
 
 	if err := json.Unmarshal(resultByte, &response); err != nil {
 		h.handleResponse(c, status_http.InternalServerError, err.Error())
@@ -204,8 +224,6 @@ func (h *Handler) GitlabGetBranches(c *gin.Context) {
 		h.handleResponse(c, status_http.InternalServerError, err.Error())
 		return
 	}
-
-	fmt.Println("resultByte", string(resultByte))
 
 	if err := json.Unmarshal(resultByte, &response); err != nil {
 		h.handleResponse(c, status_http.InternalServerError, err.Error())
