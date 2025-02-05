@@ -208,6 +208,7 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 			ResourceId:    createWebhookRequest.Resource,
 			EnvironmentId: environmentId.(string),
 			Token:         createWebhookRequest.GithubToken,
+			ProjectId:     projectId.(string),
 		})
 		if err != nil {
 			h.handleResponse(c, status.InternalServerError, err.Error())
@@ -250,10 +251,10 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		return
 	}
 
-	if !(github.VerifySignature(c.GetHeader("X-Hub-Signature"), body, []byte(h.cfg.WebhookSecret))) {
-		h.handleResponse(c, status.BadRequest, "failed to verify signature")
-		return
-	}
+	// if !(github.VerifySignature(c.GetHeader("X-Hub-Signature"), body, []byte(h.cfg.WebhookSecret))) {
+	// 	h.handleResponse(c, status.BadRequest, "failed to verify signature")
+	// 	return
+	// }
 
 	projectResource, err := h.services.CompanyService().Resource().GetSingleProjectResouece(
 		c.Request.Context(), &pb.PrimaryKeyProjectResource{
@@ -281,11 +282,11 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 
 	switch projectResource.Type {
 	case pb.ResourceType_GITLAB.String():
-		// err = h.HandleWebHookGitlab(projectResource, resource, payload)
-		// if err != nil {
-		// 	h.handleResponse(c, status.InternalServerError, err.Error())
-		// 	return
-		// }
+		err = h.HandleWebHookGitlab(projectResource, resource, payload)
+		if err != nil {
+			h.handleResponse(c, status.InternalServerError, err.Error())
+			return
+		}
 		h.handleResponse(c, status.OK, nil)
 		return
 	}
@@ -314,6 +315,256 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		parts := strings.Split(branchFromWebhook, "/")
 		branch = parts[len(parts)-1]
 	}
+
+	builderService := h.services.GetBuilderServiceByType(resource.NodeType)
+	fmt.Println("resourceType", resource.ResourceType)
+	switch resource.ResourceType {
+	case pb.ResourceType_MONGODB:
+		function, functionErr := builderService.Function().GetSingle(
+			c.Request.Context(), &obs.FunctionPrimaryKey{
+				ProjectId: resource.ResourceEnvironmentId,
+				SourceUrl: htmlUrl,
+				Branch:    branch,
+			},
+		)
+		if function != nil {
+			functionType = function.Type
+		}
+
+		switch functionType {
+		case cfg.FUNCTION:
+			if functionErr != nil {
+				function, err = builderService.Function().Create(
+					c.Request.Context(), &obs.CreateFunctionRequest{
+						Path:           repoName,
+						Name:           name,
+						Description:    repoDescription,
+						ProjectId:      resource.ResourceEnvironmentId,
+						EnvironmentId:  resource.EnvironmentId,
+						Type:           cfg.FUNCTION,
+						SourceUrl:      htmlUrl,
+						Branch:         branch,
+						PipelineStatus: "running",
+						Resource:       resourceType,
+					},
+				)
+				if err != nil {
+					h.handleResponse(c, status.GRPCError, err.Error())
+					return
+				}
+			}
+			function.PipelineStatus = "running"
+
+			go h.deployFunction(models.DeployFunctionRequest{
+				GithubToken:     token,
+				RepoId:          repoId,
+				ResourceType:    resource.NodeType,
+				Function:        function,
+				TargetNamespace: "ucode_functions_group",
+			})
+		case cfg.KNATIVE:
+			if functionErr != nil {
+				function, err = builderService.Function().Create(
+					c.Request.Context(), &obs.CreateFunctionRequest{
+						Path:           repoName,
+						Name:           name,
+						Description:    repoDescription,
+						ProjectId:      resource.ResourceEnvironmentId,
+						EnvironmentId:  resource.EnvironmentId,
+						Type:           cfg.KNATIVE,
+						SourceUrl:      htmlUrl,
+						Branch:         branch,
+						PipelineStatus: "running",
+						Resource:       resourceType,
+					},
+				)
+				if err != nil {
+					h.handleResponse(c, status.InvalidArgument, err.Error())
+					return
+				}
+			}
+			function.PipelineStatus = "running"
+
+			go h.deployFunction(
+				models.DeployFunctionRequest{
+					GithubToken:     token,
+					RepoId:          repoId,
+					ResourceType:    resource.NodeType,
+					Function:        function,
+					TargetNamespace: cfg.KnativeNamespace,
+				},
+			)
+		case cfg.MICROFE:
+			if functionErr != nil {
+				function, err = builderService.Function().Create(
+					c.Request.Context(), &obs.CreateFunctionRequest{
+						Path:           repoName,
+						Name:           name,
+						Description:    repoDescription,
+						ProjectId:      resource.ResourceEnvironmentId,
+						EnvironmentId:  resource.EnvironmentId,
+						Type:           cfg.MICROFE,
+						SourceUrl:      htmlUrl,
+						Branch:         branch,
+						PipelineStatus: "running",
+						Resource:       resourceType,
+					},
+				)
+				if err != nil {
+					h.handleResponse(c, status.InvalidArgument, err.Error())
+					return
+				}
+			}
+			function.PipelineStatus = "running"
+			go h.deployFunction(
+				models.DeployFunctionRequest{
+					GithubToken:     token,
+					RepoId:          repoId,
+					Function:        function,
+					ResourceType:    resource.NodeType,
+					TargetNamespace: cfg.MicroFrontNamaspece,
+				},
+			)
+		}
+	case pb.ResourceType_POSTGRESQL:
+		function, functionErr := h.services.GoObjectBuilderService().Function().GetSingle(
+			c.Request.Context(), &nb.FunctionPrimaryKey{
+				ProjectId: resource.ResourceEnvironmentId,
+				SourceUrl: htmlUrl,
+				Branch:    branch,
+			},
+		)
+		if function != nil {
+			functionType = function.Type
+		}
+
+		switch functionType {
+		case cfg.FUNCTION:
+			fmt.Println("FAAS")
+			if functionErr != nil {
+				function, err = h.services.GoObjectBuilderService().Function().Create(
+					c.Request.Context(), &nb.CreateFunctionRequest{
+						Path:           repoName,
+						Name:           name,
+						Description:    repoDescription,
+						ProjectId:      resource.ResourceEnvironmentId,
+						EnvironmentId:  resource.EnvironmentId,
+						Type:           cfg.FUNCTION,
+						SourceUrl:      htmlUrl,
+						Branch:         branch,
+						PipelineStatus: "running",
+						Resource:       resourceType,
+					},
+				)
+				if err != nil {
+					h.handleResponse(c, status.GRPCError, err.Error())
+					return
+				}
+			}
+			function.PipelineStatus = "running"
+
+			go h.deployFunctionGo(models.DeployFunctionRequestGo{
+				GithubToken:     token,
+				RepoId:          repoId,
+				ResourceType:    resource.NodeType,
+				Function:        function,
+				TargetNamespace: cfg.OpenFassNamespace,
+			})
+		case cfg.KNATIVE:
+			fmt.Println("KNATIVE")
+
+			if functionErr != nil {
+				function, err = h.services.GoObjectBuilderService().Function().Create(
+					c.Request.Context(), &nb.CreateFunctionRequest{
+						Path:           repoName,
+						Name:           name,
+						Description:    repoDescription,
+						ProjectId:      resource.ResourceEnvironmentId,
+						EnvironmentId:  resource.EnvironmentId,
+						Type:           cfg.KNATIVE,
+						SourceUrl:      htmlUrl,
+						Branch:         branch,
+						PipelineStatus: "running",
+						Resource:       resourceType,
+					},
+				)
+				if err != nil {
+					h.handleResponse(c, status.InvalidArgument, err.Error())
+					return
+				}
+			}
+			function.PipelineStatus = "running"
+
+			go func() {
+				_, err = h.deployFunctionGo(
+					models.DeployFunctionRequestGo{
+						GithubToken:     token,
+						RepoId:          repoId,
+						ResourceType:    resource.NodeType,
+						Function:        function,
+						TargetNamespace: cfg.KnativeNamespace,
+					},
+				)
+				if err != nil {
+					fmt.Println("DEPLOY ERROR deployFunctionGo", err)
+				}
+				fmt.Println("DEPLOY")
+			}()
+		case cfg.MICROFE:
+			if functionErr != nil {
+				function, err = h.services.GoObjectBuilderService().Function().Create(
+					c.Request.Context(), &nb.CreateFunctionRequest{
+						Path:           repoName,
+						Name:           name,
+						Description:    repoDescription,
+						ProjectId:      resource.ResourceEnvironmentId,
+						EnvironmentId:  resource.EnvironmentId,
+						Type:           cfg.MICROFE,
+						SourceUrl:      htmlUrl,
+						Branch:         branch,
+						PipelineStatus: "running",
+						Resource:       resourceType,
+					},
+				)
+				if err != nil {
+					h.handleResponse(c, status.InvalidArgument, err.Error())
+					return
+				}
+			}
+			function.PipelineStatus = "running"
+			go h.deployFunctionGo(
+				models.DeployFunctionRequestGo{
+					GithubToken:     token,
+					RepoId:          repoId,
+					ResourceType:    resource.NodeType,
+					Function:        function,
+					TargetNamespace: cfg.MicroFrontNamaspece,
+				},
+			)
+		}
+	}
+}
+
+func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.ProjectResource, resource *pb.ServiceResourceModel, payload map[string]any) error {
+	var (
+		gitlabProjectId = cast.ToString(payload["project_id"])
+		gitlabProject   = cast.ToStringMap(payload["project"])
+
+		sourceFullPath = cast.ToString(gitlabProject["path_with_namespace"])
+		functionType   string
+		resourceType   string
+		name           string
+		err            error
+	)
+
+	/*
+		htmlUrl
+		branch
+		repoName
+		repoDescription
+		token
+		repoId
+	*/
 
 	builderService := h.services.GetBuilderServiceByType(resource.NodeType)
 
@@ -533,247 +784,6 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 			)
 		}
 	}
-}
-
-func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.ProjectResource, resource *pb.ServiceResourceModel, payload map[string]any) error {
-	// var (
-	// 	gitlabProjectId = cast.ToString(payload["project_id"])
-	// 	gitlabProject   = cast.ToStringMap(payload["project"])
-
-	// 	sourceFullPath = cast.ToString(gitlabProject["path_with_namespace"])
-	// 	functionType   string
-	// 	resourceType   string
-	// 	name           string
-	// 	err            error
-	// )
-
-	// /*
-	// 	htmlUrl
-	// 	branch
-	// 	repoName
-	// 	repoDescription
-	// 	token
-	// 	repoId
-	// */
-
-	// builderService := h.services.GetBuilderServiceByType(resource.NodeType)
-
-	// switch resource.ResourceType {
-	// case pb.ResourceType_MONGODB:
-	// 	function, functionErr := builderService.Function().GetSingle(
-	// 		c.Request.Context(), &obs.FunctionPrimaryKey{
-	// 			ProjectId: resource.ResourceEnvironmentId,
-	// 			SourceUrl: htmlUrl,
-	// 			Branch:    branch,
-	// 		},
-	// 	)
-	// 	if function != nil {
-	// 		functionType = function.Type
-	// 	}
-
-	// 	switch functionType {
-	// 	case cfg.FUNCTION:
-	// 		if functionErr != nil {
-	// 			function, err = builderService.Function().Create(
-	// 				c.Request.Context(), &obs.CreateFunctionRequest{
-	// 					Path:           repoName,
-	// 					Name:           name,
-	// 					Description:    repoDescription,
-	// 					ProjectId:      resource.ResourceEnvironmentId,
-	// 					EnvironmentId:  resource.EnvironmentId,
-	// 					Type:           cfg.FUNCTION,
-	// 					SourceUrl:      htmlUrl,
-	// 					Branch:         branch,
-	// 					PipelineStatus: "running",
-	// 					Resource:       resourceType,
-	// 				},
-	// 			)
-	// 			if err != nil {
-	// 				h.handleResponse(c, status.GRPCError, err.Error())
-	// 				return
-	// 			}
-	// 		}
-	// 		function.PipelineStatus = "running"
-
-	// 		go h.deployFunction(models.DeployFunctionRequest{
-	// 			GithubToken:     token,
-	// 			RepoId:          repoId,
-	// 			ResourceType:    resource.NodeType,
-	// 			Function:        function,
-	// 			TargetNamespace: "ucode_functions_group",
-	// 		})
-	// 	case cfg.KNATIVE:
-	// 		if functionErr != nil {
-	// 			function, err = builderService.Function().Create(
-	// 				c.Request.Context(), &obs.CreateFunctionRequest{
-	// 					Path:           repoName,
-	// 					Name:           name,
-	// 					Description:    repoDescription,
-	// 					ProjectId:      resource.ResourceEnvironmentId,
-	// 					EnvironmentId:  resource.EnvironmentId,
-	// 					Type:           cfg.KNATIVE,
-	// 					SourceUrl:      htmlUrl,
-	// 					Branch:         branch,
-	// 					PipelineStatus: "running",
-	// 					Resource:       resourceType,
-	// 				},
-	// 			)
-	// 			if err != nil {
-	// 				h.handleResponse(c, status.InvalidArgument, err.Error())
-	// 				return
-	// 			}
-	// 		}
-	// 		function.PipelineStatus = "running"
-
-	// 		go h.deployFunction(
-	// 			models.DeployFunctionRequest{
-	// 				GithubToken:     token,
-	// 				RepoId:          repoId,
-	// 				ResourceType:    resource.NodeType,
-	// 				Function:        function,
-	// 				TargetNamespace: cfg.KnativeNamespace,
-	// 			},
-	// 		)
-	// 	case cfg.MICROFE:
-	// 		if functionErr != nil {
-	// 			function, err = builderService.Function().Create(
-	// 				c.Request.Context(), &obs.CreateFunctionRequest{
-	// 					Path:           repoName,
-	// 					Name:           name,
-	// 					Description:    repoDescription,
-	// 					ProjectId:      resource.ResourceEnvironmentId,
-	// 					EnvironmentId:  resource.EnvironmentId,
-	// 					Type:           cfg.MICROFE,
-	// 					SourceUrl:      htmlUrl,
-	// 					Branch:         branch,
-	// 					PipelineStatus: "running",
-	// 					Resource:       resourceType,
-	// 				},
-	// 			)
-	// 			if err != nil {
-	// 				h.handleResponse(c, status.InvalidArgument, err.Error())
-	// 				return
-	// 			}
-	// 		}
-	// 		function.PipelineStatus = "running"
-	// 		go h.deployFunction(
-	// 			models.DeployFunctionRequest{
-	// 				GithubToken:     token,
-	// 				RepoId:          repoId,
-	// 				Function:        function,
-	// 				ResourceType:    resource.NodeType,
-	// 				TargetNamespace: cfg.MicroFrontNamaspece,
-	// 			},
-	// 		)
-	// 	}
-	// case pb.ResourceType_POSTGRESQL:
-	// 	function, functionErr := h.services.GoObjectBuilderService().Function().GetSingle(
-	// 		c.Request.Context(), &nb.FunctionPrimaryKey{
-	// 			ProjectId: resource.ResourceEnvironmentId,
-	// 			SourceUrl: htmlUrl,
-	// 			Branch:    branch,
-	// 		},
-	// 	)
-	// 	if function != nil {
-	// 		functionType = function.Type
-	// 	}
-
-	// 	switch functionType {
-	// 	case cfg.FUNCTION:
-	// 		if functionErr != nil {
-	// 			function, err = h.services.GoObjectBuilderService().Function().Create(
-	// 				c.Request.Context(), &nb.CreateFunctionRequest{
-	// 					Path:           repoName,
-	// 					Name:           name,
-	// 					Description:    repoDescription,
-	// 					ProjectId:      resource.ResourceEnvironmentId,
-	// 					EnvironmentId:  resource.EnvironmentId,
-	// 					Type:           cfg.FUNCTION,
-	// 					SourceUrl:      htmlUrl,
-	// 					Branch:         branch,
-	// 					PipelineStatus: "running",
-	// 					Resource:       resourceType,
-	// 				},
-	// 			)
-	// 			if err != nil {
-	// 				h.handleResponse(c, status.GRPCError, err.Error())
-	// 				return
-	// 			}
-	// 		}
-	// 		function.PipelineStatus = "running"
-
-	// 		go h.deployFunctionGo(models.DeployFunctionRequestGo{
-	// 			GithubToken:     token,
-	// 			RepoId:          repoId,
-	// 			ResourceType:    resource.NodeType,
-	// 			Function:        function,
-	// 			TargetNamespace: cfg.OpenFassNamespace,
-	// 		})
-	// 	case cfg.KNATIVE:
-	// 		if functionErr != nil {
-	// 			function, err = h.services.GoObjectBuilderService().Function().Create(
-	// 				c.Request.Context(), &nb.CreateFunctionRequest{
-	// 					Path:           repoName,
-	// 					Name:           name,
-	// 					Description:    repoDescription,
-	// 					ProjectId:      resource.ResourceEnvironmentId,
-	// 					EnvironmentId:  resource.EnvironmentId,
-	// 					Type:           cfg.KNATIVE,
-	// 					SourceUrl:      htmlUrl,
-	// 					Branch:         branch,
-	// 					PipelineStatus: "running",
-	// 					Resource:       resourceType,
-	// 				},
-	// 			)
-	// 			if err != nil {
-	// 				h.handleResponse(c, status.InvalidArgument, err.Error())
-	// 				return
-	// 			}
-	// 		}
-	// 		function.PipelineStatus = "running"
-
-	// 		go h.deployFunctionGo(
-	// 			models.DeployFunctionRequestGo{
-	// 				GithubToken:     token,
-	// 				RepoId:          repoId,
-	// 				ResourceType:    resource.NodeType,
-	// 				Function:        function,
-	// 				TargetNamespace: cfg.KnativeNamespace,
-	// 			},
-	// 		)
-	// 	case cfg.MICROFE:
-	// 		if functionErr != nil {
-	// 			function, err = h.services.GoObjectBuilderService().Function().Create(
-	// 				c.Request.Context(), &nb.CreateFunctionRequest{
-	// 					Path:           repoName,
-	// 					Name:           name,
-	// 					Description:    repoDescription,
-	// 					ProjectId:      resource.ResourceEnvironmentId,
-	// 					EnvironmentId:  resource.EnvironmentId,
-	// 					Type:           cfg.MICROFE,
-	// 					SourceUrl:      htmlUrl,
-	// 					Branch:         branch,
-	// 					PipelineStatus: "running",
-	// 					Resource:       resourceType,
-	// 				},
-	// 			)
-	// 			if err != nil {
-	// 				h.handleResponse(c, status.InvalidArgument, err.Error())
-	// 				return
-	// 			}
-	// 		}
-	// 		function.PipelineStatus = "running"
-	// 		go h.deployFunctionGo(
-	// 			models.DeployFunctionRequestGo{
-	// 				GithubToken:     token,
-	// 				RepoId:          repoId,
-	// 				ResourceType:    resource.NodeType,
-	// 				Function:        function,
-	// 				TargetNamespace: cfg.MicroFrontNamaspece,
-	// 			},
-	// 		)
-	// 	}
-	// }
 
 	return nil
 }
@@ -982,6 +992,11 @@ func (h *Handler) deployFunctionGo(req models.DeployFunctionRequestGo) (github.I
 	if err != nil {
 		return github.ImportResponse{}, err
 	}
+
+	importrespJson, _ := json.Marshal(importResponse)
+	fmt.Println("importResponse", string(importrespJson))
+
+	fmt.Println("req.Function.Type", req.Function.Branch)
 
 	time.Sleep(10 * time.Second)
 	switch req.Function.Type {

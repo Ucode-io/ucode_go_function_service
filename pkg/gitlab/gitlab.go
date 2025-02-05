@@ -252,8 +252,6 @@ func ListWebhooks(cfg WebhookConfig) (bool, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		jshdjs, _ := io.ReadAll(resp.Body)
-		fmt.Println(string(jshdjs))
 		return false, fmt.Errorf("failed to list webhooks")
 	}
 
@@ -276,7 +274,7 @@ func CreateWebhook(cfg WebhookConfig) error {
 	var (
 		apiURL  = fmt.Sprintf("%s/api/v4/projects/%d/hooks", cfg.BaseUrl, cfg.RepoId)
 		webhook = WebhookRequest{
-			URL:                    fmt.Sprintf("%s/v2/webhook/handle?project_id=%d&resource_id=%s&environment_id=%s", cfg.ProjectUrl, cfg.RepoId, cfg.ResourceId, cfg.EnvironmentId),
+			URL:                    fmt.Sprintf("%s/v2/webhook/handle?project_id=%s&resource_id=%s&environment_id=%s", cfg.ProjectUrl, cfg.ProjectId, cfg.ResourceId, cfg.EnvironmentId),
 			PushEvents:             true,
 			MergeRequestsEvents:    true,
 			TagPushEvents:          true,

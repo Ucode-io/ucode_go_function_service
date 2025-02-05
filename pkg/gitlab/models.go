@@ -60,6 +60,7 @@ type (
 		ResourceId    string `json:"resource_id"`
 		EnvironmentId string `json:"environment_id"`
 		RepoId        int64  `json:"repo_id"`
+		ProjectId     string `json:"project_id"`
 	}
 
 	Webhook struct {

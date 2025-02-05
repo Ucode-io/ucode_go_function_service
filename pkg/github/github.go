@@ -42,6 +42,8 @@ func ImportFromGithub(cfg ImportData) (response ImportResponse, err error) {
 		return ImportResponse{}, errors.New("failed to read response body")
 	}
 
+	fmt.Println("import response body", string(respBody))
+
 	var importResponse ImportResponse
 
 	if err = json.Unmarshal(respBody, &importResponse); err != nil {
@@ -373,6 +375,8 @@ func DoRequest(method, url string, payload map[string]any, token string) (map[st
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println("response body", string(respBody))
 
 	var result map[string]any
 
