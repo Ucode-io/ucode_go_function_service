@@ -12,6 +12,7 @@ import (
 	"time"
 	status "ucode/ucode_go_function_service/api/status_http"
 	"ucode/ucode_go_function_service/config"
+	"ucode/ucode_go_function_service/pkg/github"
 )
 
 // Integration gitlab.udevs.io
@@ -315,16 +316,16 @@ func CreateWebhook(cfg WebhookConfig) error {
 	return nil
 }
 
-func ImportFromGitlabCom(cfg ImportData) (response ImportResponse, err error) {
+func ImportFromGitlabCom(cfg ImportData) (response github.ImportResponse, err error) {
 	gitlabBodyJSON, err := json.Marshal(cfg)
 	if err != nil {
-		return ImportResponse{}, errors.New("failed to marshal JSON")
+		return github.ImportResponse{}, errors.New("failed to marshal JSON")
 	}
 
 	gitlabUrl := "https://gitlab.udevs.io/api/v4/import/gitlab"
 	req, err := http.NewRequest(http.MethodPost, gitlabUrl, bytes.NewBuffer(gitlabBodyJSON))
 	if err != nil {
-		return ImportResponse{}, errors.New("failed to create request")
+		return github.ImportResponse{}, errors.New("failed to create request")
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -333,20 +334,26 @@ func ImportFromGitlabCom(cfg ImportData) (response ImportResponse, err error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return ImportResponse{}, errors.New("failed to send request")
+		return github.ImportResponse{}, errors.New("failed to send request")
 	}
 	defer resp.Body.Close()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return ImportResponse{}, errors.New("failed to read response body")
+		return github.ImportResponse{}, errors.New("failed to read response body")
 	}
 
-	var importResponse ImportResponse
+	var importResponse github.ImportResponse
 
 	if err = json.Unmarshal(respBody, &importResponse); err != nil {
-		return ImportResponse{}, errors.New("failed to unmarshal response body")
+		return github.ImportResponse{}, errors.New("failed to unmarshal response body")
 	}
 
 	return importResponse, nil
+}
+
+func IsExpired(createdAt int64, expiresIn int32) bool {
+	createdTime := time.Unix(createdAt, 0) // Convert Unix timestamp to time.Time
+	expirationTime := createdTime.Add(time.Duration(expiresIn) * time.Second)
+	return time.Now().After(expirationTime)
 }

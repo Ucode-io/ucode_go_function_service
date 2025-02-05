@@ -48,6 +48,8 @@ type DeployFunctionRequest struct {
 	RepoId          string
 	ResourceType    string
 	TargetNamespace string
+	IsGitlab        bool
+	SourcheFullPath string
 	Function        *obs.Function
 }
 
@@ -56,5 +58,7 @@ type DeployFunctionRequestGo struct {
 	RepoId          string
 	ResourceType    string
 	TargetNamespace string
+	IsGitlab        bool
+	SourcheFullPath string
 	Function        *nb.Function
 }

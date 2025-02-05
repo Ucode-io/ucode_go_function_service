@@ -10,6 +10,7 @@ import (
 
 	"ucode/ucode_go_function_service/api/models"
 	status "ucode/ucode_go_function_service/api/status_http"
+	"ucode/ucode_go_function_service/config"
 	cfg "ucode/ucode_go_function_service/config"
 	pb "ucode/ucode_go_function_service/genproto/company_service"
 	nb "ucode/ucode_go_function_service/genproto/new_object_builder_service"
@@ -17,6 +18,7 @@ import (
 	"ucode/ucode_go_function_service/pkg/github"
 	"ucode/ucode_go_function_service/pkg/gitlab"
 	"ucode/ucode_go_function_service/pkg/helper"
+	"ucode/ucode_go_function_service/pkg/logger"
 	"ucode/ucode_go_function_service/pkg/util"
 
 	"github.com/gin-gonic/gin"
@@ -284,7 +286,6 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 	case pb.ResourceType_GITLAB.String():
 		err = h.HandleWebHookGitlab(projectResource, resource, payload)
 		if err != nil {
-			h.handleResponse(c, status.InternalServerError, err.Error())
 			return
 		}
 		h.handleResponse(c, status.OK, nil)
@@ -551,19 +552,56 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 		gitlabProject   = cast.ToStringMap(payload["project"])
 
 		sourceFullPath = cast.ToString(gitlabProject["path_with_namespace"])
+		token          = projectResource.GetSettings().GetGitlab().GetToken()
+		createdAt      = projectResource.GetSettings().GetGitlab().GetCreatedAt()
+		expiresIn      = projectResource.GetSettings().GetGitlab().GetExpiresIn()
+		refreshToken   = projectResource.GetSettings().GetGitlab().GetRefreshToken()
 		functionType   string
 		resourceType   string
 		name           string
 		err            error
 	)
 
+	if gitlab.IsExpired(createdAt, expiresIn) {
+		refresh, err := gitlab.RefreshGitLabToken(gitlab.GitLabTokenRequest{
+			ClinetId:     h.cfg.GitlabClientIdIntegration,
+			ClientSecret: h.cfg.GitlabClientSecretIntegration,
+			RefreshToken: refreshToken,
+		})
+		if err != nil {
+			h.handleResponse(c, status.InternalServerError, err.Error())
+			return err
+		}
+
+		token = refresh.AccessToken
+
+		go func() {
+			_, err := h.services.CompanyService().Resource().UpdateProjectResource(
+				c.Request.Context(), &pb.ProjectResource{
+					Id:   projectResource.Id,
+					Name: projectResource.GetName(),
+					Settings: &pb.Settings{
+						Gitlab: &pb.Gitlab{
+							Token:        refresh.AccessToken,
+							RefreshToken: refresh.RefreshToken,
+							Username:     projectResource.GetSettings().GetGitlab().GetUsername(),
+							CreatedAt:    refresh.CreatedAt,
+							ExpiresIn:    int32(refresh.ExpiresIn),
+						},
+					},
+				},
+			)
+			if err != nil {
+				h.log.Error("error updating project resource", logger.Error(err))
+			}
+		}()
+	}
+
 	/*
 		htmlUrl
 		branch
 		repoName
 		repoDescription
-		token
-		repoId
 	*/
 
 	builderService := h.services.GetBuilderServiceByType(resource.NodeType)
@@ -596,21 +634,24 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 						Branch:         branch,
 						PipelineStatus: "running",
 						Resource:       resourceType,
+						RepoId:         gitlabProjectId,
 					},
 				)
 				if err != nil {
 					h.handleResponse(c, status.GRPCError, err.Error())
-					return
+					return err
 				}
 			}
 			function.PipelineStatus = "running"
 
 			go h.deployFunction(models.DeployFunctionRequest{
 				GithubToken:     token,
-				RepoId:          repoId,
+				RepoId:          gitlabProjectId,
 				ResourceType:    resource.NodeType,
 				Function:        function,
-				TargetNamespace: "ucode_functions_group",
+				TargetNamespace: config.OpenFassNamespace,
+				IsGitlab:        true,
+				SourcheFullPath: sourceFullPath,
 			})
 		case cfg.KNATIVE:
 			if functionErr != nil {
@@ -626,11 +667,12 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 						Branch:         branch,
 						PipelineStatus: "running",
 						Resource:       resourceType,
+						RepoId:         gitlabProjectId,
 					},
 				)
 				if err != nil {
 					h.handleResponse(c, status.InvalidArgument, err.Error())
-					return
+					return err
 				}
 			}
 			function.PipelineStatus = "running"
@@ -638,10 +680,12 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 			go h.deployFunction(
 				models.DeployFunctionRequest{
 					GithubToken:     token,
-					RepoId:          repoId,
+					RepoId:          gitlabProjectId,
 					ResourceType:    resource.NodeType,
 					Function:        function,
 					TargetNamespace: cfg.KnativeNamespace,
+					IsGitlab:        true,
+					SourcheFullPath: sourceFullPath,
 				},
 			)
 		case cfg.MICROFE:
@@ -658,21 +702,24 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 						Branch:         branch,
 						PipelineStatus: "running",
 						Resource:       resourceType,
+						RepoId:         gitlabProjectId,
 					},
 				)
 				if err != nil {
 					h.handleResponse(c, status.InvalidArgument, err.Error())
-					return
+					return err
 				}
 			}
 			function.PipelineStatus = "running"
 			go h.deployFunction(
 				models.DeployFunctionRequest{
 					GithubToken:     token,
-					RepoId:          repoId,
+					RepoId:          gitlabProjectId,
 					Function:        function,
 					ResourceType:    resource.NodeType,
 					TargetNamespace: cfg.MicroFrontNamaspece,
+					IsGitlab:        true,
+					SourcheFullPath: sourceFullPath,
 				},
 			)
 		}
@@ -703,21 +750,24 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 						Branch:         branch,
 						PipelineStatus: "running",
 						Resource:       resourceType,
+						RepoId:         gitlabProjectId,
 					},
 				)
 				if err != nil {
 					h.handleResponse(c, status.GRPCError, err.Error())
-					return
+					return err
 				}
 			}
 			function.PipelineStatus = "running"
 
 			go h.deployFunctionGo(models.DeployFunctionRequestGo{
 				GithubToken:     token,
-				RepoId:          repoId,
+				RepoId:          gitlabProjectId,
 				ResourceType:    resource.NodeType,
 				Function:        function,
 				TargetNamespace: cfg.OpenFassNamespace,
+				IsGitlab:        true,
+				SourcheFullPath: sourceFullPath,
 			})
 		case cfg.KNATIVE:
 			if functionErr != nil {
@@ -737,7 +787,7 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 				)
 				if err != nil {
 					h.handleResponse(c, status.InvalidArgument, err.Error())
-					return
+					return err
 				}
 			}
 			function.PipelineStatus = "running"
@@ -745,10 +795,12 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 			go h.deployFunctionGo(
 				models.DeployFunctionRequestGo{
 					GithubToken:     token,
-					RepoId:          repoId,
+					RepoId:          gitlabProjectId,
 					ResourceType:    resource.NodeType,
 					Function:        function,
 					TargetNamespace: cfg.KnativeNamespace,
+					IsGitlab:        true,
+					SourcheFullPath: sourceFullPath,
 				},
 			)
 		case cfg.MICROFE:
@@ -765,21 +817,24 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 						Branch:         branch,
 						PipelineStatus: "running",
 						Resource:       resourceType,
+						RepoId:         gitlabProjectId,
 					},
 				)
 				if err != nil {
 					h.handleResponse(c, status.InvalidArgument, err.Error())
-					return
+					return err
 				}
 			}
 			function.PipelineStatus = "running"
 			go h.deployFunctionGo(
 				models.DeployFunctionRequestGo{
 					GithubToken:     token,
-					RepoId:          repoId,
+					RepoId:          gitlabProjectId,
 					ResourceType:    resource.NodeType,
 					Function:        function,
 					TargetNamespace: cfg.MicroFrontNamaspece,
+					IsGitlab:        true,
+					SourcheFullPath: sourceFullPath,
 				},
 			)
 		}
@@ -789,7 +844,11 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 }
 
 func (h *Handler) deployFunction(req models.DeployFunctionRequest) (github.ImportResponse, error) {
-	var gitlabToken string
+	var (
+		gitlabToken    string
+		importResponse github.ImportResponse
+		err            error
+	)
 
 	switch req.Function.Type {
 	case cfg.FUNCTION:
@@ -800,19 +859,30 @@ func (h *Handler) deployFunction(req models.DeployFunctionRequest) (github.Impor
 		gitlabToken = h.cfg.GitlabTokenMicroFront
 	}
 
-	importResponse, err := github.ImportFromGithub(github.ImportData{
-		PersonalAccessToken: req.GithubToken,
-		RepoId:              req.RepoId,
-		TargetNamespace:     req.TargetNamespace,
-		NewName:             req.Function.Path,
-		GitlabToken:         gitlabToken,
-	})
-	if err != nil {
-		return github.ImportResponse{}, err
+	if req.IsGitlab {
+		importResponse, err = gitlab.ImportFromGitlabCom(gitlab.ImportData{
+			PersonalAccessToken: req.GithubToken,
+			TargetNamespace:     req.TargetNamespace,
+			SourceFullPath:      "", // source_full_path
+			GitlabToken:         gitlabToken,
+		})
+		if err != nil {
+			return github.ImportResponse{}, err
+		}
+	} else {
+		importResponse, err = github.ImportFromGithub(github.ImportData{
+			PersonalAccessToken: req.GithubToken,
+			RepoId:              req.RepoId,
+			TargetNamespace:     req.TargetNamespace,
+			NewName:             req.Function.Path,
+			GitlabToken:         gitlabToken,
+		})
+		if err != nil {
+			return github.ImportResponse{}, err
+		}
 	}
 
 	time.Sleep(10 * time.Second)
-
 	switch req.Function.Type {
 	case cfg.KNATIVE:
 		err = github.AddCiFileKnative(gitlabToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneKnative)
