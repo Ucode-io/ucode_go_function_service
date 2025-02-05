@@ -129,8 +129,6 @@ func (h *Handler) GitlabGetRepos(c *gin.Context) {
 	}
 	defer resp.Body.Close()
 
-	fmt.Println("STATUS", resp.StatusCode)
-
 	if resp.StatusCode == http.StatusUnauthorized {
 		projectResource, err := h.services.CompanyService().Resource().GetSingleProjectResouece(
 			c.Request.Context(), &pb.PrimaryKeyProjectResource{

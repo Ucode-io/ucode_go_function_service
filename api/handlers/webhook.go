@@ -113,7 +113,7 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 		Path:           createWebhookRequest.RepoName,
 		Name:           createWebhookRequest.RepoName,
 		Description:    createWebhookRequest.RepoName,
-		RepoId:         createWebhookRequest.RepoId,
+		RepoId:         fmt.Sprintf("%d", createWebhookRequest.RepoId),
 		ProjectId:      resource.ResourceEnvironmentId,
 		EnvironmentId:  resource.EnvironmentId,
 		Type:           createWebhookRequest.FunctionType,
@@ -140,7 +140,7 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 	case pb.ResourceType_GITLAB.String():
 		exists, err = gitlab.ListWebhooks(gitlab.WebhookConfig{
 			Token:      createWebhookRequest.GithubToken,
-			ProjectId:  createWebhookRequest.RepoId,
+			RepoId:     createWebhookRequest.RepoId,
 			ProjectUrl: h.cfg.ProjectUrl,
 			BaseUrl:    h.cfg.GitlabBaseUrlIntegration,
 		})
@@ -202,13 +202,12 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 		}
 	case pb.ResourceType_GITLAB.String():
 		err = gitlab.CreateWebhook(gitlab.WebhookConfig{
-			ProjectUrl:      h.cfg.ProjectUrl,
-			BaseUrl:         h.cfg.GitlabBaseUrlIntegration,
-			GitlabProjectId: createWebhookRequest.RepoId,
-			ResourceId:      createWebhookRequest.Resource,
-			ProjectId:       projectId.(string),
-			EnvironmentId:   environmentId.(string),
-			Token:           createWebhookRequest.GithubToken,
+			ProjectUrl:    h.cfg.ProjectUrl,
+			BaseUrl:       h.cfg.GitlabBaseUrlIntegration,
+			RepoId:        createWebhookRequest.RepoId,
+			ResourceId:    createWebhookRequest.Resource,
+			EnvironmentId: environmentId.(string),
+			Token:         createWebhookRequest.GithubToken,
 		})
 		if err != nil {
 			h.handleResponse(c, status.InternalServerError, err.Error())

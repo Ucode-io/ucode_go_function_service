@@ -54,7 +54,7 @@ type (
 	CreateWebhook struct {
 		Username     string `json:"username"`
 		RepoName     string `json:"repo_name" binding:"required"`
-		RepoId       string `json:"repo_id"`
+		RepoId       int64  `json:"repo_id"`
 		RefreshToken string `json:"refresh_toke"`
 		ExpiresIn    int32  `json:"expiress_in"`
 		CreatedAt    int64  `json:"created_at"`

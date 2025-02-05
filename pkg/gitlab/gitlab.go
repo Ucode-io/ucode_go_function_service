@@ -235,7 +235,7 @@ func RefreshGitLabToken(request GitLabTokenRequest) (*GitLabTokenResponse, error
 }
 
 func ListWebhooks(cfg WebhookConfig) (bool, error) {
-	var apiURL = fmt.Sprintf("%s/api/v4/projects/%s/hooks", cfg.BaseUrl, cfg.ProjectId)
+	var apiURL = fmt.Sprintf("%s/api/v4/projects/%d/hooks", cfg.BaseUrl, cfg.RepoId)
 
 	req, err := http.NewRequest(http.MethodGet, apiURL, nil)
 	if err != nil {
@@ -274,9 +274,9 @@ func ListWebhooks(cfg WebhookConfig) (bool, error) {
 
 func CreateWebhook(cfg WebhookConfig) error {
 	var (
-		apiURL  = fmt.Sprintf("%s/api/v4/projects/%s/hooks", cfg.BaseUrl, cfg.GitlabProjectId)
+		apiURL  = fmt.Sprintf("%s/api/v4/projects/%d/hooks", cfg.BaseUrl, cfg.RepoId)
 		webhook = WebhookRequest{
-			URL:                    fmt.Sprintf("%s/v2/webhook/handle?project_id=%s&resource_id=%s&environment_id=%s", cfg.ProjectUrl, cfg.ProjectId, cfg.ResourceId, cfg.EnvironmentId),
+			URL:                    fmt.Sprintf("%s/v2/webhook/handle?project_id=%d&resource_id=%s&environment_id=%s", cfg.ProjectUrl, cfg.RepoId, cfg.ResourceId, cfg.EnvironmentId),
 			PushEvents:             true,
 			MergeRequestsEvents:    true,
 			TagPushEvents:          true,

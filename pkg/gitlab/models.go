@@ -54,13 +54,12 @@ type (
 	}
 
 	WebhookConfig struct {
-		ProjectUrl      string `json:"project_url"`
-		BaseUrl         string `json:"base_url"`
-		GitlabProjectId string `json:"gitlab_project_id"`
-		Token           string `json:"token"`
-		ResourceId      string `json:"resource_id"`
-		EnvironmentId   string `json:"environment_id"`
-		ProjectId       string `json:"project_id"`
+		ProjectUrl    string `json:"project_url"`
+		BaseUrl       string `json:"base_url"`
+		Token         string `json:"token"`
+		ResourceId    string `json:"resource_id"`
+		EnvironmentId string `json:"environment_id"`
+		RepoId        int64  `json:"repo_id"`
 	}
 
 	Webhook struct {
