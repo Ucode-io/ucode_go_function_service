@@ -284,7 +284,7 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 
 	switch projectResource.Type {
 	case pb.ResourceType_GITLAB.String():
-		err = h.HandleWebHookGitlab(projectResource, resource, payload)
+		err = h.HandleWebHookGitlab(c, projectResource, resource, payload)
 		if err != nil {
 			return
 		}
@@ -551,15 +551,19 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 		gitlabProjectId = cast.ToString(payload["project_id"])
 		gitlabProject   = cast.ToStringMap(payload["project"])
 
-		sourceFullPath = cast.ToString(gitlabProject["path_with_namespace"])
-		token          = projectResource.GetSettings().GetGitlab().GetToken()
-		createdAt      = projectResource.GetSettings().GetGitlab().GetCreatedAt()
-		expiresIn      = projectResource.GetSettings().GetGitlab().GetExpiresIn()
-		refreshToken   = projectResource.GetSettings().GetGitlab().GetRefreshToken()
-		functionType   string
-		resourceType   string
-		name           string
-		err            error
+		sourceFullPath  = cast.ToString(gitlabProject["path_with_namespace"])
+		htmlUrl         = cast.ToString(gitlabProject["web_url"])
+		branch          = cast.ToString(gitlabProject["default_branch"])
+		repoName        = cast.ToString(gitlabProject["name"])
+		repoDescription = cast.ToString(gitlabProject["description"])
+		token           = projectResource.GetSettings().GetGitlab().GetToken()
+		createdAt       = projectResource.GetSettings().GetGitlab().GetCreatedAt()
+		expiresIn       = projectResource.GetSettings().GetGitlab().GetExpiresIn()
+		refreshToken    = projectResource.GetSettings().GetGitlab().GetRefreshToken()
+		functionType    string
+		resourceType    string
+		name            string
+		err             error
 	)
 
 	if gitlab.IsExpired(createdAt, expiresIn) {
@@ -596,13 +600,6 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 			}
 		}()
 	}
-
-	/*
-		htmlUrl
-		branch
-		repoName
-		repoDescription
-	*/
 
 	builderService := h.services.GetBuilderServiceByType(resource.NodeType)
 
