@@ -558,6 +558,8 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 		branch          = cast.ToString(gitlabProject["default_branch"])
 		repoName        = cast.ToString(gitlabProject["name"])
 		repoDescription = cast.ToString(gitlabProject["description"])
+
+
 		token           = projectResource.GetSettings().GetGitlab().GetToken()
 		createdAt       = projectResource.GetSettings().GetGitlab().GetCreatedAt()
 		expiresIn       = projectResource.GetSettings().GetGitlab().GetExpiresIn()
@@ -568,7 +570,10 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 		err             error
 	)
 
+	fmt.Println("refresh token", refreshToken)
+
 	if gitlab.IsExpired(createdAt, expiresIn) {
+		fmt.Println("expired token")
 		refresh, err := gitlab.RefreshGitLabToken(gitlab.GitLabTokenRequest{
 			ClinetId:     h.cfg.GitlabClientIdIntegration,
 			ClientSecret: h.cfg.GitlabClientSecretIntegration,
@@ -588,7 +593,7 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 			fmt.Println("refresh expires in", refresh.ExpiresIn)
 
 			_, err := h.services.CompanyService().Resource().UpdateProjectResource(
-				c.Request.Context(), &pb.ProjectResource{
+				context.Background(), &pb.ProjectResource{
 					Id:            projectResource.GetId(),
 					Name:          projectResource.GetName(),
 					ProjectId:     projectResource.GetProjectId(),
@@ -612,6 +617,7 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 
 	builderService := h.services.GetBuilderServiceByType(resource.NodeType)
 	fmt.Println("resourceType", resource.ResourceType)
+	fmt.Println("resource.NodeType", projectResource)
 
 	switch resource.ResourceType {
 	case pb.ResourceType_MONGODB:
@@ -870,10 +876,7 @@ func (h *Handler) deployFunction(req models.DeployFunctionRequest) (github.Impor
 
 	if req.IsGitlab {
 		importResponse, err = gitlab.ImportFromGitlabCom(gitlab.ImportData{
-			PersonalAccessToken: req.GithubToken,
-			TargetNamespace:     req.TargetNamespace,
-			SourceFullPath:      "", // source_full_path
-			GitlabToken:         gitlabToken,
+			GitlabToken: gitlabToken,
 		})
 		if err != nil {
 			return github.ImportResponse{}, err
@@ -1050,7 +1053,11 @@ func (h *Handler) deployFunction(req models.DeployFunctionRequest) (github.Impor
 }
 
 func (h *Handler) deployFunctionGo(req models.DeployFunctionRequestGo) (github.ImportResponse, error) {
-	var gitlabToken string
+	var (
+		gitlabToken    string
+		importResponse github.ImportResponse
+		err            error
+	)
 
 	switch req.Function.Type {
 	case cfg.FUNCTION:
@@ -1061,15 +1068,33 @@ func (h *Handler) deployFunctionGo(req models.DeployFunctionRequestGo) (github.I
 		gitlabToken = h.cfg.GitlabTokenMicroFront
 	}
 
-	importResponse, err := github.ImportFromGithub(github.ImportData{
-		PersonalAccessToken: req.GithubToken,
-		RepoId:              req.RepoId,
-		TargetNamespace:     req.TargetNamespace,
-		NewName:             req.Function.Path,
-		GitlabToken:         gitlabToken,
-	})
-	if err != nil {
-		return github.ImportResponse{}, err
+	fmt.Println("req.IsGitlab", req.IsGitlab)
+	fadfadf, _ := json.Marshal(req)
+	fmt.Println("req", string(fadfadf))
+
+	if req.IsGitlab {
+		importResponse, err = gitlab.ImportFromGitLab(gitlab.ImportData{
+			PersonalAccessToken: req.GithubToken,
+			RepoId:              req.RepoId,
+			TargetNamespace:     req.TargetNamespace,
+			NewName:             req.Function.Path,
+			GitlabToken:         gitlabToken,
+			SourceFullPath:      req.SourcheFullPath,
+		})
+		if err != nil {
+			return github.ImportResponse{}, err
+		}
+	} else {
+		importResponse, err = github.ImportFromGithub(github.ImportData{
+			PersonalAccessToken: req.GithubToken,
+			RepoId:              req.RepoId,
+			TargetNamespace:     req.TargetNamespace,
+			NewName:             req.Function.Path,
+			GitlabToken:         gitlabToken,
+		})
+		if err != nil {
+			return github.ImportResponse{}, err
+		}
 	}
 
 	importrespJson, _ := json.Marshal(importResponse)

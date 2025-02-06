@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -322,6 +323,8 @@ func ImportFromGitlabCom(cfg ImportData) (response github.ImportResponse, err er
 		return github.ImportResponse{}, errors.New("failed to marshal JSON")
 	}
 
+	fmt.Println("gitlabBodyJSON", string(gitlabBodyJSON))
+
 	gitlabUrl := "https://gitlab.udevs.io/api/v4/import/gitlab"
 	req, err := http.NewRequest(http.MethodPost, gitlabUrl, bytes.NewBuffer(gitlabBodyJSON))
 	if err != nil {
@@ -343,6 +346,9 @@ func ImportFromGitlabCom(cfg ImportData) (response github.ImportResponse, err er
 		return github.ImportResponse{}, errors.New("failed to read response body")
 	}
 
+	fmt.Println("ImportFromGitlabComBODY", string(respBody))
+	fmt.Println("ImportFromGitlabComStatus", resp.StatusCode)
+
 	var importResponse github.ImportResponse
 
 	if err = json.Unmarshal(respBody, &importResponse); err != nil {
@@ -356,4 +362,116 @@ func IsExpired(createdAt int64, expiresIn int32) bool {
 	createdTime := time.Unix(createdAt, 0) // Convert Unix timestamp to time.Time
 	expirationTime := createdTime.Add(time.Duration(expiresIn) * time.Second)
 	return time.Now().After(expirationTime)
+}
+
+func ImportFromGitLab(cfg ImportData) (response github.ImportResponse, err error) {
+	fmt.Println("ImportFromGitLab NEW")
+	err = ExportRepo(cfg)
+	if err != nil {
+		return github.ImportResponse{}, err
+	}
+
+	fmt.Println("here again1")
+	time.Sleep(5 * time.Second)
+
+	fmt.Println("PersonalAccessToken", cfg.PersonalAccessToken)
+	err = exportProject(fmt.Sprintf("https://gitlab.com/api/v4/projects/%v/export/download", cfg.RepoId), cfg.PersonalAccessToken, cfg.NewName+".tar.gz")
+	if err != nil {
+		return github.ImportResponse{}, err
+	}
+
+	fmt.Println("here again2")
+
+	// Parse response into ImportResponse struct
+	var importResponse github.ImportResponse
+	// if err = json.Unmarshal(respBody, &importResponse); err != nil {
+	// 	return github.ImportResponse{}, errors.New("failed to unmarshal response body")
+	// }
+
+	return importResponse, nil
+}
+
+func ExportRepo(cfg ImportData) error {
+	url := fmt.Sprintf("https://gitlab.com/api/v4/projects/%s/export", cfg.RepoId)
+	req, err := http.NewRequest(http.MethodPost, url, nil)
+	if err != nil {
+		fmt.Println("Error Create request:", err)
+		return err
+	}
+
+	// Set Authorization Header
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", cfg.PersonalAccessToken))
+
+	// Send Request
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Error Do request:", err)
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusAccepted {
+		fmt.Println("Error Status code:", resp.StatusCode)
+		return errors.New("failed to export repository")
+	}
+
+	// Read Response
+	return nil
+}
+
+func exportProject(exportURL, gitlabToken, exportFilePath string) error {
+	req, err := http.NewRequest(http.MethodGet, exportURL, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	fmt.Println("before add header", gitlabToken)
+	fmt.Println("exportURL", exportURL)
+
+	req.Header.Add("Authorization", "Bearer "+gitlabToken)
+
+	client := &http.Client{}
+
+	fmt.Println("before do")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Error Do request:", err)
+		return fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("Error Read response:", err)
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	fmt.Println("respBody", string(respBody))
+
+	if resp.StatusCode != http.StatusOK {
+		fmt.Println("Error Status code:", resp.StatusCode)
+		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	fmt.Println("before create file")
+	file, err := os.Create(exportFilePath)
+	if err != nil {
+		fmt.Println("Error Create file:", err)
+		return fmt.Errorf("failed to create file: %w", err)
+	}
+	defer file.Close()
+
+	fmt.Println("before copy")
+
+	_, err = io.Copy(file, resp.Body)
+	if err != nil {
+		fmt.Println("Error Copy:", err)
+		return fmt.Errorf("failed to write to file: %w", err)
+	}
+	fmt.Println("after copy")
+
+	fmt.Println("Project exported successfully to", exportFilePath)
+	return nil
 }

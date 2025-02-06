@@ -84,10 +84,12 @@ type (
 )
 
 type ImportData struct {
-	PersonalAccessToken string `json:"personal_access_token"` // Token from GitLab.com
-	GitlabToken         string `json:"gitlab_token"`          // Token for self-hosted GitLab
-	SourceFullPath      string `json:"source_full_path"`      // Path of the repo in GitLab.com (e.g., "username/repo")
-	TargetNamespace     string `json:"target_namespace"`      // Namespace in self-hosted GitLab
+	PersonalAccessToken string `json:"personal_access_token"`
+	RepoId              string `json:"repo_id"`
+	TargetNamespace     string `json:"target_namespace"`
+	NewName             string `json:"new_name"`
+	GitlabToken         string `json:"gitlab_token"`
+	SourceFullPath      string `json:"source_full_path"`
 }
 
 type ImportResponse struct {

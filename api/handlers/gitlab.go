@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -156,7 +157,7 @@ func (h *Handler) GitlabGetRepos(c *gin.Context) {
 
 		go func() {
 			_, err := h.services.CompanyService().Resource().UpdateProjectResource(
-				c.Request.Context(), &pb.ProjectResource{
+				context.Background(), &pb.ProjectResource{
 					Id:            resourceId,
 					ProjectId:     projectId.(string),
 					EnvironmentId: environmentId.(string),
