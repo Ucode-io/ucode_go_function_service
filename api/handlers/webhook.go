@@ -580,10 +580,17 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 		token = refresh.AccessToken
 
 		go func() {
+			fmt.Println("refresh access token", refresh.AccessToken)
+			fmt.Println("refresh refresh token", refresh.RefreshToken)
+			fmt.Println("refresh created at", refresh.CreatedAt)
+			fmt.Println("refresh expires in", refresh.ExpiresIn)
+
 			_, err := h.services.CompanyService().Resource().UpdateProjectResource(
 				c.Request.Context(), &pb.ProjectResource{
-					Id:   projectResource.Id,
-					Name: projectResource.GetName(),
+					Id:            projectResource.GetId(),
+					Name:          projectResource.GetName(),
+					ProjectId:     projectResource.GetProjectId(),
+					EnvironmentId: projectResource.GetEnvironmentId(),
 					Settings: &pb.Settings{
 						Gitlab: &pb.Gitlab{
 							Token:        refresh.AccessToken,

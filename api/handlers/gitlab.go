@@ -157,8 +157,10 @@ func (h *Handler) GitlabGetRepos(c *gin.Context) {
 		go func() {
 			_, err := h.services.CompanyService().Resource().UpdateProjectResource(
 				c.Request.Context(), &pb.ProjectResource{
-					Id:   resourceId,
-					Name: projectResource.GetName(),
+					Id:            resourceId,
+					ProjectId:     projectId.(string),
+					EnvironmentId: environmentId.(string),
+					Name:          projectResource.GetName(),
 					Settings: &pb.Settings{
 						Gitlab: &pb.Gitlab{
 							Token:        retoken.AccessToken,
