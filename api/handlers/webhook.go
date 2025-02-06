@@ -112,16 +112,17 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 	}
 
 	createFunction = &obs.CreateFunctionRequest{
-		Path:           createWebhookRequest.RepoName,
-		Name:           createWebhookRequest.RepoName,
-		Description:    createWebhookRequest.RepoName,
-		RepoId:         fmt.Sprintf("%d", createWebhookRequest.RepoId),
-		ProjectId:      resource.ResourceEnvironmentId,
-		EnvironmentId:  resource.EnvironmentId,
-		Type:           createWebhookRequest.FunctionType,
-		FrameworkType:  createWebhookRequest.FrameworkType,
-		Url:            "",
-		Branch:         createWebhookRequest.Branch,
+		Path:          createWebhookRequest.RepoName,
+		Name:          createWebhookRequest.RepoName,
+		Description:   createWebhookRequest.RepoName,
+		RepoId:        fmt.Sprintf("%d", createWebhookRequest.RepoId),
+		ProjectId:     resource.ResourceEnvironmentId,
+		EnvironmentId: resource.EnvironmentId,
+		Type:          createWebhookRequest.FunctionType,
+		FrameworkType: createWebhookRequest.FrameworkType,
+		Url:           "",
+		Branch:        createWebhookRequest.Branch,
+		// SourceUrl: ,
 		PipelineStatus: "running",
 		Resource:       createWebhookRequest.Resource,
 	}
@@ -150,6 +151,7 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 			h.handleResponse(c, status.InternalServerError, err.Error())
 			return
 		}
+		createFunction.SourceUrl = fmt.Sprintf("https://gitlab.com/%s/%s", createWebhookRequest.Username, createWebhookRequest.RepoName)
 	}
 
 	if exists {
@@ -609,6 +611,7 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 	}
 
 	builderService := h.services.GetBuilderServiceByType(resource.NodeType)
+	fmt.Println("resourceType", resource.ResourceType)
 
 	switch resource.ResourceType {
 	case pb.ResourceType_MONGODB:
@@ -623,6 +626,7 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 			functionType = function.Type
 		}
 
+		fmt.Print("functionType", functionType)
 		switch functionType {
 		case cfg.FUNCTION:
 			if functionErr != nil {
@@ -739,6 +743,7 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 			functionType = function.Type
 		}
 
+		fmt.Println("functionType", functionType)
 		switch functionType {
 		case cfg.FUNCTION:
 			if functionErr != nil {
