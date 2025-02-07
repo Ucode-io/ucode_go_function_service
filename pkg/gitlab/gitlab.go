@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"strconv"
@@ -209,6 +210,8 @@ func RefreshGitLabToken(request GitLabTokenRequest) (*GitLabTokenResponse, error
 		return nil, err
 	}
 
+	fmt.Println("RefreshGitLabTokenBODY", string(requestBody))
+
 	req, err := http.NewRequest(http.MethodPost, "https://gitlab.com/oauth/token", bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, err
@@ -226,6 +229,8 @@ func RefreshGitLabToken(request GitLabTokenRequest) (*GitLabTokenResponse, error
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println("RefreshGitLabToken", string(body))
 
 	var tokenResponse GitLabTokenResponse
 
@@ -365,14 +370,18 @@ func IsExpired(createdAt int64, expiresIn int32) bool {
 }
 
 func ImportFromGitLab(cfg ImportData) (response github.ImportResponse, err error) {
-	fmt.Println("ImportFromGitLab NEW")
+	fmt.Println("ImportFromGitLab NEW", cfg)
 	err = ExportRepo(cfg)
 	if err != nil {
 		return github.ImportResponse{}, err
 	}
 
 	fmt.Println("here again1")
-	time.Sleep(5 * time.Second)
+
+	err = checkExportStatusWithTimeout("https://gitlab.com/api/v4/projects", cfg.RepoId, cfg.PersonalAccessToken)
+	if err != nil {
+		return github.ImportResponse{}, err
+	}
 
 	fmt.Println("PersonalAccessToken", cfg.PersonalAccessToken)
 	err = exportProject(fmt.Sprintf("https://gitlab.com/api/v4/projects/%v/export/download", cfg.RepoId), cfg.PersonalAccessToken, cfg.NewName+".tar.gz")
@@ -382,16 +391,26 @@ func ImportFromGitLab(cfg ImportData) (response github.ImportResponse, err error
 
 	fmt.Println("here again2")
 
+	url := "https://gitlab.udevs.io/api/v4/projects/import"
+
+	importResponse, err := ImportGitLabProject(cfg.GitlabToken, url, fmt.Sprintf("%d", cfg.GitlabGroupId), cfg.NewName, cfg.NewName+".tar.gz")
+	if err != nil {
+		return github.ImportResponse{}, err
+	}
+
+	//remove file
+	err = os.Remove(cfg.NewName + ".tar.gz")
+	if err != nil {
+		return github.ImportResponse{}, err
+	}
+
 	// Parse response into ImportResponse struct
-	var importResponse github.ImportResponse
-	// if err = json.Unmarshal(respBody, &importResponse); err != nil {
-	// 	return github.ImportResponse{}, errors.New("failed to unmarshal response body")
-	// }
 
 	return importResponse, nil
 }
 
 func ExportRepo(cfg ImportData) error {
+	fmt.Println("export repo id", cfg.RepoId)
 	url := fmt.Sprintf("https://gitlab.com/api/v4/projects/%s/export", cfg.RepoId)
 	req, err := http.NewRequest(http.MethodPost, url, nil)
 	if err != nil {
@@ -426,14 +445,9 @@ func exportProject(exportURL, gitlabToken, exportFilePath string) error {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
 
-	fmt.Println("before add header", gitlabToken)
-	fmt.Println("exportURL", exportURL)
-
 	req.Header.Add("Authorization", "Bearer "+gitlabToken)
 
 	client := &http.Client{}
-
-	fmt.Println("before do")
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -442,20 +456,11 @@ func exportProject(exportURL, gitlabToken, exportFilePath string) error {
 	}
 	defer resp.Body.Close()
 
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println("Error Read response:", err)
-		return fmt.Errorf("failed to read response body: %w", err)
-	}
-
-	fmt.Println("respBody", string(respBody))
-
 	if resp.StatusCode != http.StatusOK {
 		fmt.Println("Error Status code:", resp.StatusCode)
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	fmt.Println("before create file")
 	file, err := os.Create(exportFilePath)
 	if err != nil {
 		fmt.Println("Error Create file:", err)
@@ -463,15 +468,115 @@ func exportProject(exportURL, gitlabToken, exportFilePath string) error {
 	}
 	defer file.Close()
 
-	fmt.Println("before copy")
-
 	_, err = io.Copy(file, resp.Body)
 	if err != nil {
 		fmt.Println("Error Copy:", err)
 		return fmt.Errorf("failed to write to file: %w", err)
 	}
-	fmt.Println("after copy")
 
 	fmt.Println("Project exported successfully to", exportFilePath)
 	return nil
+}
+
+func ImportGitLabProject(token, url, namespace, path, filePath string) (github.ImportResponse, error) {
+	// Open the file
+	file, err := os.Open(filePath)
+	if err != nil {
+		return github.ImportResponse{}, fmt.Errorf("error opening file: %w", err)
+	}
+	defer file.Close()
+
+	// Create a buffer to store multipart form data
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	// Add namespace and path fields
+	_ = writer.WriteField("namespace", namespace)
+	_ = writer.WriteField("path", path)
+
+	// Add file to the form
+	part, err := writer.CreateFormFile("file", filePath)
+	if err != nil {
+		return github.ImportResponse{}, fmt.Errorf("error creating form file: %w", err)
+	}
+
+	// Copy file content to multipart writer
+	_, err = io.Copy(part, file)
+	if err != nil {
+		return github.ImportResponse{}, fmt.Errorf("error copying file content: %w", err)
+	}
+
+	// Close the writer to finalize the form
+	writer.Close()
+
+	// Create the request
+	req, err := http.NewRequest("POST", url, body)
+	if err != nil {
+		return github.ImportResponse{}, fmt.Errorf("error creating request: %w", err)
+	}
+
+	// Set headers
+	req.Header.Set("PRIVATE-TOKEN", token)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	// Send request
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return github.ImportResponse{}, fmt.Errorf("error sending request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Check response status
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		return github.ImportResponse{}, fmt.Errorf("failed to import project, status: %s", resp.Status)
+	}
+
+	respByte, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return github.ImportResponse{}, err
+	}
+
+	var importResponse github.ImportResponse
+	if err = json.Unmarshal(respByte, &importResponse); err != nil {
+		return github.ImportResponse{}, errors.New("failed to unmarshal response body")
+	}
+
+	fmt.Println("Project imported successfully!")
+	return importResponse, nil
+}
+
+func checkExportStatusWithTimeout(baseURL, projectID, exportToken string) error {
+	url := fmt.Sprintf("%s/%s/export", baseURL, projectID)
+	startTime := time.Now()
+
+	maxWait := 30 * time.Minute
+
+	for {
+		if time.Since(startTime) > maxWait {
+			return fmt.Errorf("export timed out after %v", maxWait)
+		}
+
+		req, _ := http.NewRequest(http.MethodGet, url, nil)
+		req.Header.Set("Authorization", "Bearer "+exportToken)
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		var result map[string]string
+		json.NewDecoder(resp.Body).Decode(&result)
+
+		status := result["export_status"]
+		fmt.Println("Export status:", status)
+
+		if status == "finished" {
+			return nil
+		}
+
+		time.Sleep(10 * time.Second) // Check every 10s
+	}
 }

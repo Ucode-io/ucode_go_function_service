@@ -146,8 +146,8 @@ func Load() Config {
 
 	// Gitlab Creds
 	config.GitlabBaseUrlIntegration = cast.ToString(getOrReturnDefaultValue("GITLAB_BASE_URL_INTEGRATION", "https://gitlab.com"))
-	config.GitlabClientIdIntegration = cast.ToString(getOrReturnDefaultValue("GITLAB_CLIENT_ID_INTEGRATION", "acedee8c5139316306ed5da48c3fdd5ad7424279a257a89cb7d5637712dec894"))
-	config.GitlabClientSecretIntegration = cast.ToString(getOrReturnDefaultValue("GITLAB_CLIENT_SECRET_INTEGRATION", "gloas-fbd41f01c2ceac45dd32aacb4cccbc0229452cced07b8799f95aabab4aa9fc4a"))
+	config.GitlabClientIdIntegration = cast.ToString(getOrReturnDefaultValue("GITLAB_CLIENT_ID_INTEGRATION", "f646f740d8d92d0fa7f24b6997bee02532b555790c9758e08f5b04641fc97e38"))
+	config.GitlabClientSecretIntegration = cast.ToString(getOrReturnDefaultValue("GITLAB_CLIENT_SECRET_INTEGRATION", "gloas-8f65ccce6bff2cbcbeec95b757b3206c3b8f8aeb832f2bcadc99b3251aece089"))
 	config.GitlabRedirectUriIntegration = cast.ToString(getOrReturnDefaultValue("GITLAB_REDIRECT_URI_INTEGRATION", "https://app.ucode.run/main/c57eedc3-a954-4262-a0af-376c65b5a280/resources/create"))
 
 	// Gitlab Creds

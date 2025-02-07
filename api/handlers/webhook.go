@@ -559,18 +559,17 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 		repoName        = cast.ToString(gitlabProject["name"])
 		repoDescription = cast.ToString(gitlabProject["description"])
 
-
-		token           = projectResource.GetSettings().GetGitlab().GetToken()
-		createdAt       = projectResource.GetSettings().GetGitlab().GetCreatedAt()
-		expiresIn       = projectResource.GetSettings().GetGitlab().GetExpiresIn()
-		refreshToken    = projectResource.GetSettings().GetGitlab().GetRefreshToken()
-		functionType    string
-		resourceType    string
-		name            string
-		err             error
+		token        = projectResource.GetSettings().GetGitlab().GetToken()
+		createdAt    = projectResource.GetSettings().GetGitlab().GetCreatedAt()
+		expiresIn    = projectResource.GetSettings().GetGitlab().GetExpiresIn()
+		refreshToken = projectResource.GetSettings().GetGitlab().GetRefreshToken()
+		functionType string
+		resourceType string
+		name         string
+		err          error
 	)
 
-	fmt.Println("refresh token", refreshToken)
+	fmt.Println("refresh token", projectResource)
 
 	if gitlab.IsExpired(createdAt, expiresIn) {
 		fmt.Println("expired token")
@@ -1055,6 +1054,7 @@ func (h *Handler) deployFunction(req models.DeployFunctionRequest) (github.Impor
 func (h *Handler) deployFunctionGo(req models.DeployFunctionRequestGo) (github.ImportResponse, error) {
 	var (
 		gitlabToken    string
+		gitlabGroupId  int
 		importResponse github.ImportResponse
 		err            error
 	)
@@ -1062,10 +1062,13 @@ func (h *Handler) deployFunctionGo(req models.DeployFunctionRequestGo) (github.I
 	switch req.Function.Type {
 	case cfg.FUNCTION:
 		gitlabToken = h.cfg.GitlabOpenFassToken
+		gitlabGroupId = h.cfg.GitlabOpenFassGroupId
 	case cfg.KNATIVE:
 		gitlabToken = h.cfg.GitlabKnativeToken
+		gitlabGroupId = h.cfg.GitlabKnativeGroupId
 	case cfg.MICROFE:
 		gitlabToken = h.cfg.GitlabTokenMicroFront
+		gitlabGroupId = h.cfg.GitlabGroupIdMicroFront
 	}
 
 	fmt.Println("req.IsGitlab", req.IsGitlab)
@@ -1080,6 +1083,7 @@ func (h *Handler) deployFunctionGo(req models.DeployFunctionRequestGo) (github.I
 			NewName:             req.Function.Path,
 			GitlabToken:         gitlabToken,
 			SourceFullPath:      req.SourcheFullPath,
+			GitlabGroupId:       gitlabGroupId,
 		})
 		if err != nil {
 			return github.ImportResponse{}, err
@@ -1257,4 +1261,6 @@ func (h *Handler) deployFunctionGo(req models.DeployFunctionRequestGo) (github.I
 			return github.ImportResponse{}, nil
 		}
 	}
+
+	// return github.ImportResponse{}, nil
 }

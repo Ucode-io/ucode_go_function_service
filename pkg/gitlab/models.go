@@ -90,6 +90,7 @@ type ImportData struct {
 	NewName             string `json:"new_name"`
 	GitlabToken         string `json:"gitlab_token"`
 	SourceFullPath      string `json:"source_full_path"`
+	GitlabGroupId       int    `json:"-"`
 }
 
 type ImportResponse struct {
