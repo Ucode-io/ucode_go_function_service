@@ -246,8 +246,8 @@ func (h *Handler) GitlabGetBranches(c *gin.Context) {
 		return
 	}
 
+	token = projectResource.GetSettings().GetGitlab().GetToken()
 	refreshToken := projectResource.GetSettings().GetGitlab().GetRefreshToken()
-
 	createdAt := projectResource.GetSettings().GetGitlab().GetCreatedAt()
 	expiresIn := projectResource.GetSettings().GetGitlab().GetExpiresIn()
 
