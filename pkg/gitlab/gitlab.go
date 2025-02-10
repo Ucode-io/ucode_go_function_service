@@ -210,8 +210,6 @@ func RefreshGitLabToken(request GitLabTokenRequest) (*GitLabTokenResponse, error
 		return nil, err
 	}
 
-	fmt.Println("RefreshGitLabTokenBODY", string(requestBody))
-
 	req, err := http.NewRequest(http.MethodPost, "https://gitlab.com/oauth/token", bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, err
@@ -229,8 +227,6 @@ func RefreshGitLabToken(request GitLabTokenRequest) (*GitLabTokenResponse, error
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println("RefreshGitLabToken", string(body))
 
 	var tokenResponse GitLabTokenResponse
 
@@ -328,8 +324,6 @@ func ImportFromGitlabCom(cfg ImportData) (response github.ImportResponse, err er
 		return github.ImportResponse{}, errors.New("failed to marshal JSON")
 	}
 
-	fmt.Println("gitlabBodyJSON", string(gitlabBodyJSON))
-
 	gitlabUrl := "https://gitlab.udevs.io/api/v4/import/gitlab"
 	req, err := http.NewRequest(http.MethodPost, gitlabUrl, bytes.NewBuffer(gitlabBodyJSON))
 	if err != nil {
@@ -351,9 +345,6 @@ func ImportFromGitlabCom(cfg ImportData) (response github.ImportResponse, err er
 		return github.ImportResponse{}, errors.New("failed to read response body")
 	}
 
-	fmt.Println("ImportFromGitlabComBODY", string(respBody))
-	fmt.Println("ImportFromGitlabComStatus", resp.StatusCode)
-
 	var importResponse github.ImportResponse
 
 	if err = json.Unmarshal(respBody, &importResponse); err != nil {
@@ -370,26 +361,20 @@ func IsExpired(createdAt int64, expiresIn int32) bool {
 }
 
 func ImportFromGitLab(cfg ImportData) (response github.ImportResponse, err error) {
-	fmt.Println("ImportFromGitLab NEW", cfg)
 	err = ExportRepo(cfg)
 	if err != nil {
 		return github.ImportResponse{}, err
 	}
-
-	fmt.Println("here again1")
 
 	err = checkExportStatusWithTimeout("https://gitlab.com/api/v4/projects", cfg.RepoId, cfg.PersonalAccessToken)
 	if err != nil {
 		return github.ImportResponse{}, err
 	}
 
-	fmt.Println("PersonalAccessToken", cfg.PersonalAccessToken)
 	err = exportProject(fmt.Sprintf("https://gitlab.com/api/v4/projects/%v/export/download", cfg.RepoId), cfg.PersonalAccessToken, cfg.NewName+".tar.gz")
 	if err != nil {
 		return github.ImportResponse{}, err
 	}
-
-	fmt.Println("here again2")
 
 	url := "https://gitlab.udevs.io/api/v4/projects/import"
 
@@ -410,11 +395,9 @@ func ImportFromGitLab(cfg ImportData) (response github.ImportResponse, err error
 }
 
 func ExportRepo(cfg ImportData) error {
-	fmt.Println("export repo id", cfg.RepoId)
 	url := fmt.Sprintf("https://gitlab.com/api/v4/projects/%s/export", cfg.RepoId)
 	req, err := http.NewRequest(http.MethodPost, url, nil)
 	if err != nil {
-		fmt.Println("Error Create request:", err)
 		return err
 	}
 
@@ -425,13 +408,11 @@ func ExportRepo(cfg ImportData) error {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("Error Do request:", err)
 		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusAccepted {
-		fmt.Println("Error Status code:", resp.StatusCode)
 		return errors.New("failed to export repository")
 	}
 
@@ -451,30 +432,25 @@ func exportProject(exportURL, gitlabToken, exportFilePath string) error {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("Error Do request:", err)
 		return fmt.Errorf("failed to send request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		fmt.Println("Error Status code:", resp.StatusCode)
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
 	file, err := os.Create(exportFilePath)
 	if err != nil {
-		fmt.Println("Error Create file:", err)
 		return fmt.Errorf("failed to create file: %w", err)
 	}
 	defer file.Close()
 
 	_, err = io.Copy(file, resp.Body)
 	if err != nil {
-		fmt.Println("Error Copy:", err)
 		return fmt.Errorf("failed to write to file: %w", err)
 	}
 
-	fmt.Println("Project exported successfully to", exportFilePath)
 	return nil
 }
 
@@ -542,7 +518,6 @@ func ImportGitLabProject(token, url, namespace, path, filePath string) (github.I
 		return github.ImportResponse{}, errors.New("failed to unmarshal response body")
 	}
 
-	fmt.Println("Project imported successfully!")
 	return importResponse, nil
 }
 
@@ -571,7 +546,6 @@ func checkExportStatusWithTimeout(baseURL, projectID, exportToken string) error 
 		json.NewDecoder(resp.Body).Decode(&result)
 
 		status := result["export_status"]
-		fmt.Println("Export status:", status)
 
 		if status == "finished" {
 			return nil

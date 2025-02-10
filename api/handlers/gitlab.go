@@ -214,11 +214,79 @@ func (h *Handler) GitlabGetRepos(c *gin.Context) {
 // @Failure 500 {object} status_http.Response{data=string} "Server Error"
 func (h *Handler) GitlabGetBranches(c *gin.Context) {
 	var (
-		projectId = c.Query("repo_id")
-		token     = c.Query("token")
-		url       = fmt.Sprintf("%s/api/v4/projects/%s/repository/branches", h.cfg.GitlabBaseUrlIntegration, projectId)
-		response  models.GitlabBranch
+		repoId     = c.Query("repo_id")
+		token      = c.Query("token")
+		resourceId = c.Query("resource_id")
+
+		url      = fmt.Sprintf("%s/api/v4/projects/%s/repository/branches", h.cfg.GitlabBaseUrlIntegration, repoId)
+		response models.GitlabBranch
 	)
+
+	projectId, ok := c.Get("project_id")
+	if !ok || !util.IsValidUUID(projectId.(string)) {
+		h.handleResponse(c, status.InvalidArgument, "project id is an invalid uuid")
+		return
+	}
+
+	environmentId, ok := c.Get("environment_id")
+	if !ok || !util.IsValidUUID(environmentId.(string)) {
+		h.handleResponse(c, status.BadRequest, "error getting environment id | not valid")
+		return
+	}
+
+	projectResource, err := h.services.CompanyService().Resource().GetSingleProjectResouece(
+		c.Request.Context(), &pb.PrimaryKeyProjectResource{
+			Id:            resourceId,
+			ProjectId:     projectId.(string),
+			EnvironmentId: environmentId.(string),
+		},
+	)
+	if err != nil {
+		h.handleResponse(c, status.InternalServerError, err.Error())
+		return
+	}
+
+	refreshToken := projectResource.GetSettings().GetGitlab().GetRefreshToken()
+
+	createdAt := projectResource.GetSettings().GetGitlab().GetCreatedAt()
+	expiresIn := projectResource.GetSettings().GetGitlab().GetExpiresIn()
+
+	if gitlab.IsExpired(createdAt, expiresIn) {
+		refresh, err := gitlab.RefreshGitLabToken(gitlab.GitLabTokenRequest{
+			ClinetId:     h.cfg.GitlabClientIdIntegration,
+			ClientSecret: h.cfg.GitlabClientSecretIntegration,
+			RefreshToken: refreshToken,
+		})
+		if err != nil {
+			h.handleResponse(c, status.InternalServerError, err.Error())
+			return
+		}
+
+		token = refresh.AccessToken
+
+		go func() {
+			_, err := h.services.CompanyService().Resource().UpdateProjectResource(
+				context.Background(), &pb.ProjectResource{
+					Id:            projectResource.GetId(),
+					Name:          projectResource.GetName(),
+					ProjectId:     projectResource.GetProjectId(),
+					EnvironmentId: projectResource.GetEnvironmentId(),
+					Settings: &pb.Settings{
+						Gitlab: &pb.Gitlab{
+							Token:        refresh.AccessToken,
+							RefreshToken: refresh.RefreshToken,
+							Username:     projectResource.GetSettings().GetGitlab().GetUsername(),
+							CreatedAt:    refresh.CreatedAt,
+							ExpiresIn:    int32(refresh.ExpiresIn),
+						},
+					},
+				},
+			)
+			if err != nil {
+				h.log.Error("error updating project resource", logger.Error(err))
+			}
+		}()
+	}
 
 	resultByte, err := github.MakeRequestV1(http.MethodGet, url, token, map[string]any{})
 	if err != nil {

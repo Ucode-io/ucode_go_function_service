@@ -320,7 +320,6 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 	}
 
 	builderService := h.services.GetBuilderServiceByType(resource.NodeType)
-	fmt.Println("resourceType", resource.ResourceType)
 	switch resource.ResourceType {
 	case pb.ResourceType_MONGODB:
 		function, functionErr := builderService.Function().GetSingle(
@@ -443,7 +442,6 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 
 		switch functionType {
 		case cfg.FUNCTION:
-			fmt.Println("FAAS")
 			if functionErr != nil {
 				function, err = h.services.GoObjectBuilderService().Function().Create(
 					c.Request.Context(), &nb.CreateFunctionRequest{
@@ -474,8 +472,6 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 				TargetNamespace: cfg.OpenFassNamespace,
 			})
 		case cfg.KNATIVE:
-			fmt.Println("KNATIVE")
-
 			if functionErr != nil {
 				function, err = h.services.GoObjectBuilderService().Function().Create(
 					c.Request.Context(), &nb.CreateFunctionRequest{
@@ -511,7 +507,6 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 				if err != nil {
 					fmt.Println("DEPLOY ERROR deployFunctionGo", err)
 				}
-				fmt.Println("DEPLOY")
 			}()
 		case cfg.MICROFE:
 			if functionErr != nil {
@@ -569,10 +564,7 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 		err          error
 	)
 
-	fmt.Println("refresh token", projectResource)
-
 	if gitlab.IsExpired(createdAt, expiresIn) {
-		fmt.Println("expired token")
 		refresh, err := gitlab.RefreshGitLabToken(gitlab.GitLabTokenRequest{
 			ClinetId:     h.cfg.GitlabClientIdIntegration,
 			ClientSecret: h.cfg.GitlabClientSecretIntegration,
@@ -586,11 +578,6 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 		token = refresh.AccessToken
 
 		go func() {
-			fmt.Println("refresh access token", refresh.AccessToken)
-			fmt.Println("refresh refresh token", refresh.RefreshToken)
-			fmt.Println("refresh created at", refresh.CreatedAt)
-			fmt.Println("refresh expires in", refresh.ExpiresIn)
-
 			_, err := h.services.CompanyService().Resource().UpdateProjectResource(
 				context.Background(), &pb.ProjectResource{
 					Id:            projectResource.GetId(),
@@ -615,8 +602,6 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 	}
 
 	builderService := h.services.GetBuilderServiceByType(resource.NodeType)
-	fmt.Println("resourceType", resource.ResourceType)
-	fmt.Println("resource.NodeType", projectResource)
 
 	switch resource.ResourceType {
 	case pb.ResourceType_MONGODB:
@@ -631,7 +616,6 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 			functionType = function.Type
 		}
 
-		fmt.Print("functionType", functionType)
 		switch functionType {
 		case cfg.FUNCTION:
 			if functionErr != nil {
@@ -748,7 +732,6 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 			functionType = function.Type
 		}
 
-		fmt.Println("functionType", functionType)
 		switch functionType {
 		case cfg.FUNCTION:
 			if functionErr != nil {
@@ -1071,10 +1054,6 @@ func (h *Handler) deployFunctionGo(req models.DeployFunctionRequestGo) (github.I
 		gitlabGroupId = h.cfg.GitlabGroupIdMicroFront
 	}
 
-	fmt.Println("req.IsGitlab", req.IsGitlab)
-	fadfadf, _ := json.Marshal(req)
-	fmt.Println("req", string(fadfadf))
-
 	if req.IsGitlab {
 		importResponse, err = gitlab.ImportFromGitLab(gitlab.ImportData{
 			PersonalAccessToken: req.GithubToken,
@@ -1100,11 +1079,6 @@ func (h *Handler) deployFunctionGo(req models.DeployFunctionRequestGo) (github.I
 			return github.ImportResponse{}, err
 		}
 	}
-
-	importrespJson, _ := json.Marshal(importResponse)
-	fmt.Println("importResponse", string(importrespJson))
-
-	fmt.Println("req.Function.Type", req.Function.Branch)
 
 	time.Sleep(10 * time.Second)
 	switch req.Function.Type {
