@@ -606,7 +606,11 @@ func (h *Handler) DeleteMicroFrontEnd(c *gin.Context) {
 		}
 	}
 
-	gitlab.DeleteForkedProject(resp.Path, h.cfg)
+	_, err = gitlab.DeleteForkedProject(resp.Path, h.cfg)
+	if err != nil {
+		h.handleResponse(c, status.GRPCError, err.Error())
+		return
+	}
 
 	var (
 		logReq = &models.CreateVersionHistoryRequest{

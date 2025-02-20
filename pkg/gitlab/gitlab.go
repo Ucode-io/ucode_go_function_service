@@ -181,7 +181,9 @@ func MakeGitLabRequest(method, url string, payload map[string]any, token string)
 }
 
 func DeleteForkedProject(repoName string, cfg config.Config) (response GitlabIntegrationResponse, err error) {
-	resp, _ := DoRequest(cfg.GitlabIntegrationURL+"/api/v4/projects/ucode_functions_group%2"+"F"+repoName, cfg.GitlabTokenMicroFront, http.MethodDelete, nil)
+	url := cfg.GitlabIntegrationURL + "/api/v4/projects/ucode%2Fucode_micro_frontend%2F" + repoName
+
+	resp, _ := DoRequest(url, cfg.GitlabTokenMicroFront, http.MethodDelete, nil)
 
 	if resp.Code >= 400 {
 		return GitlabIntegrationResponse{}, errors.New(status.BadRequest.Description)
