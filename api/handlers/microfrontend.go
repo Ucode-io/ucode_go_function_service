@@ -606,11 +606,7 @@ func (h *Handler) DeleteMicroFrontEnd(c *gin.Context) {
 		}
 	}
 
-	_, err = gitlab.DeleteForkedProject(resp.Path, h.cfg)
-	if err != nil {
-		h.handleResponse(c, status.GRPCError, err.Error())
-		return
-	}
+	gitlab.DeleteForkedProject(resp.Path, h.cfg)
 
 	var (
 		logReq = &models.CreateVersionHistoryRequest{
@@ -647,7 +643,7 @@ func (h *Handler) DeleteMicroFrontEnd(c *gin.Context) {
 
 	switch resource.ResourceType {
 	case pb.ResourceType_MONGODB:
-		_, err = h.services.GetBuilderServiceByType(resource.NodeType).Function().Delete(
+		resp, err := h.services.GetBuilderServiceByType(resource.NodeType).Function().Delete(
 			ctx, &obs.FunctionPrimaryKey{
 				Id:        functionID,
 				ProjectId: resource.ResourceEnvironmentId,
@@ -657,8 +653,9 @@ func (h *Handler) DeleteMicroFrontEnd(c *gin.Context) {
 			h.handleResponse(c, status.GRPCError, err.Error())
 			return
 		}
+		h.handleResponse(c, status.NoContent, resp)
 	case pb.ResourceType_POSTGRESQL:
-		_, err = h.services.GoObjectBuilderService().Function().Delete(
+		resp, err := h.services.GoObjectBuilderService().Function().Delete(
 			ctx, &nb.FunctionPrimaryKey{
 				Id:        functionID,
 				ProjectId: resource.ResourceEnvironmentId,
@@ -668,7 +665,6 @@ func (h *Handler) DeleteMicroFrontEnd(c *gin.Context) {
 			h.handleResponse(c, status.GRPCError, err.Error())
 			return
 		}
+		h.handleResponse(c, status.NoContent, resp)
 	}
-
-	h.handleResponse(c, status.NoContent, empty.Empty{})
 }
