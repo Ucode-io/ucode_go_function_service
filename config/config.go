@@ -134,8 +134,8 @@ func Load() Config {
 	config.AuthGRPCPort = cast.ToString(getOrReturnDefaultValue("AUTH_GRPC_PORT", ""))
 
 	// Fass Urls
-	config.OpeFassBaseUrl = cast.ToString(getOrReturnDefaultValue("OPENFASS_BASE_URL", ""))
-	config.KnativeBaseUrl = cast.ToString(getOrReturnDefaultValue("KNATIVE_BASE_URL", ""))
+	config.OpeFassBaseUrl = cast.ToString(getOrReturnDefaultValue("OPENFASS_BASE_URL", "https://ofs.u-code.io/function/"))
+	config.KnativeBaseUrl = cast.ToString(getOrReturnDefaultValue("KNATIVE_BASE_URL", "knative-fn.u-code.io"))
 
 	// Github Creds
 	config.GithubBaseUrl = cast.ToString(getOrReturnDefaultValue("GITHUB_BASE_URL", "https://github.com"))
