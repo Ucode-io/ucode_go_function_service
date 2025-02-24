@@ -47,6 +47,7 @@ const (
 	ObjectBuilderService_GetListRelationTabInExcel_FullMethodName = "/object_builder_service.ObjectBuilderService/GetListRelationTabInExcel"
 	ObjectBuilderService_UpsertMany_FullMethodName                = "/object_builder_service.ObjectBuilderService/UpsertMany"
 	ObjectBuilderService_UpdateByUserIdAuth_FullMethodName        = "/object_builder_service.ObjectBuilderService/UpdateByUserIdAuth"
+	ObjectBuilderService_AgGridTree_FullMethodName                = "/object_builder_service.ObjectBuilderService/AgGridTree"
 )
 
 // ObjectBuilderServiceClient is the client API for ObjectBuilderService service.
@@ -81,6 +82,7 @@ type ObjectBuilderServiceClient interface {
 	GetListRelationTabInExcel(ctx context.Context, in *CommonMessage, opts ...grpc.CallOption) (*CommonMessage, error)
 	UpsertMany(ctx context.Context, in *CommonMessage, opts ...grpc.CallOption) (*CommonMessage, error)
 	UpdateByUserIdAuth(ctx context.Context, in *CommonMessage, opts ...grpc.CallOption) (*CommonMessage, error)
+	AgGridTree(ctx context.Context, in *CommonMessage, opts ...grpc.CallOption) (*CommonMessage, error)
 }
 
 type objectBuilderServiceClient struct {
@@ -371,6 +373,16 @@ func (c *objectBuilderServiceClient) UpdateByUserIdAuth(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *objectBuilderServiceClient) AgGridTree(ctx context.Context, in *CommonMessage, opts ...grpc.CallOption) (*CommonMessage, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CommonMessage)
+	err := c.cc.Invoke(ctx, ObjectBuilderService_AgGridTree_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ObjectBuilderServiceServer is the server API for ObjectBuilderService service.
 // All implementations must embed UnimplementedObjectBuilderServiceServer
 // for forward compatibility.
@@ -403,6 +415,7 @@ type ObjectBuilderServiceServer interface {
 	GetListRelationTabInExcel(context.Context, *CommonMessage) (*CommonMessage, error)
 	UpsertMany(context.Context, *CommonMessage) (*CommonMessage, error)
 	UpdateByUserIdAuth(context.Context, *CommonMessage) (*CommonMessage, error)
+	AgGridTree(context.Context, *CommonMessage) (*CommonMessage, error)
 	mustEmbedUnimplementedObjectBuilderServiceServer()
 }
 
@@ -496,6 +509,9 @@ func (UnimplementedObjectBuilderServiceServer) UpsertMany(context.Context, *Comm
 }
 func (UnimplementedObjectBuilderServiceServer) UpdateByUserIdAuth(context.Context, *CommonMessage) (*CommonMessage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateByUserIdAuth not implemented")
+}
+func (UnimplementedObjectBuilderServiceServer) AgGridTree(context.Context, *CommonMessage) (*CommonMessage, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AgGridTree not implemented")
 }
 func (UnimplementedObjectBuilderServiceServer) mustEmbedUnimplementedObjectBuilderServiceServer() {}
 func (UnimplementedObjectBuilderServiceServer) testEmbeddedByValue()                              {}
@@ -1022,6 +1038,24 @@ func _ObjectBuilderService_UpdateByUserIdAuth_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ObjectBuilderService_AgGridTree_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CommonMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ObjectBuilderServiceServer).AgGridTree(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ObjectBuilderService_AgGridTree_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ObjectBuilderServiceServer).AgGridTree(ctx, req.(*CommonMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ObjectBuilderService_ServiceDesc is the grpc.ServiceDesc for ObjectBuilderService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1140,6 +1174,10 @@ var ObjectBuilderService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateByUserIdAuth",
 			Handler:    _ObjectBuilderService_UpdateByUserIdAuth_Handler,
+		},
+		{
+			MethodName: "AgGridTree",
+			Handler:    _ObjectBuilderService_AgGridTree_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

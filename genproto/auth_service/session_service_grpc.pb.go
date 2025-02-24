@@ -43,6 +43,7 @@ const (
 	SessionService_ExpireSessions_FullMethodName           = "/auth_service.SessionService/ExpireSessions"
 	SessionService_GetList_FullMethodName                  = "/auth_service.SessionService/GetList"
 	SessionService_Delete_FullMethodName                   = "/auth_service.SessionService/Delete"
+	SessionService_DeleteByParams_FullMethodName           = "/auth_service.SessionService/DeleteByParams"
 )
 
 // SessionServiceClient is the client API for SessionService service.
@@ -72,6 +73,7 @@ type SessionServiceClient interface {
 	ExpireSessions(ctx context.Context, in *ExpireSessionsRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	GetList(ctx context.Context, in *GetSessionListRequest, opts ...grpc.CallOption) (*GetSessionListResponse, error)
 	Delete(ctx context.Context, in *SessionPrimaryKey, opts ...grpc.CallOption) (*empty.Empty, error)
+	DeleteByParams(ctx context.Context, in *DeleteByParamsRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
 type sessionServiceClient struct {
@@ -312,6 +314,16 @@ func (c *sessionServiceClient) Delete(ctx context.Context, in *SessionPrimaryKey
 	return out, nil
 }
 
+func (c *sessionServiceClient) DeleteByParams(ctx context.Context, in *DeleteByParamsRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, SessionService_DeleteByParams_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SessionServiceServer is the server API for SessionService service.
 // All implementations must embed UnimplementedSessionServiceServer
 // for forward compatibility.
@@ -339,6 +351,7 @@ type SessionServiceServer interface {
 	ExpireSessions(context.Context, *ExpireSessionsRequest) (*empty.Empty, error)
 	GetList(context.Context, *GetSessionListRequest) (*GetSessionListResponse, error)
 	Delete(context.Context, *SessionPrimaryKey) (*empty.Empty, error)
+	DeleteByParams(context.Context, *DeleteByParamsRequest) (*empty.Empty, error)
 	mustEmbedUnimplementedSessionServiceServer()
 }
 
@@ -417,6 +430,9 @@ func (UnimplementedSessionServiceServer) GetList(context.Context, *GetSessionLis
 }
 func (UnimplementedSessionServiceServer) Delete(context.Context, *SessionPrimaryKey) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
+}
+func (UnimplementedSessionServiceServer) DeleteByParams(context.Context, *DeleteByParamsRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteByParams not implemented")
 }
 func (UnimplementedSessionServiceServer) mustEmbedUnimplementedSessionServiceServer() {}
 func (UnimplementedSessionServiceServer) testEmbeddedByValue()                        {}
@@ -853,6 +869,24 @@ func _SessionService_Delete_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SessionService_DeleteByParams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteByParamsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SessionServiceServer).DeleteByParams(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SessionService_DeleteByParams_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SessionServiceServer).DeleteByParams(ctx, req.(*DeleteByParamsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SessionService_ServiceDesc is the grpc.ServiceDesc for SessionService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -951,6 +985,10 @@ var SessionService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Delete",
 			Handler:    _SessionService_Delete_Handler,
+		},
+		{
+			MethodName: "DeleteByParams",
+			Handler:    _SessionService_DeleteByParams_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -18,6 +18,8 @@ service ProjectService {
     rpc GetProjectsByCompanyId(GetProjectsByCompanyIdReq) returns (GetProjectsByCompanyIdRes) {}
     rpc UpdateProjectUserData (UpdateProjectUserDataReq) returns (UpdateProjectUserDataRes) {}
     rpc GetListSetting(GetListSettingReq) returns (Setting) {};
+    rpc AttachFare(AttachFareRequest) returns (Project) {};
+
 
     rpc CreateProjectLoginMicroFront(ProjectLoginMicroFrontend) returns (ProjectLoginMicroFrontend) {};
     rpc GetProjectLoginMicroFront(GetProjectLoginMicroFrontRequest) returns (ProjectLoginMicroFrontend) {};
@@ -230,6 +232,7 @@ message Project {
     double credit_limit = 14;
     Fare fare = 15;
     string status = 16;
+    bool new_design = 17;
 }
 
 message CreateProjectRequest {
@@ -413,4 +416,10 @@ message Record {
 
 message ListRecordRequest {
 
+}
+
+message AttachFareRequest {
+    string project_id = 1;
+    string fare_id = 2;
+    string discount_id = 3;
 }

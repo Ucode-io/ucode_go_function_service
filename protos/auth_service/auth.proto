@@ -41,6 +41,7 @@ message ClientType {
     string project_id = 6;
     repeated Table tables = 7;
     string default_page = 8;
+    int32 session_limit = 9;
 }
 
 message Relation {

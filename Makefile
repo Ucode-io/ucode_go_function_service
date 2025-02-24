@@ -14,7 +14,7 @@ update-proto-module:
 	git submodule update --remote --merge
 
 copy-proto-module:
-	rm -rf ${CURRENT_DIR}/protos
+	sudo rm -rf ${CURRENT_DIR}/protos
 	rsync -rv --exclude=.git ${CURRENT_DIR}/ucode_protos/* ${CURRENT_DIR}/protos
 
 gen-proto-module:

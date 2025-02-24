@@ -32,6 +32,7 @@ service SessionService {
     rpc ExpireSessions (ExpireSessionsRequest) returns (google.protobuf.Empty) {}
     rpc GetList (GetSessionListRequest) returns (GetSessionListResponse) {}
     rpc Delete (SessionPrimaryKey) returns (google.protobuf.Empty) {}
+    rpc DeleteByParams(DeleteByParamsRequest) returns (google.protobuf.Empty) {}
 }
 
 message V2ResetPasswordRequest {
@@ -87,6 +88,8 @@ message Project2 {
         string name_plural = 8;
     }
     repeated Currency currencies = 9;
+    bool new_design = 10;
+    string status = 11;
 }
 
 message Company2 {
@@ -221,6 +224,7 @@ message HasAccessSuperAdminRes {
     string env_id = 13;
     string client_type_id = 14;
     string role_id = 15;
+    string user_id_auth = 16;
 }
 
 message TableBody {
@@ -241,6 +245,7 @@ message CreateSessionRequest {
     string env_id = 11;
     string user_id_auth = 12;
     string client_id = 13;
+    int32 session_limit = 14;
 }
 
 message UpdateSessionRequest {
@@ -455,6 +460,7 @@ message V2MultiCompanyLoginReq {
     string phone = 6;
     string email = 7;
     string google_token = 8;
+    string env_id = 9;
 }
 
 message V2MultiCompanyLoginRes {
@@ -506,4 +512,11 @@ message MultiCompanyLoginResponse {
 
 message ExpireSessionsRequest {
     repeated string session_ids = 1;
+}
+
+message DeleteByParamsRequest {
+    string project_id = 1;
+    string user_id = 2;
+    string client_type_id = 3;
+    string session_id = 4;
 }

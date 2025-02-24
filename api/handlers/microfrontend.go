@@ -394,7 +394,7 @@ func (h *Handler) GetAllMicroFrontEnd(c *gin.Context) {
 				Limit:     int32(limit),
 				Offset:    int32(offset),
 				ProjectId: resource.ResourceEnvironmentId,
-				Type:      config.MICROFE,
+				Type:      []string{config.MICROFE},
 			},
 		)
 		if err != nil {

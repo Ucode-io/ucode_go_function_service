@@ -42,3 +42,4 @@ import "file.proto";
 import "request_analytic.proto";
 import "version_history.proto";
 import "version.proto";
+import "language.proto";
