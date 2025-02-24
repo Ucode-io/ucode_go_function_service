@@ -51,7 +51,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -61,20 +61,14 @@ const docTemplate = `{
                                             "items": {
                                                 "type": "object",
                                                 "properties": {
-                                                    "full_name": {
-                                                        "type": "string"
-                                                    },
-                                                    "id": {
-                                                        "type": "integer"
-                                                    },
                                                     "name": {
                                                         "type": "string"
                                                     },
-                                                    "node_id": {
-                                                        "type": "string"
-                                                    },
-                                                    "private": {
+                                                    "protected": {
                                                         "type": "boolean"
+                                                    },
+                                                    "protection_url": {
+                                                        "type": "string"
                                                     }
                                                 }
                                             }
@@ -89,7 +83,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -107,7 +101,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -151,7 +145,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -169,7 +163,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -187,7 +181,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -237,7 +231,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -275,7 +269,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -293,7 +287,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -337,13 +331,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ucode_ucode_go_function_service_api_models.GithubUser"
+                                            "$ref": "#/definitions/models.GithubUser"
                                         }
                                     }
                                 }
@@ -355,7 +349,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -373,7 +367,392 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gitlab/branches": {
+            "get": {
+                "description": "Gitlab Branches",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Gitlab"
+                ],
+                "summary": "Gitlab Branches",
+                "operationId": "gitlab_get_branches",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "project_id",
+                        "name": "project_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Data",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/status_http.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "name": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/status_http.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Server Error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/status_http.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gitlab/login": {
+            "get": {
+                "description": "Gitlab Login",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Gitlab"
+                ],
+                "summary": "Gitlab Login",
+                "operationId": "gitlab_login",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "code",
+                        "name": "code",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Data",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/status_http.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/status_http.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Server Error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/status_http.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gitlab/repos": {
+            "get": {
+                "description": "Gitlab Repo",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Gitlab"
+                ],
+                "summary": "Gitlab Repo",
+                "operationId": "gitlab_get_repos",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token",
+                        "name": "token",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Data",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/status_http.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "created_at": {
+                                                        "type": "string"
+                                                    },
+                                                    "default_branch": {
+                                                        "type": "string"
+                                                    },
+                                                    "id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "name_with_namespace": {
+                                                        "type": "string"
+                                                    },
+                                                    "namespace": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "full_path": {
+                                                                "type": "string"
+                                                            },
+                                                            "id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "kind": {
+                                                                "type": "string"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            },
+                                                            "path": {
+                                                                "type": "string"
+                                                            },
+                                                            "web_url": {
+                                                                "type": "string"
+                                                            }
+                                                        }
+                                                    },
+                                                    "path": {
+                                                        "type": "string"
+                                                    },
+                                                    "path_with_namespace": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/status_http.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Server Error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/status_http.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gitlab/user": {
+            "get": {
+                "description": "Gitlab User",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Gitlab"
+                ],
+                "summary": "Gitlab User",
+                "operationId": "gitlab_get_user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token",
+                        "name": "token",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Data",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/status_http.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.GitlabUser"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/status_http.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Server Error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -448,13 +827,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.GetCustomEventsListResponse"
+                                            "$ref": "#/definitions/object_builder_service.GetCustomEventsListResponse"
                                         }
                                     }
                                 }
@@ -466,7 +845,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -484,7 +863,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -531,7 +910,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ucode_ucode_go_function_service_api_models.CustomEvent"
+                            "$ref": "#/definitions/models.CustomEvent"
                         }
                     }
                 ],
@@ -544,7 +923,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -562,7 +941,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -609,7 +988,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.CreateCustomEventRequest"
+                            "$ref": "#/definitions/object_builder_service.CreateCustomEventRequest"
                         }
                     }
                 ],
@@ -619,13 +998,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.CustomEvent"
+                                            "$ref": "#/definitions/object_builder_service.CustomEvent"
                                         }
                                     }
                                 }
@@ -637,7 +1016,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -655,7 +1034,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -712,13 +1091,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.CustomEvent"
+                                            "$ref": "#/definitions/object_builder_service.CustomEvent"
                                         }
                                     }
                                 }
@@ -730,7 +1109,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -748,7 +1127,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -806,7 +1185,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -824,7 +1203,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -885,13 +1264,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.GetAllFunctionsResponse"
+                                            "$ref": "#/definitions/object_builder_service.GetAllFunctionsResponse"
                                         }
                                     }
                                 }
@@ -903,7 +1282,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -921,7 +1300,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -961,7 +1340,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ucode_ucode_go_function_service_api_models.Function"
+                            "$ref": "#/definitions/models.Function"
                         }
                     }
                 ],
@@ -974,7 +1353,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -992,7 +1371,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1032,7 +1411,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ucode_ucode_go_function_service_api_models.CreateFunctionRequest"
+                            "$ref": "#/definitions/models.CreateFunctionRequest"
                         }
                     }
                 ],
@@ -1045,7 +1424,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1063,7 +1442,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1124,13 +1503,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.GetAllFunctionsResponse"
+                                            "$ref": "#/definitions/object_builder_service.GetAllFunctionsResponse"
                                         }
                                     }
                                 }
@@ -1142,7 +1521,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1160,7 +1539,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1210,13 +1589,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.Function"
+                                            "$ref": "#/definitions/object_builder_service.Function"
                                         }
                                     }
                                 }
@@ -1228,7 +1607,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1246,7 +1625,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1297,7 +1676,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1315,7 +1694,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1376,13 +1755,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.GetAllFunctionsResponse"
+                                            "$ref": "#/definitions/object_builder_service.GetAllFunctionsResponse"
                                         }
                                     }
                                 }
@@ -1394,7 +1773,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1412,7 +1791,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1452,7 +1831,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ucode_ucode_go_function_service_api_models.Function"
+                            "$ref": "#/definitions/models.Function"
                         }
                     }
                 ],
@@ -1465,7 +1844,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1483,7 +1862,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1523,7 +1902,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ucode_ucode_go_function_service_api_models.CreateFunctionRequest"
+                            "$ref": "#/definitions/models.CreateFunctionRequest"
                         }
                     }
                 ],
@@ -1533,13 +1912,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.Function"
+                                            "$ref": "#/definitions/object_builder_service.Function"
                                         }
                                     }
                                 }
@@ -1551,7 +1930,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1569,7 +1948,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1619,13 +1998,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.Function"
+                                            "$ref": "#/definitions/object_builder_service.Function"
                                         }
                                     }
                                 }
@@ -1637,7 +2016,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1655,7 +2034,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1706,7 +2085,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1724,7 +2103,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1766,7 +2145,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ucode_ucode_go_function_service_api_models.InvokeFunctionRequest"
+                            "$ref": "#/definitions/models.InvokeFunctionRequest"
                         }
                     }
                 ],
@@ -1776,13 +2155,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ucode_ucode_go_function_service_api_models.InvokeFunctionRequest"
+                                            "$ref": "#/definitions/models.InvokeFunctionRequest"
                                         }
                                     }
                                 }
@@ -1794,7 +2173,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1812,7 +2191,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1861,7 +2240,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ucode_ucode_go_function_service_api_models.CommonMessage"
+                            "$ref": "#/definitions/models.CommonMessage"
                         }
                     }
                 ],
@@ -1871,13 +2250,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ucode_ucode_go_function_service_api_models.InvokeFunctionRequest"
+                                            "$ref": "#/definitions/models.InvokeFunctionRequest"
                                         }
                                     }
                                 }
@@ -1889,7 +2268,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1907,7 +2286,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1966,7 +2345,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1984,7 +2363,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -2002,7 +2381,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -2039,7 +2418,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ucode_ucode_go_function_service_api_models.GetGrafanaFunctionLogRequest"
+                            "$ref": "#/definitions/models.GetGrafanaFunctionLogRequest"
                         }
                     }
                 ],
@@ -2049,7 +2428,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -2067,7 +2446,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -2085,7 +2464,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -2134,7 +2513,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ucode_ucode_go_function_service_api_models.CommonMessage"
+                            "$ref": "#/definitions/models.CommonMessage"
                         }
                     }
                 ],
@@ -2144,13 +2523,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ucode_ucode_go_function_service_api_models.InvokeFunctionRequest"
+                                            "$ref": "#/definitions/models.InvokeFunctionRequest"
                                         }
                                     }
                                 }
@@ -2162,7 +2541,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -2180,7 +2559,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ucode_ucode_go_function_service_api_status_http.Response"
+                                    "$ref": "#/definitions/status_http.Response"
                                 },
                                 {
                                     "type": "object",
@@ -2218,19 +2597,19 @@ const docTemplate = `{
                 }
             }
         },
-        "ucode_ucode_go_function_service_api_models.CommonMessage": {
+        "models.CommonMessage": {
             "type": "object",
             "properties": {
                 "data": {
                     "type": "object",
-                    "additionalProperties": true
+                    "additionalProperties": {}
                 },
                 "is_cached": {
                     "type": "boolean"
                 }
             }
         },
-        "ucode_ucode_go_function_service_api_models.CreateFunctionRequest": {
+        "models.CreateFunctionRequest": {
             "type": "object",
             "properties": {
                 "branch": {
@@ -2256,10 +2635,13 @@ const docTemplate = `{
                 },
                 "resource_id": {
                     "type": "string"
+                },
+                "type": {
+                    "type": "string"
                 }
             }
         },
-        "ucode_ucode_go_function_service_api_models.CustomEvent": {
+        "models.CustomEvent": {
             "type": "object",
             "properties": {
                 "action_type": {
@@ -2267,7 +2649,7 @@ const docTemplate = `{
                 },
                 "attributes": {
                     "type": "object",
-                    "additionalProperties": true
+                    "additionalProperties": {}
                 },
                 "commit_guid": {
                     "type": "string"
@@ -2301,7 +2683,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ucode_ucode_go_function_service_api_models.Function": {
+        "models.Function": {
             "type": "object",
             "properties": {
                 "description": {
@@ -2321,7 +2703,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ucode_ucode_go_function_service_api_models.GetGrafanaFunctionLogRequest": {
+        "models.GetGrafanaFunctionLogRequest": {
             "type": "object",
             "properties": {
                 "from": {
@@ -2338,7 +2720,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ucode_ucode_go_function_service_api_models.GithubUser": {
+        "models.GithubUser": {
             "type": "object",
             "properties": {
                 "avatar_url": {
@@ -2414,12 +2796,26 @@ const docTemplate = `{
                 }
             }
         },
-        "ucode_ucode_go_function_service_api_models.InvokeFunctionRequest": {
+        "models.GitlabUser": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.InvokeFunctionRequest": {
             "type": "object",
             "properties": {
                 "attributes": {
                     "type": "object",
-                    "additionalProperties": true
+                    "additionalProperties": {}
                 },
                 "function_id": {
                     "type": "string"
@@ -2435,20 +2831,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ucode_ucode_go_function_service_api_status_http.Response": {
-            "type": "object",
-            "properties": {
-                "custom_message": {},
-                "data": {},
-                "description": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "ucode_ucode_go_function_service_genproto_object_builder_service.CreateCustomEventRequest": {
+        "object_builder_service.CreateCustomEventRequest": {
             "type": "object",
             "properties": {
                 "action_type": {
@@ -2492,7 +2875,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ucode_ucode_go_function_service_genproto_object_builder_service.CustomEvent": {
+        "object_builder_service.CustomEvent": {
             "type": "object",
             "properties": {
                 "action_permission": {
@@ -2516,7 +2899,7 @@ const docTemplate = `{
                 "functions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.Function"
+                        "$ref": "#/definitions/object_builder_service.Function"
                     }
                 },
                 "icon": {
@@ -2542,7 +2925,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ucode_ucode_go_function_service_genproto_object_builder_service.Function": {
+        "object_builder_service.Function": {
             "type": "object",
             "properties": {
                 "branch": {
@@ -2616,7 +2999,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ucode_ucode_go_function_service_genproto_object_builder_service.GetAllFunctionsResponse": {
+        "object_builder_service.GetAllFunctionsResponse": {
             "type": "object",
             "properties": {
                 "count": {
@@ -2625,12 +3008,12 @@ const docTemplate = `{
                 "functions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.Function"
+                        "$ref": "#/definitions/object_builder_service.Function"
                     }
                 }
             }
         },
-        "ucode_ucode_go_function_service_genproto_object_builder_service.GetCustomEventsListResponse": {
+        "object_builder_service.GetCustomEventsListResponse": {
             "type": "object",
             "properties": {
                 "count": {
@@ -2639,8 +3022,21 @@ const docTemplate = `{
                 "custom_events": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.CustomEvent"
+                        "$ref": "#/definitions/object_builder_service.CustomEvent"
                     }
+                }
+            }
+        },
+        "status_http.Response": {
+            "type": "object",
+            "properties": {
+                "custom_message": {},
+                "data": {},
+                "description": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
                 }
             }
         }

@@ -26,6 +26,9 @@ enum ResourceType {
     GITHUB = 5;
     SMS = 6;
     SMTP = 7;
+    GITLAB = 8;
+    GIT = 9;
+    BITBUCKET = 10;
 }
 
 enum SettingType {

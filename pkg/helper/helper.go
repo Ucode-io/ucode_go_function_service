@@ -5,27 +5,27 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-func MarshalToStruct(data interface{}, resp interface{}) error {
+func MarshalToStruct(data any, resp any) error {
 	js, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
 
-	err = json.Unmarshal(js, resp)
-	if err != nil {
+	if err = json.Unmarshal(js, resp); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func ConvertMapToStruct(inputMap map[string]interface{}) (*structpb.Struct, error) {
+func ConvertMapToStruct(inputMap map[string]any) (*structpb.Struct, error) {
 	marshledInputMap, err := json.Marshal(inputMap)
 	outputStruct := &structpb.Struct{}
 	if err != nil {
@@ -46,16 +46,16 @@ func GetURLWithTableSlug(c *gin.Context) string {
 	return url
 }
 
-func ConvertStructToMap(s *structpb.Struct) (map[string]interface{}, error) {
-
-	newMap := make(map[string]interface{})
+func ConvertStructToMap(s *structpb.Struct) (map[string]any, error) {
+	var newMap = make(map[string]any)
 
 	body, err := json.Marshal(s)
 	if err != nil {
-		return map[string]interface{}{}, err
+		return map[string]any{}, err
 	}
+
 	if err := json.Unmarshal(body, &newMap); err != nil {
-		return map[string]interface{}{}, err
+		return map[string]any{}, err
 	}
 
 	return newMap, nil
@@ -77,4 +77,13 @@ func ListFiles(folderPath string) ([]string, error) {
 		return nil
 	})
 	return files, err
+}
+
+func IsExpired(createdAt, expiresIn int64) bool {
+	var (
+		createdTime    = time.Unix(createdAt, 0)
+		expirationTime = createdTime.Add(time.Duration(expiresIn) * time.Second)
+	)
+
+	return time.Now().After(expirationTime)
 }

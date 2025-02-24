@@ -12,15 +12,15 @@ definitions:
       kind:
         description: "The kind of value.\n\nTypes that are assignable to Kind:\n\n\t*Value_NullValue\n\t*Value_NumberValue\n\t*Value_StringValue\n\t*Value_BoolValue\n\t*Value_StructValue\n\t*Value_ListValue"
     type: object
-  ucode_ucode_go_function_service_api_models.CommonMessage:
+  models.CommonMessage:
     properties:
       data:
-        additionalProperties: true
+        additionalProperties: {}
         type: object
       is_cached:
         type: boolean
     type: object
-  ucode_ucode_go_function_service_api_models.CreateFunctionRequest:
+  models.CreateFunctionRequest:
     properties:
       branch:
         type: string
@@ -38,13 +38,15 @@ definitions:
         type: string
       resource_id:
         type: string
+      type:
+        type: string
     type: object
-  ucode_ucode_go_function_service_api_models.CustomEvent:
+  models.CustomEvent:
     properties:
       action_type:
         type: string
       attributes:
-        additionalProperties: true
+        additionalProperties: {}
         type: object
       commit_guid:
         type: string
@@ -67,7 +69,7 @@ definitions:
       url:
         type: string
     type: object
-  ucode_ucode_go_function_service_api_models.Function:
+  models.Function:
     properties:
       description:
         type: string
@@ -80,7 +82,7 @@ definitions:
       path:
         type: string
     type: object
-  ucode_ucode_go_function_service_api_models.GetGrafanaFunctionLogRequest:
+  models.GetGrafanaFunctionLogRequest:
     properties:
       from:
         type: string
@@ -91,7 +93,7 @@ definitions:
       to:
         type: string
     type: object
-  ucode_ucode_go_function_service_api_models.GithubUser:
+  models.GithubUser:
     properties:
       avatar_url:
         type: string
@@ -143,10 +145,19 @@ definitions:
       user_view_type:
         type: string
     type: object
-  ucode_ucode_go_function_service_api_models.InvokeFunctionRequest:
+  models.GitlabUser:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      username:
+        type: string
+    type: object
+  models.InvokeFunctionRequest:
     properties:
       attributes:
-        additionalProperties: true
+        additionalProperties: {}
         type: object
       function_id:
         type: string
@@ -157,16 +168,7 @@ definitions:
       table_slug:
         type: string
     type: object
-  ucode_ucode_go_function_service_api_status_http.Response:
-    properties:
-      custom_message: {}
-      data: {}
-      description:
-        type: string
-      status:
-        type: string
-    type: object
-  ucode_ucode_go_function_service_genproto_object_builder_service.CreateCustomEventRequest:
+  object_builder_service.CreateCustomEventRequest:
     properties:
       action_type:
         type: string
@@ -195,7 +197,7 @@ definitions:
       url:
         type: string
     type: object
-  ucode_ucode_go_function_service_genproto_object_builder_service.CustomEvent:
+  object_builder_service.CustomEvent:
     properties:
       action_permission:
         $ref: '#/definitions/github_com_golang_protobuf_ptypes_struct.Struct'
@@ -211,7 +213,7 @@ definitions:
         type: string
       functions:
         items:
-          $ref: '#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.Function'
+          $ref: '#/definitions/object_builder_service.Function'
         type: array
       icon:
         type: string
@@ -228,7 +230,7 @@ definitions:
       url:
         type: string
     type: object
-  ucode_ucode_go_function_service_genproto_object_builder_service.Function:
+  object_builder_service.Function:
     properties:
       branch:
         type: string
@@ -277,23 +279,32 @@ definitions:
       url:
         type: string
     type: object
-  ucode_ucode_go_function_service_genproto_object_builder_service.GetAllFunctionsResponse:
+  object_builder_service.GetAllFunctionsResponse:
     properties:
       count:
         type: integer
       functions:
         items:
-          $ref: '#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.Function'
+          $ref: '#/definitions/object_builder_service.Function'
         type: array
     type: object
-  ucode_ucode_go_function_service_genproto_object_builder_service.GetCustomEventsListResponse:
+  object_builder_service.GetCustomEventsListResponse:
     properties:
       count:
         type: integer
       custom_events:
         items:
-          $ref: '#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.CustomEvent'
+          $ref: '#/definitions/object_builder_service.CustomEvent'
         type: array
+    type: object
+  status_http.Response:
+    properties:
+      custom_message: {}
+      data: {}
+      description:
+        type: string
+      status:
+        type: string
     type: object
 info:
   contact: {}
@@ -321,21 +332,17 @@ paths:
           description: Data
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   items:
                     properties:
-                      full_name:
-                        type: string
-                      id:
-                        type: integer
                       name:
                         type: string
-                      node_id:
-                        type: string
-                      private:
+                      protected:
                         type: boolean
+                      protection_url:
+                        type: string
                     type: object
                   type: array
               type: object
@@ -343,7 +350,7 @@ paths:
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -352,7 +359,7 @@ paths:
           description: Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -378,7 +385,7 @@ paths:
           description: Data
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -387,7 +394,7 @@ paths:
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -396,7 +403,7 @@ paths:
           description: Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -426,7 +433,7 @@ paths:
           description: Data
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   items:
@@ -448,7 +455,7 @@ paths:
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -457,7 +464,7 @@ paths:
           description: Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -483,16 +490,16 @@ paths:
           description: Data
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/ucode_ucode_go_function_service_api_models.GithubUser'
+                  $ref: '#/definitions/models.GithubUser'
               type: object
         "400":
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -501,7 +508,7 @@ paths:
           description: Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -509,6 +516,225 @@ paths:
       summary: Github User
       tags:
       - Github
+  /gitlab/branches:
+    get:
+      consumes:
+      - application/json
+      description: Gitlab Branches
+      operationId: gitlab_get_branches
+      parameters:
+      - description: token
+        in: query
+        name: token
+        required: true
+        type: string
+      - description: project_id
+        in: query
+        name: project_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Data
+          schema:
+            allOf:
+            - $ref: '#/definitions/status_http.Response'
+            - properties:
+                data:
+                  items:
+                    properties:
+                      name:
+                        type: string
+                    type: object
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Gitlab Branches
+      tags:
+      - Gitlab
+  /gitlab/login:
+    get:
+      consumes:
+      - application/json
+      description: Gitlab Login
+      operationId: gitlab_login
+      parameters:
+      - description: code
+        in: query
+        name: code
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Data
+          schema:
+            allOf:
+            - $ref: '#/definitions/status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Gitlab Login
+      tags:
+      - Gitlab
+  /gitlab/repos:
+    get:
+      consumes:
+      - application/json
+      description: Gitlab Repo
+      operationId: gitlab_get_repos
+      parameters:
+      - description: token
+        in: query
+        name: token
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Data
+          schema:
+            allOf:
+            - $ref: '#/definitions/status_http.Response'
+            - properties:
+                data:
+                  items:
+                    properties:
+                      created_at:
+                        type: string
+                      default_branch:
+                        type: string
+                      id:
+                        type: integer
+                      name:
+                        type: string
+                      name_with_namespace:
+                        type: string
+                      namespace:
+                        properties:
+                          full_path:
+                            type: string
+                          id:
+                            type: integer
+                          kind:
+                            type: string
+                          name:
+                            type: string
+                          path:
+                            type: string
+                          web_url:
+                            type: string
+                        type: object
+                      path:
+                        type: string
+                      path_with_namespace:
+                        type: string
+                    type: object
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Gitlab Repo
+      tags:
+      - Gitlab
+  /gitlab/user:
+    get:
+      consumes:
+      - application/json
+      description: Gitlab User
+      operationId: gitlab_get_user
+      parameters:
+      - description: token
+        in: query
+        name: token
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Data
+          schema:
+            allOf:
+            - $ref: '#/definitions/status_http.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.GitlabUser'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/status_http.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Gitlab User
+      tags:
+      - Gitlab
   /v1/collections/{collection}/automation:
     get:
       consumes:
@@ -543,16 +769,16 @@ paths:
           description: AutomationBody
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.GetCustomEventsListResponse'
+                  $ref: '#/definitions/object_builder_service.GetCustomEventsListResponse'
               type: object
         "400":
           description: Invalid Argument
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -561,7 +787,7 @@ paths:
           description: Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -587,7 +813,7 @@ paths:
         name: Automation
         required: true
         schema:
-          $ref: '#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.CreateCustomEventRequest'
+          $ref: '#/definitions/object_builder_service.CreateCustomEventRequest'
       produces:
       - application/json
       responses:
@@ -595,16 +821,16 @@ paths:
           description: Automation data
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.CustomEvent'
+                  $ref: '#/definitions/object_builder_service.CustomEvent'
               type: object
         "400":
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -613,7 +839,7 @@ paths:
           description: Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -639,7 +865,7 @@ paths:
         name: Customevent
         required: true
         schema:
-          $ref: '#/definitions/ucode_ucode_go_function_service_api_models.CustomEvent'
+          $ref: '#/definitions/models.CustomEvent'
       produces:
       - application/json
       responses:
@@ -649,7 +875,7 @@ paths:
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -658,7 +884,7 @@ paths:
           description: Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -694,7 +920,7 @@ paths:
           description: Invalid Argument
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -703,7 +929,7 @@ paths:
           description: Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -736,16 +962,16 @@ paths:
           description: AutomationBody
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.CustomEvent'
+                  $ref: '#/definitions/object_builder_service.CustomEvent'
               type: object
         "400":
           description: Invalid Argument
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -754,7 +980,7 @@ paths:
           description: Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -790,16 +1016,16 @@ paths:
           description: FunctionBody
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.GetAllFunctionsResponse'
+                  $ref: '#/definitions/object_builder_service.GetAllFunctionsResponse'
               type: object
         "400":
           description: Invalid Argument
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -808,7 +1034,7 @@ paths:
           description: Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -829,7 +1055,7 @@ paths:
         name: Function
         required: true
         schema:
-          $ref: '#/definitions/ucode_ucode_go_function_service_api_models.CreateFunctionRequest'
+          $ref: '#/definitions/models.CreateFunctionRequest'
       produces:
       - application/json
       responses:
@@ -839,7 +1065,7 @@ paths:
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -848,7 +1074,7 @@ paths:
           description: Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -869,7 +1095,7 @@ paths:
         name: Function
         required: true
         schema:
-          $ref: '#/definitions/ucode_ucode_go_function_service_api_models.Function'
+          $ref: '#/definitions/models.Function'
       produces:
       - application/json
       responses:
@@ -879,7 +1105,7 @@ paths:
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -888,7 +1114,7 @@ paths:
           description: Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -924,16 +1150,16 @@ paths:
           description: FunctionBody
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.GetAllFunctionsResponse'
+                  $ref: '#/definitions/object_builder_service.GetAllFunctionsResponse'
               type: object
         "400":
           description: Invalid Argument
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -942,7 +1168,7 @@ paths:
           description: Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -973,7 +1199,7 @@ paths:
           description: Invalid Argument
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -982,7 +1208,7 @@ paths:
           description: Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -1010,16 +1236,16 @@ paths:
           description: FunctionBody
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.Function'
+                  $ref: '#/definitions/object_builder_service.Function'
               type: object
         "400":
           description: Invalid Argument
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -1028,7 +1254,7 @@ paths:
           description: Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -1064,16 +1290,16 @@ paths:
           description: Data
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.GetAllFunctionsResponse'
+                  $ref: '#/definitions/object_builder_service.GetAllFunctionsResponse'
               type: object
         "400":
           description: Invalid Argument
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -1082,7 +1308,7 @@ paths:
           description: Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -1103,7 +1329,7 @@ paths:
         name: MicroFrontend
         required: true
         schema:
-          $ref: '#/definitions/ucode_ucode_go_function_service_api_models.CreateFunctionRequest'
+          $ref: '#/definitions/models.CreateFunctionRequest'
       produces:
       - application/json
       responses:
@@ -1111,16 +1337,16 @@ paths:
           description: Data
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.Function'
+                  $ref: '#/definitions/object_builder_service.Function'
               type: object
         "400":
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -1129,7 +1355,7 @@ paths:
           description: Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -1150,7 +1376,7 @@ paths:
         name: Data
         required: true
         schema:
-          $ref: '#/definitions/ucode_ucode_go_function_service_api_models.Function'
+          $ref: '#/definitions/models.Function'
       produces:
       - application/json
       responses:
@@ -1160,7 +1386,7 @@ paths:
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -1169,7 +1395,7 @@ paths:
           description: Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -1200,7 +1426,7 @@ paths:
           description: Invalid Argument
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -1209,7 +1435,7 @@ paths:
           description: Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -1237,16 +1463,16 @@ paths:
           description: Data
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/ucode_ucode_go_function_service_genproto_object_builder_service.Function'
+                  $ref: '#/definitions/object_builder_service.Function'
               type: object
         "400":
           description: Invalid Argument
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -1255,7 +1481,7 @@ paths:
           description: Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -1277,7 +1503,7 @@ paths:
         name: InvokeFunctionRequest
         required: true
         schema:
-          $ref: '#/definitions/ucode_ucode_go_function_service_api_models.InvokeFunctionRequest'
+          $ref: '#/definitions/models.InvokeFunctionRequest'
       produces:
       - application/json
       responses:
@@ -1285,16 +1511,16 @@ paths:
           description: Function data
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/ucode_ucode_go_function_service_api_models.InvokeFunctionRequest'
+                  $ref: '#/definitions/models.InvokeFunctionRequest'
               type: object
         "400":
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -1303,7 +1529,7 @@ paths:
           description: Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -1330,7 +1556,7 @@ paths:
         name: InvokeFunctionByPathRequest
         required: true
         schema:
-          $ref: '#/definitions/ucode_ucode_go_function_service_api_models.CommonMessage'
+          $ref: '#/definitions/models.CommonMessage'
       produces:
       - application/json
       responses:
@@ -1338,16 +1564,16 @@ paths:
           description: Function data
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/ucode_ucode_go_function_service_api_models.InvokeFunctionRequest'
+                  $ref: '#/definitions/models.InvokeFunctionRequest'
               type: object
         "400":
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -1356,7 +1582,7 @@ paths:
           description: Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -1395,7 +1621,7 @@ paths:
           description: Success
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -1404,7 +1630,7 @@ paths:
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -1413,7 +1639,7 @@ paths:
           description: Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -1433,7 +1659,7 @@ paths:
         name: Grafana
         required: true
         schema:
-          $ref: '#/definitions/ucode_ucode_go_function_service_api_models.GetGrafanaFunctionLogRequest'
+          $ref: '#/definitions/models.GetGrafanaFunctionLogRequest'
       produces:
       - application/json
       responses:
@@ -1441,7 +1667,7 @@ paths:
           description: Success
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -1450,7 +1676,7 @@ paths:
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -1459,7 +1685,7 @@ paths:
           description: Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -1484,7 +1710,7 @@ paths:
         name: InvokeFunctionByPathRequest
         required: true
         schema:
-          $ref: '#/definitions/ucode_ucode_go_function_service_api_models.CommonMessage'
+          $ref: '#/definitions/models.CommonMessage'
       produces:
       - application/json
       responses:
@@ -1492,16 +1718,16 @@ paths:
           description: Function data
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/ucode_ucode_go_function_service_api_models.InvokeFunctionRequest'
+                  $ref: '#/definitions/models.InvokeFunctionRequest'
               type: object
         "400":
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string
@@ -1510,7 +1736,7 @@ paths:
           description: Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/ucode_ucode_go_function_service_api_status_http.Response'
+            - $ref: '#/definitions/status_http.Response'
             - properties:
                 data:
                   type: string

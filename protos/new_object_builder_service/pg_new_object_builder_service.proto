@@ -49,3 +49,4 @@ import "pg_field.proto";
 import "pg_version.proto";
 import "pg_1c_folder.proto";
 import "pg_csv.proto";
+import "pg_language.proto";

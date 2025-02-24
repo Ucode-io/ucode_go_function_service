@@ -170,6 +170,7 @@ message UpdateClientTypeRequest {
     repeated Table tables = 6;
     repeated string client_platform_ids = 7;
     string project_id = 8;
+    int32 session_limit = 9;
 }
 
 message AddClientRequest {
@@ -272,6 +273,7 @@ message CreateClientTypeRequestToObjService {
     string project_id = 6;
     repeated string client_platform_ids = 7;
     string table_slug = 8;
+    int32 session_limit = 9;
 }
 
 message UpdateClientTypeRequestToObjService {
@@ -298,7 +300,7 @@ message V2CreateClientTypeRequest {
     string default_page = 11;
     string node_type = 12;
     string resource_envrironment_id = 13;
-
+    int32 session_limit = 14;
 }
 
 message V2GetClientTypeListRequest {
@@ -326,6 +328,7 @@ message V2UpdateClientTypeRequest {
     string default_page = 12;
     string node_type = 13;
     string resource_envrironment_id = 14;
+    int32 session_limit = 15;
 }
 
 message V2ClientTypePrimaryKey {

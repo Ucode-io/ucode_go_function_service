@@ -191,7 +191,7 @@ func (h *Handler) AuthMiddleware(cfg config.Config) gin.HandlerFunc {
 				}()
 			}
 
-			var data = make(map[string]interface{})
+			var data = make(map[string]any)
 
 			if err = json.Unmarshal(apiJson, &data); err != nil {
 				h.handleResponse(c, status_http.BadRequest, "cant get auth info")

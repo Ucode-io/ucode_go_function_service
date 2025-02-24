@@ -30,7 +30,7 @@ func NewExpiringLRUCache(size int) (*ExpiringLRUCache, error) {
 	return &ExpiringLRUCache{cache: baseCache}, nil
 }
 
-func (c *ExpiringLRUCache) Add(key interface{}, value []byte, expiration time.Duration) {
+func (c *ExpiringLRUCache) Add(key any, value []byte, expiration time.Duration) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
@@ -42,7 +42,7 @@ func (c *ExpiringLRUCache) Add(key interface{}, value []byte, expiration time.Du
 	c.cache.Add(key, entry)
 }
 
-func (c *ExpiringLRUCache) Get(key interface{}) ([]byte, bool) {
+func (c *ExpiringLRUCache) Get(key any) ([]byte, bool) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
@@ -53,7 +53,6 @@ func (c *ExpiringLRUCache) Get(key interface{}) ([]byte, bool) {
 
 	cacheEntry := entry.(cacheEntry)
 	if cacheEntry.expiration.Before(time.Now()) {
-		// Entry has expired, remove it
 		c.cache.Remove(key)
 		return nil, false
 	}
@@ -61,7 +60,7 @@ func (c *ExpiringLRUCache) Get(key interface{}) ([]byte, bool) {
 	return cacheEntry.value, true
 }
 
-func (c *ExpiringLRUCache) AddKey(key interface{}, value bool, expiration time.Duration) {
+func (c *ExpiringLRUCache) AddKey(key any, value bool, expiration time.Duration) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
@@ -73,7 +72,7 @@ func (c *ExpiringLRUCache) AddKey(key interface{}, value bool, expiration time.D
 	c.cache.Add(key, entry)
 }
 
-func (c *ExpiringLRUCache) GetValue(key interface{}) (bool, bool) {
+func (c *ExpiringLRUCache) GetValue(key any) (bool, bool) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
@@ -84,7 +83,6 @@ func (c *ExpiringLRUCache) GetValue(key interface{}) (bool, bool) {
 
 	cacheEntry := entry.(cache)
 	if cacheEntry.expiration.Before(time.Now()) {
-		// Entry has expired, remove it
 		c.cache.Remove(key)
 		return false, false
 	}

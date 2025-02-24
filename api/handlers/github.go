@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"ucode/ucode_go_function_service/api/models"
 	"ucode/ucode_go_function_service/api/status_http"
 	"ucode/ucode_go_function_service/pkg/github"
@@ -24,17 +25,16 @@ import (
 // @Failure 500 {object} status_http.Response{data=string} "Server Error"
 func (h *Handler) GithubLogin(c *gin.Context) {
 	var (
-		code                  = c.Query("code")
+		code           string = c.Query("code")
 		accessTokenUrl string = h.cfg.GithubBaseUrl + "/login/oauth/access_token"
+		params                = map[string]any{
+			"client_id":     h.cfg.GithubClientId,
+			"client_secret": h.cfg.GithubClientSecret,
+			"code":          code,
+		}
 	)
 
-	param := map[string]interface{}{
-		"client_id":     h.cfg.GithubClientId,
-		"client_secret": h.cfg.GithubClientSecret,
-		"code":          code,
-	}
-
-	result, err := github.MakeRequest("POST", accessTokenUrl, "", param)
+	result, err := github.MakeRequest(http.MethodPost, accessTokenUrl, "", params)
 	if err != nil {
 		h.handleResponse(c, status_http.InternalServerError, err.Error())
 		return
@@ -63,11 +63,11 @@ func (h *Handler) GithubLogin(c *gin.Context) {
 func (h *Handler) GithubGetUser(c *gin.Context) {
 	var (
 		token      = c.Query("token")
-		getUserUrl = "https://api.github.com/user"
+		getUserUrl = h.cfg.GithubApiBaseUrl + "/user"
 		response   models.GithubUser
 	)
 
-	resultByte, err := github.MakeRequestV1("GET", getUserUrl, token, map[string]interface{}{})
+	resultByte, err := github.MakeRequestV1(http.MethodGet, getUserUrl, token, map[string]any{})
 	if err != nil {
 		h.handleResponse(c, status_http.InternalServerError, err.Error())
 		return
@@ -103,11 +103,11 @@ func (h *Handler) GithubGetRepos(c *gin.Context) {
 	var (
 		username = c.Query("username")
 		token    = c.Query("token")
-		url      = fmt.Sprintf("https://api.github.com/users/%s/repos", username)
+		url      = fmt.Sprintf("%s/users/%s/repos", h.cfg.GithubApiBaseUrl, username)
 		response = models.GithubRepo{}
 	)
 
-	resultByte, err := github.MakeRequestV1("GET", url, token, map[string]any{})
+	resultByte, err := github.MakeRequestV1(http.MethodGet, url, token, map[string]any{})
 	if err != nil {
 		h.handleResponse(c, status_http.InternalServerError, err.Error())
 		return
@@ -131,7 +131,7 @@ func (h *Handler) GithubGetRepos(c *gin.Context) {
 // @Produce json
 // @Param token query string false "token"
 // @Param username query string false "username"
-// @Success 201 {object} status_http.Response{data=models.GithubRepo} "Data"
+// @Success 201 {object} status_http.Response{data=models.GithubBranch} "Data"
 // @Response 400 {object} status_http.Response{data=string} "Bad Request"
 // @Failure 500 {object} status_http.Response{data=string} "Server Error"
 func (h *Handler) GithubGetBranches(c *gin.Context) {
@@ -140,11 +140,11 @@ func (h *Handler) GithubGetBranches(c *gin.Context) {
 		repoName = c.Query("repo")
 		token    = c.Query("token")
 
-		url      = fmt.Sprintf("https://api.github.com/repos/%s/%s/branches", username, repoName)
+		url      = fmt.Sprintf("%s/repos/%s/%s/branches", h.cfg.GithubApiBaseUrl, username, repoName)
 		response models.GithubBranch
 	)
 
-	resultByte, err := github.MakeRequestV1("GET", url, token, map[string]interface{}{})
+	resultByte, err := github.MakeRequestV1(http.MethodGet, url, token, map[string]any{})
 	if err != nil {
 		h.handleResponse(c, status_http.InternalServerError, err.Error())
 		return

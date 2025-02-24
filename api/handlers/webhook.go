@@ -10,15 +10,19 @@ import (
 
 	"ucode/ucode_go_function_service/api/models"
 	status "ucode/ucode_go_function_service/api/status_http"
+	"ucode/ucode_go_function_service/config"
 	cfg "ucode/ucode_go_function_service/config"
 	pb "ucode/ucode_go_function_service/genproto/company_service"
 	nb "ucode/ucode_go_function_service/genproto/new_object_builder_service"
 	obs "ucode/ucode_go_function_service/genproto/object_builder_service"
 	"ucode/ucode_go_function_service/pkg/github"
+	"ucode/ucode_go_function_service/pkg/gitlab"
 	"ucode/ucode_go_function_service/pkg/helper"
+	"ucode/ucode_go_function_service/pkg/logger"
 	"ucode/ucode_go_function_service/pkg/util"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/spf13/cast"
 )
 
@@ -26,6 +30,7 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 	var (
 		createWebhookRequest models.CreateWebhook
 		createFunction       *obs.CreateFunctionRequest
+		exists               bool
 	)
 
 	ctx, cancel := context.WithCancel(c.Request.Context())
@@ -34,6 +39,10 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 	if err := c.ShouldBindJSON(&createWebhookRequest); err != nil {
 		h.handleResponse(c, status.BadRequest, err.Error())
 		return
+	}
+
+	if len(createWebhookRequest.FunctionType) == 0 {
+		h.handleResponse(c, status.BadRequest, "function type required")
 	}
 
 	projectId, ok := c.Get("project_id")
@@ -60,7 +69,7 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 		return
 	}
 
-	githubResource, err := h.services.CompanyService().Resource().GetSingleProjectResouece(
+	integrationResource, err := h.services.CompanyService().Resource().GetSingleProjectResouece(
 		ctx, &pb.PrimaryKeyProjectResource{
 			Id:            createWebhookRequest.Resource,
 			EnvironmentId: environmentId.(string),
@@ -71,11 +80,7 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 		return
 	}
 
-	project, err := h.services.CompanyService().Project().GetById(
-		ctx, &pb.GetProjectByIdRequest{
-			ProjectId: projectId.(string),
-		},
-	)
+	project, err := h.services.CompanyService().Project().GetById(ctx, &pb.GetProjectByIdRequest{ProjectId: projectId.(string)})
 	if err != nil {
 		h.handleResponse(c, status.GRPCError, err.Error())
 		return
@@ -89,23 +94,64 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 		return
 	}
 
-	createWebhookRequest.Username = githubResource.GetSettings().GetGithub().GetUsername()
-	createWebhookRequest.GithubToken = githubResource.GetSettings().GetGithub().GetToken()
+	switch integrationResource.Type {
+	case pb.ResourceType_GITHUB.String():
+		createWebhookRequest.Username = integrationResource.GetSettings().GetGithub().GetUsername()
+		createWebhookRequest.GithubToken = integrationResource.GetSettings().GetGithub().GetToken()
+	case pb.ResourceType_GITLAB.String():
+		createWebhookRequest.Username = integrationResource.GetSettings().GetGitlab().GetUsername()
+		createWebhookRequest.GithubToken = integrationResource.GetSettings().GetGitlab().GetToken()
+		createWebhookRequest.RefreshToken = integrationResource.GetSettings().GetGitlab().GetRefreshToken()
+		createWebhookRequest.ExpiresIn = integrationResource.GetSettings().GetGitlab().GetExpiresIn()
+		createWebhookRequest.CreatedAt = integrationResource.GetSettings().GetGitlab().GetCreatedAt()
+	}
 
 	if createWebhookRequest.RepoName == "" || createWebhookRequest.Username == "" {
 		h.handleResponse(c, status.BadRequest, "Username or RepoName is empty")
 		return
 	}
 
-	exists, err := github.ListWebhooks(github.ListWebhookRequest{
-		Username:    createWebhookRequest.Username,
-		RepoName:    createWebhookRequest.RepoName,
-		GithubToken: createWebhookRequest.GithubToken,
-		ProjectUrl:  h.cfg.ProjectUrl,
-	})
-	if err != nil {
-		h.handleResponse(c, status.InternalServerError, err.Error())
-		return
+	createFunction = &obs.CreateFunctionRequest{
+		Path:          createWebhookRequest.RepoName,
+		Name:          createWebhookRequest.RepoName,
+		Description:   createWebhookRequest.RepoName,
+		RepoId:        fmt.Sprintf("%d", createWebhookRequest.RepoId),
+		ProjectId:     resource.ResourceEnvironmentId,
+		EnvironmentId: resource.EnvironmentId,
+		Type:          createWebhookRequest.FunctionType,
+		FrameworkType: createWebhookRequest.FrameworkType,
+		Url:           "",
+		Branch:        createWebhookRequest.Branch,
+		// SourceUrl: ,
+		PipelineStatus: "running",
+		Resource:       createWebhookRequest.Resource,
+	}
+
+	switch integrationResource.Type {
+	case pb.ResourceType_GITHUB.String():
+		exists, err = github.ListWebhooks(github.ListWebhookRequest{
+			Username:    createWebhookRequest.Username,
+			RepoName:    createWebhookRequest.RepoName,
+			GithubToken: createWebhookRequest.GithubToken,
+			ProjectUrl:  h.cfg.ProjectUrl,
+		})
+		if err != nil {
+			h.handleResponse(c, status.InternalServerError, err.Error())
+			return
+		}
+		createFunction.SourceUrl = fmt.Sprintf("https://github.com/%s/%s", createWebhookRequest.Username, createWebhookRequest.RepoName)
+	case pb.ResourceType_GITLAB.String():
+		exists, err = gitlab.ListWebhooks(gitlab.WebhookConfig{
+			Token:      createWebhookRequest.GithubToken,
+			RepoId:     createWebhookRequest.RepoId,
+			ProjectUrl: h.cfg.ProjectUrl,
+			BaseUrl:    h.cfg.GitlabBaseUrlIntegration,
+		})
+		if err != nil {
+			h.handleResponse(c, status.InternalServerError, err.Error())
+			return
+		}
+		createFunction.SourceUrl = fmt.Sprintf("https://gitlab.com/%s/%s", createWebhookRequest.Username, createWebhookRequest.RepoName)
 	}
 
 	if exists {
@@ -113,25 +159,9 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 		return
 	}
 
-	createFunction = &obs.CreateFunctionRequest{
-		Path:           createWebhookRequest.RepoName,
-		Name:           createWebhookRequest.RepoName,
-		Description:    createWebhookRequest.RepoName,
-		ProjectId:      resource.ResourceEnvironmentId,
-		EnvironmentId:  resource.EnvironmentId,
-		Type:           createWebhookRequest.FunctionType,
-		Url:            "",
-		SourceUrl:      fmt.Sprintf("https://github.com/%s/%s", createWebhookRequest.Username, createWebhookRequest.RepoName),
-		Branch:         createWebhookRequest.Branch,
-		PipelineStatus: "running",
-		Resource:       createWebhookRequest.Resource,
-	}
-
 	switch resource.ResourceType {
 	case pb.ResourceType_MONGODB:
-		_, err = h.services.GetBuilderServiceByType(resource.NodeType).Function().Create(
-			ctx, createFunction,
-		)
+		_, err = h.services.GetBuilderServiceByType(resource.NodeType).Function().Create(ctx, createFunction)
 
 		if err != nil {
 			h.handleResponse(c, status.GRPCError, err.Error())
@@ -154,23 +184,40 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 		}
 	}
 
-	err = github.CreateWebhook(github.CreateWebhookRequest{
-		Username:      createWebhookRequest.Username,
-		RepoName:      createWebhookRequest.RepoName,
-		WebhookSecret: h.cfg.WebhookSecret,
-		FrameworkType: createWebhookRequest.FrameworkType,
-		Branch:        createWebhookRequest.Branch,
-		FunctionType:  createWebhookRequest.FunctionType,
-		GithubToken:   createWebhookRequest.GithubToken,
-		ProjectUrl:    h.cfg.ProjectUrl,
-		Name:          createWebhookRequest.Name,
-		ResourceId:    createWebhookRequest.Resource,
-		ProjectId:     projectId.(string),
-		EnvironmentId: environmentId.(string),
-	})
-	if err != nil {
-		h.handleResponse(c, status.InternalServerError, err.Error())
-		return
+	switch integrationResource.Type {
+	case pb.ResourceType_GITHUB.String():
+		err = github.CreateWebhook(github.CreateWebhookRequest{
+			Username:      createWebhookRequest.Username,
+			RepoName:      createWebhookRequest.RepoName,
+			WebhookSecret: h.cfg.WebhookSecret,
+			FrameworkType: createWebhookRequest.FrameworkType,
+			Branch:        createWebhookRequest.Branch,
+			FunctionType:  createWebhookRequest.FunctionType,
+			GithubToken:   createWebhookRequest.GithubToken,
+			ProjectUrl:    h.cfg.ProjectUrl,
+			Name:          createWebhookRequest.Name,
+			ResourceId:    createWebhookRequest.Resource,
+			ProjectId:     projectId.(string),
+			EnvironmentId: environmentId.(string),
+		})
+		if err != nil {
+			h.handleResponse(c, status.InternalServerError, err.Error())
+			return
+		}
+	case pb.ResourceType_GITLAB.String():
+		err = gitlab.CreateWebhook(gitlab.WebhookConfig{
+			ProjectUrl:    h.cfg.ProjectUrl,
+			BaseUrl:       h.cfg.GitlabBaseUrlIntegration,
+			RepoId:        createWebhookRequest.RepoId,
+			ResourceId:    createWebhookRequest.Resource,
+			EnvironmentId: environmentId.(string),
+			Token:         createWebhookRequest.GithubToken,
+			ProjectId:     projectId.(string),
+		})
+		if err != nil {
+			h.handleResponse(c, status.InternalServerError, err.Error())
+			return
+		}
 	}
 
 	h.handleResponse(c, status.Created, nil)
@@ -208,10 +255,10 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		return
 	}
 
-	if !(github.VerifySignature(c.GetHeader("X-Hub-Signature"), body, []byte(h.cfg.WebhookSecret))) {
-		h.handleResponse(c, status.BadRequest, "failed to verify signature")
-		return
-	}
+	// if !(github.VerifySignature(c.GetHeader("X-Hub-Signature"), body, []byte(h.cfg.WebhookSecret))) {
+	// 	h.handleResponse(c, status.BadRequest, "failed to verify signature")
+	// 	return
+	// }
 
 	projectResource, err := h.services.CompanyService().Resource().GetSingleProjectResouece(
 		c.Request.Context(), &pb.PrimaryKeyProjectResource{
@@ -222,6 +269,28 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 	)
 	if err != nil {
 		h.handleResponse(c, status.InternalServerError, err.Error())
+		return
+	}
+
+	resource, err := h.services.CompanyService().ServiceResource().GetSingle(
+		c.Request.Context(), &pb.GetSingleServiceResourceReq{
+			ProjectId:     projectId,
+			EnvironmentId: environmentId,
+			ServiceType:   pb.ServiceType_BUILDER_SERVICE,
+		},
+	)
+	if err != nil {
+		h.handleResponse(c, status.InternalServerError, err.Error())
+		return
+	}
+
+	switch projectResource.Type {
+	case pb.ResourceType_GITLAB.String():
+		err = h.HandleWebHookGitlab(c, projectResource, resource, payload)
+		if err != nil {
+			return
+		}
+		h.handleResponse(c, status.OK, nil)
 		return
 	}
 
@@ -250,20 +319,7 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		branch = parts[len(parts)-1]
 	}
 
-	resource, err := h.services.CompanyService().ServiceResource().GetSingle(
-		c.Request.Context(), &pb.GetSingleServiceResourceReq{
-			ProjectId:     projectId,
-			EnvironmentId: environmentId,
-			ServiceType:   pb.ServiceType_FUNCTION_SERVICE,
-		},
-	)
-	if err != nil {
-		h.handleResponse(c, status.InternalServerError, err.Error())
-		return
-	}
-
 	builderService := h.services.GetBuilderServiceByType(resource.NodeType)
-
 	switch resource.ResourceType {
 	case pb.ResourceType_MONGODB:
 		function, functionErr := builderService.Function().GetSingle(
@@ -278,7 +334,7 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		}
 
 		switch functionType {
-		case "FUNCTION":
+		case cfg.FUNCTION:
 			if functionErr != nil {
 				function, err = builderService.Function().Create(
 					c.Request.Context(), &obs.CreateFunctionRequest{
@@ -287,7 +343,7 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 						Description:    repoDescription,
 						ProjectId:      resource.ResourceEnvironmentId,
 						EnvironmentId:  resource.EnvironmentId,
-						Type:           "FUNCTION",
+						Type:           cfg.FUNCTION,
 						SourceUrl:      htmlUrl,
 						Branch:         branch,
 						PipelineStatus: "running",
@@ -302,13 +358,13 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 			function.PipelineStatus = "running"
 
 			go h.deployFunction(models.DeployFunctionRequest{
-				GithubToken:     "glpat-SA8FqtKh8u7hyV_SdLzh",
+				GithubToken:     token,
 				RepoId:          repoId,
 				ResourceType:    resource.NodeType,
 				Function:        function,
 				TargetNamespace: "ucode_functions_group",
 			})
-		case "KNATIVE":
+		case cfg.KNATIVE:
 			if functionErr != nil {
 				function, err = builderService.Function().Create(
 					c.Request.Context(), &obs.CreateFunctionRequest{
@@ -337,7 +393,38 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 					RepoId:          repoId,
 					ResourceType:    resource.NodeType,
 					Function:        function,
-					TargetNamespace: "ucode/knative",
+					TargetNamespace: cfg.KnativeNamespace,
+				},
+			)
+		case cfg.MICROFE:
+			if functionErr != nil {
+				function, err = builderService.Function().Create(
+					c.Request.Context(), &obs.CreateFunctionRequest{
+						Path:           repoName,
+						Name:           name,
+						Description:    repoDescription,
+						ProjectId:      resource.ResourceEnvironmentId,
+						EnvironmentId:  resource.EnvironmentId,
+						Type:           cfg.MICROFE,
+						SourceUrl:      htmlUrl,
+						Branch:         branch,
+						PipelineStatus: "running",
+						Resource:       resourceType,
+					},
+				)
+				if err != nil {
+					h.handleResponse(c, status.InvalidArgument, err.Error())
+					return
+				}
+			}
+			function.PipelineStatus = "running"
+			go h.deployFunction(
+				models.DeployFunctionRequest{
+					GithubToken:     token,
+					RepoId:          repoId,
+					Function:        function,
+					ResourceType:    resource.NodeType,
+					TargetNamespace: cfg.MicroFrontNamaspece,
 				},
 			)
 		}
@@ -354,7 +441,7 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		}
 
 		switch functionType {
-		case "FUNCTION":
+		case cfg.FUNCTION:
 			if functionErr != nil {
 				function, err = h.services.GoObjectBuilderService().Function().Create(
 					c.Request.Context(), &nb.CreateFunctionRequest{
@@ -378,13 +465,13 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 			function.PipelineStatus = "running"
 
 			go h.deployFunctionGo(models.DeployFunctionRequestGo{
-				GithubToken:     "glpat-SA8FqtKh8u7hyV_SdLzh",
+				GithubToken:     token,
 				RepoId:          repoId,
 				ResourceType:    resource.NodeType,
 				Function:        function,
-				TargetNamespace: "ucode_functions_group",
+				TargetNamespace: cfg.OpenFassNamespace,
 			})
-		case "KNATIVE":
+		case cfg.KNATIVE:
 			if functionErr != nil {
 				function, err = h.services.GoObjectBuilderService().Function().Create(
 					c.Request.Context(), &nb.CreateFunctionRequest{
@@ -407,52 +494,451 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 			}
 			function.PipelineStatus = "running"
 
+			go func() {
+				_, err = h.deployFunctionGo(
+					models.DeployFunctionRequestGo{
+						GithubToken:     token,
+						RepoId:          repoId,
+						ResourceType:    resource.NodeType,
+						Function:        function,
+						TargetNamespace: cfg.KnativeNamespace,
+					},
+				)
+				if err != nil {
+					fmt.Println("DEPLOY ERROR deployFunctionGo", err)
+				}
+			}()
+		case cfg.MICROFE:
+			if functionErr != nil {
+				function, err = h.services.GoObjectBuilderService().Function().Create(
+					c.Request.Context(), &nb.CreateFunctionRequest{
+						Path:           repoName,
+						Name:           name,
+						Description:    repoDescription,
+						ProjectId:      resource.ResourceEnvironmentId,
+						EnvironmentId:  resource.EnvironmentId,
+						Type:           cfg.MICROFE,
+						SourceUrl:      htmlUrl,
+						Branch:         branch,
+						PipelineStatus: "running",
+						Resource:       resourceType,
+					},
+				)
+				if err != nil {
+					h.handleResponse(c, status.InvalidArgument, err.Error())
+					return
+				}
+			}
+			function.PipelineStatus = "running"
 			go h.deployFunctionGo(
 				models.DeployFunctionRequestGo{
 					GithubToken:     token,
 					RepoId:          repoId,
 					ResourceType:    resource.NodeType,
 					Function:        function,
-					TargetNamespace: "ucode/knative",
+					TargetNamespace: cfg.MicroFrontNamaspece,
 				},
 			)
 		}
 	}
 }
 
+func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.ProjectResource, resource *pb.ServiceResourceModel, payload map[string]any) error {
+	var (
+		gitlabProjectId = cast.ToString(payload["project_id"])
+		gitlabProject   = cast.ToStringMap(payload["project"])
+
+		sourceFullPath  = cast.ToString(gitlabProject["path_with_namespace"])
+		htmlUrl         = cast.ToString(gitlabProject["web_url"])
+		branch          = cast.ToString(gitlabProject["default_branch"])
+		repoName        = cast.ToString(gitlabProject["name"])
+		repoDescription = cast.ToString(gitlabProject["description"])
+
+		token        = projectResource.GetSettings().GetGitlab().GetToken()
+		createdAt    = projectResource.GetSettings().GetGitlab().GetCreatedAt()
+		expiresIn    = projectResource.GetSettings().GetGitlab().GetExpiresIn()
+		refreshToken = projectResource.GetSettings().GetGitlab().GetRefreshToken()
+		functionType string
+		resourceType string
+		name         string
+		err          error
+	)
+
+	if gitlab.IsExpired(createdAt, expiresIn) {
+		refresh, err := gitlab.RefreshGitLabToken(gitlab.GitLabTokenRequest{
+			ClinetId:     h.cfg.GitlabClientIdIntegration,
+			ClientSecret: h.cfg.GitlabClientSecretIntegration,
+			RefreshToken: refreshToken,
+		})
+		if err != nil {
+			h.handleResponse(c, status.InternalServerError, err.Error())
+			return err
+		}
+
+		token = refresh.AccessToken
+
+		go func() {
+			_, err := h.services.CompanyService().Resource().UpdateProjectResource(
+				context.Background(), &pb.ProjectResource{
+					Id:            projectResource.GetId(),
+					Name:          projectResource.GetName(),
+					ProjectId:     projectResource.GetProjectId(),
+					EnvironmentId: projectResource.GetEnvironmentId(),
+					Settings: &pb.Settings{
+						Gitlab: &pb.Gitlab{
+							Token:        refresh.AccessToken,
+							RefreshToken: refresh.RefreshToken,
+							Username:     projectResource.GetSettings().GetGitlab().GetUsername(),
+							CreatedAt:    refresh.CreatedAt,
+							ExpiresIn:    int32(refresh.ExpiresIn),
+						},
+					},
+				},
+			)
+			if err != nil {
+				h.log.Error("error updating project resource", logger.Error(err))
+			}
+		}()
+	}
+
+	builderService := h.services.GetBuilderServiceByType(resource.NodeType)
+
+	switch resource.ResourceType {
+	case pb.ResourceType_MONGODB:
+		function, functionErr := builderService.Function().GetSingle(
+			c.Request.Context(), &obs.FunctionPrimaryKey{
+				ProjectId: resource.ResourceEnvironmentId,
+				SourceUrl: htmlUrl,
+				Branch:    branch,
+			},
+		)
+		if function != nil {
+			functionType = function.Type
+		}
+
+		switch functionType {
+		case cfg.FUNCTION:
+			if functionErr != nil {
+				function, err = builderService.Function().Create(
+					c.Request.Context(), &obs.CreateFunctionRequest{
+						Path:           repoName,
+						Name:           name,
+						Description:    repoDescription,
+						ProjectId:      resource.ResourceEnvironmentId,
+						EnvironmentId:  resource.EnvironmentId,
+						Type:           cfg.FUNCTION,
+						SourceUrl:      htmlUrl,
+						Branch:         branch,
+						PipelineStatus: "running",
+						Resource:       resourceType,
+						RepoId:         gitlabProjectId,
+					},
+				)
+				if err != nil {
+					h.handleResponse(c, status.GRPCError, err.Error())
+					return err
+				}
+			}
+			function.PipelineStatus = "running"
+
+			go h.deployFunction(models.DeployFunctionRequest{
+				GithubToken:     token,
+				RepoId:          gitlabProjectId,
+				ResourceType:    resource.NodeType,
+				Function:        function,
+				TargetNamespace: config.OpenFassNamespace,
+				IsGitlab:        true,
+				SourcheFullPath: sourceFullPath,
+			})
+		case cfg.KNATIVE:
+			if functionErr != nil {
+				function, err = builderService.Function().Create(
+					c.Request.Context(), &obs.CreateFunctionRequest{
+						Path:           repoName,
+						Name:           name,
+						Description:    repoDescription,
+						ProjectId:      resource.ResourceEnvironmentId,
+						EnvironmentId:  resource.EnvironmentId,
+						Type:           cfg.KNATIVE,
+						SourceUrl:      htmlUrl,
+						Branch:         branch,
+						PipelineStatus: "running",
+						Resource:       resourceType,
+						RepoId:         gitlabProjectId,
+					},
+				)
+				if err != nil {
+					h.handleResponse(c, status.InvalidArgument, err.Error())
+					return err
+				}
+			}
+			function.PipelineStatus = "running"
+
+			go h.deployFunction(
+				models.DeployFunctionRequest{
+					GithubToken:     token,
+					RepoId:          gitlabProjectId,
+					ResourceType:    resource.NodeType,
+					Function:        function,
+					TargetNamespace: cfg.KnativeNamespace,
+					IsGitlab:        true,
+					SourcheFullPath: sourceFullPath,
+				},
+			)
+		case cfg.MICROFE:
+			if functionErr != nil {
+				function, err = builderService.Function().Create(
+					c.Request.Context(), &obs.CreateFunctionRequest{
+						Path:           repoName,
+						Name:           name,
+						Description:    repoDescription,
+						ProjectId:      resource.ResourceEnvironmentId,
+						EnvironmentId:  resource.EnvironmentId,
+						Type:           cfg.MICROFE,
+						SourceUrl:      htmlUrl,
+						Branch:         branch,
+						PipelineStatus: "running",
+						Resource:       resourceType,
+						RepoId:         gitlabProjectId,
+					},
+				)
+				if err != nil {
+					h.handleResponse(c, status.InvalidArgument, err.Error())
+					return err
+				}
+			}
+			function.PipelineStatus = "running"
+			go h.deployFunction(
+				models.DeployFunctionRequest{
+					GithubToken:     token,
+					RepoId:          gitlabProjectId,
+					Function:        function,
+					ResourceType:    resource.NodeType,
+					TargetNamespace: cfg.MicroFrontNamaspece,
+					IsGitlab:        true,
+					SourcheFullPath: sourceFullPath,
+				},
+			)
+		}
+	case pb.ResourceType_POSTGRESQL:
+		function, functionErr := h.services.GoObjectBuilderService().Function().GetSingle(
+			c.Request.Context(), &nb.FunctionPrimaryKey{
+				ProjectId: resource.ResourceEnvironmentId,
+				SourceUrl: htmlUrl,
+				Branch:    branch,
+			},
+		)
+		if function != nil {
+			functionType = function.Type
+		}
+
+		switch functionType {
+		case cfg.FUNCTION:
+			if functionErr != nil {
+				function, err = h.services.GoObjectBuilderService().Function().Create(
+					c.Request.Context(), &nb.CreateFunctionRequest{
+						Path:           repoName,
+						Name:           name,
+						Description:    repoDescription,
+						ProjectId:      resource.ResourceEnvironmentId,
+						EnvironmentId:  resource.EnvironmentId,
+						Type:           cfg.FUNCTION,
+						SourceUrl:      htmlUrl,
+						Branch:         branch,
+						PipelineStatus: "running",
+						Resource:       resourceType,
+						RepoId:         gitlabProjectId,
+					},
+				)
+				if err != nil {
+					h.handleResponse(c, status.GRPCError, err.Error())
+					return err
+				}
+			}
+			function.PipelineStatus = "running"
+
+			go h.deployFunctionGo(models.DeployFunctionRequestGo{
+				GithubToken:     token,
+				RepoId:          gitlabProjectId,
+				ResourceType:    resource.NodeType,
+				Function:        function,
+				TargetNamespace: cfg.OpenFassNamespace,
+				IsGitlab:        true,
+				SourcheFullPath: sourceFullPath,
+			})
+		case cfg.KNATIVE:
+			if functionErr != nil {
+				function, err = h.services.GoObjectBuilderService().Function().Create(
+					c.Request.Context(), &nb.CreateFunctionRequest{
+						Path:           repoName,
+						Name:           name,
+						Description:    repoDescription,
+						ProjectId:      resource.ResourceEnvironmentId,
+						EnvironmentId:  resource.EnvironmentId,
+						Type:           cfg.KNATIVE,
+						SourceUrl:      htmlUrl,
+						Branch:         branch,
+						PipelineStatus: "running",
+						Resource:       resourceType,
+					},
+				)
+				if err != nil {
+					h.handleResponse(c, status.InvalidArgument, err.Error())
+					return err
+				}
+			}
+			function.PipelineStatus = "running"
+
+			go h.deployFunctionGo(
+				models.DeployFunctionRequestGo{
+					GithubToken:     token,
+					RepoId:          gitlabProjectId,
+					ResourceType:    resource.NodeType,
+					Function:        function,
+					TargetNamespace: cfg.KnativeNamespace,
+					IsGitlab:        true,
+					SourcheFullPath: sourceFullPath,
+				},
+			)
+		case cfg.MICROFE:
+			if functionErr != nil {
+				function, err = h.services.GoObjectBuilderService().Function().Create(
+					c.Request.Context(), &nb.CreateFunctionRequest{
+						Path:           repoName,
+						Name:           name,
+						Description:    repoDescription,
+						ProjectId:      resource.ResourceEnvironmentId,
+						EnvironmentId:  resource.EnvironmentId,
+						Type:           cfg.MICROFE,
+						SourceUrl:      htmlUrl,
+						Branch:         branch,
+						PipelineStatus: "running",
+						Resource:       resourceType,
+						RepoId:         gitlabProjectId,
+					},
+				)
+				if err != nil {
+					h.handleResponse(c, status.InvalidArgument, err.Error())
+					return err
+				}
+			}
+			function.PipelineStatus = "running"
+			go h.deployFunctionGo(
+				models.DeployFunctionRequestGo{
+					GithubToken:     token,
+					RepoId:          gitlabProjectId,
+					ResourceType:    resource.NodeType,
+					Function:        function,
+					TargetNamespace: cfg.MicroFrontNamaspece,
+					IsGitlab:        true,
+					SourcheFullPath: sourceFullPath,
+				},
+			)
+		}
+	}
+
+	return nil
+}
+
 func (h *Handler) deployFunction(req models.DeployFunctionRequest) (github.ImportResponse, error) {
-	importResponse, err := github.ImportFromGithub(github.ImportData{
-		PersonalAccessToken: req.GithubToken,
-		RepoId:              req.RepoId,
-		TargetNamespace:     req.TargetNamespace,
-		NewName:             req.Function.Path,
-		GitlabToken:         h.cfg.GitlabIntegrationToken,
-	})
-	if err != nil {
-		return github.ImportResponse{}, err
+	var (
+		gitlabToken    string
+		importResponse github.ImportResponse
+		err            error
+	)
+
+	switch req.Function.Type {
+	case cfg.FUNCTION:
+		gitlabToken = h.cfg.GitlabOpenFassToken
+	case cfg.KNATIVE:
+		gitlabToken = h.cfg.GitlabKnativeToken
+	case cfg.MICROFE:
+		gitlabToken = h.cfg.GitlabTokenMicroFront
+	}
+
+	if req.IsGitlab {
+		importResponse, err = gitlab.ImportFromGitlabCom(gitlab.ImportData{
+			GitlabToken: gitlabToken,
+		})
+		if err != nil {
+			return github.ImportResponse{}, err
+		}
+	} else {
+		importResponse, err = github.ImportFromGithub(github.ImportData{
+			PersonalAccessToken: req.GithubToken,
+			RepoId:              req.RepoId,
+			TargetNamespace:     req.TargetNamespace,
+			NewName:             req.Function.Path,
+			GitlabToken:         gitlabToken,
+		})
+		if err != nil {
+			return github.ImportResponse{}, err
+		}
 	}
 
 	time.Sleep(10 * time.Second)
 	switch req.Function.Type {
-	case "KNATIVE":
-		err = github.AddCiFileKnative(h.cfg.GitlabIntegrationToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneKnative)
+	case cfg.KNATIVE:
+		err = github.AddCiFileKnative(gitlabToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneKnative)
 		if err != nil {
-			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
+			if err := github.DeleteRepository(gitlabToken, importResponse.ID); err != nil {
 				return github.ImportResponse{}, err
 			}
 		}
-	case "FUNCTION":
-		err = github.AddCiFileFunction(h.cfg.GitlabIntegrationToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneFunction)
+	case cfg.FUNCTION:
+		err = github.AddCiFileFunction(gitlabToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneFunction)
 		if err != nil {
-			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
+			if err := github.DeleteRepository(gitlabToken, importResponse.ID); err != nil {
 				return github.ImportResponse{}, err
 			}
+		}
+	case cfg.MICROFE:
+		var (
+			id       = uuid.New().String()
+			repoHost = fmt.Sprintf("%s-%s", id, h.cfg.GitlabHostMicroFront)
+			data     = make([]map[string]any, 0)
+			host     = make(map[string]any)
+		)
+
+		host["key"] = "INGRESS_HOST"
+		host["value"] = repoHost
+		data = append(data, host)
+
+		_, err = gitlab.CreateProjectVariable(gitlab.IntegrationData{
+			GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
+			GitlabIntegrationToken: gitlabToken,
+			GitlabProjectId:        importResponse.ID,
+			GitlabGroupId:          h.cfg.GitlabGroupIdMicroFront,
+		}, host)
+		if err != nil {
+			return github.ImportResponse{}, err
+		}
+
+		err = github.AddFilesMicroFront(gitlabToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneMicroFront)
+		if err != nil {
+			if err := github.DeleteRepository(gitlabToken, importResponse.ID); err != nil {
+				return github.ImportResponse{}, err
+			}
+		}
+
+		_, err = gitlab.CreatePipeline(
+			gitlab.IntegrationData{
+				GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
+				GitlabIntegrationToken: gitlabToken,
+				GitlabProjectId:        importResponse.ID,
+				GitlabGroupId:          h.cfg.GitlabGroupIdMicroFront,
+			}, map[string]any{
+				"variables": data,
+			},
+		)
+		if err != nil {
+			return github.ImportResponse{}, err
 		}
 	}
 
 	for {
 		time.Sleep(60 * time.Second)
-		pipeline, err := github.GetLatestPipeline(h.cfg.GitlabIntegrationToken, req.Function.Branch, importResponse.ID)
+		pipeline, err := github.GetLatestPipeline(gitlabToken, req.Function.Branch, importResponse.ID)
 		if err != nil {
 			h.services.GetBuilderServiceByType(req.ResourceType).Function().Update(
 				context.Background(), &obs.Function{
@@ -475,14 +961,14 @@ func (h *Handler) deployFunction(req models.DeployFunctionRequest) (github.Impor
 				},
 			)
 
-			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
+			if err := github.DeleteRepository(gitlabToken, importResponse.ID); err != nil {
 				return github.ImportResponse{}, err
 			}
 			return github.ImportResponse{}, err
 		}
 
 		if pipeline.Status == "failed" {
-			logResp, err := github.GetPipelineLog(fmt.Sprintf("%v", importResponse.ID), h.cfg.GitlabIntegrationURL, h.cfg.GitlabIntegrationToken)
+			logResp, err := github.GetPipelineLog(fmt.Sprintf("%v", importResponse.ID), h.cfg.GitlabIntegrationURL, gitlabToken)
 			if err != nil {
 				return github.ImportResponse{}, err
 			}
@@ -510,7 +996,7 @@ func (h *Handler) deployFunction(req models.DeployFunctionRequest) (github.Impor
 				},
 			)
 
-			err = github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID)
+			err = github.DeleteRepository(gitlabToken, importResponse.ID)
 			if err != nil {
 				return github.ImportResponse{}, err
 			}
@@ -540,7 +1026,7 @@ func (h *Handler) deployFunction(req models.DeployFunctionRequest) (github.Impor
 			},
 		)
 		if pipeline.Status == "success" || pipeline.Status == "skipped" {
-			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
+			if err := github.DeleteRepository(gitlabToken, importResponse.ID); err != nil {
 				return github.ImportResponse{}, err
 			}
 			return github.ImportResponse{}, nil
@@ -549,68 +1035,144 @@ func (h *Handler) deployFunction(req models.DeployFunctionRequest) (github.Impor
 }
 
 func (h *Handler) deployFunctionGo(req models.DeployFunctionRequestGo) (github.ImportResponse, error) {
-	importResponse, err := github.ImportFromGithub(github.ImportData{
-		PersonalAccessToken: req.GithubToken,
-		RepoId:              req.RepoId,
-		TargetNamespace:     req.TargetNamespace,
-		NewName:             req.Function.Path,
-		GitlabToken:         h.cfg.GitlabIntegrationToken,
-	})
-	if err != nil {
-		return github.ImportResponse{}, err
+	var (
+		gitlabToken    string
+		gitlabGroupId  int
+		importResponse github.ImportResponse
+		err            error
+	)
+
+	switch req.Function.Type {
+	case cfg.FUNCTION:
+		gitlabToken = h.cfg.GitlabOpenFassToken
+		gitlabGroupId = h.cfg.GitlabOpenFassGroupId
+	case cfg.KNATIVE:
+		gitlabToken = h.cfg.GitlabKnativeToken
+		gitlabGroupId = h.cfg.GitlabKnativeGroupId
+	case cfg.MICROFE:
+		gitlabToken = h.cfg.GitlabTokenMicroFront
+		gitlabGroupId = h.cfg.GitlabGroupIdMicroFront
+	}
+
+	if req.IsGitlab {
+		importResponse, err = gitlab.ImportFromGitLab(gitlab.ImportData{
+			PersonalAccessToken: req.GithubToken,
+			RepoId:              req.RepoId,
+			TargetNamespace:     req.TargetNamespace,
+			NewName:             req.Function.Path,
+			GitlabToken:         gitlabToken,
+			SourceFullPath:      req.SourcheFullPath,
+			GitlabGroupId:       gitlabGroupId,
+		})
+		if err != nil {
+			return github.ImportResponse{}, err
+		}
+	} else {
+		importResponse, err = github.ImportFromGithub(github.ImportData{
+			PersonalAccessToken: req.GithubToken,
+			RepoId:              req.RepoId,
+			TargetNamespace:     req.TargetNamespace,
+			NewName:             req.Function.Path,
+			GitlabToken:         gitlabToken,
+		})
+		if err != nil {
+			return github.ImportResponse{}, err
+		}
 	}
 
 	time.Sleep(10 * time.Second)
 	switch req.Function.Type {
-	case "KNATIVE":
-		err = github.AddCiFileKnative(h.cfg.GitlabIntegrationToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneKnative)
+	case cfg.KNATIVE:
+		err = github.AddCiFileKnative(gitlabToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneKnative)
 		if err != nil {
-			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
+			if err := github.DeleteRepository(gitlabToken, importResponse.ID); err != nil {
 				return github.ImportResponse{}, err
 			}
 		}
-	case "FUNCTION":
-		err = github.AddCiFileFunction(h.cfg.GitlabIntegrationToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneFunction)
+	case cfg.FUNCTION:
+		err = github.AddCiFileFunction(gitlabToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneFunction)
 		if err != nil {
-			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
+			if err := github.DeleteRepository(gitlabToken, importResponse.ID); err != nil {
 				return github.ImportResponse{}, err
 			}
+		}
+	case cfg.MICROFE:
+		var (
+			id       = uuid.New().String()
+			repoHost = fmt.Sprintf("%s-%s", id, h.cfg.GitlabHostMicroFront)
+			data     = make([]map[string]any, 0)
+			host     = make(map[string]any)
+		)
+
+		host["key"] = "INGRESS_HOST"
+		host["value"] = repoHost
+		data = append(data, host)
+
+		_, err = gitlab.CreateProjectVariable(gitlab.IntegrationData{
+			GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
+			GitlabIntegrationToken: gitlabToken,
+			GitlabProjectId:        importResponse.ID,
+			GitlabGroupId:          h.cfg.GitlabGroupIdMicroFront,
+		}, host)
+		if err != nil {
+			return github.ImportResponse{}, err
+		}
+
+		err = github.AddFilesMicroFront(gitlabToken, importResponse.ID, req.Function.Branch, cfg.PathToCloneMicroFront)
+		if err != nil {
+			if err := github.DeleteRepository(gitlabToken, importResponse.ID); err != nil {
+				return github.ImportResponse{}, err
+			}
+		}
+
+		_, err = gitlab.CreatePipeline(
+			gitlab.IntegrationData{
+				GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
+				GitlabIntegrationToken: gitlabToken,
+				GitlabProjectId:        importResponse.ID,
+				GitlabGroupId:          h.cfg.GitlabGroupIdMicroFront,
+			}, map[string]any{
+				"variables": data,
+			},
+		)
+		if err != nil {
+			return github.ImportResponse{}, err
 		}
 	}
 
 	for {
 		time.Sleep(60 * time.Second)
-		pipeline, err := github.GetLatestPipeline(h.cfg.GitlabIntegrationToken, req.Function.Branch, importResponse.ID)
+		pipeline, err := github.GetLatestPipeline(gitlabToken, req.Function.Branch, importResponse.ID)
 		if err != nil {
 			h.services.GoObjectBuilderService().Function().Update(
 				context.Background(), &nb.Function{
-					Id:             req.Function.Id,
-					Path:           req.Function.Path,
-					Name:           req.Function.Name,
-					Description:    req.Function.Description,
-					ProjectId:      req.Function.ProjectId,
-					EnvironmentId:  req.Function.EnvironmentId,
-					Type:           req.Function.Type,
-					Url:            req.Function.Url,
-					SourceUrl:      req.Function.SourceUrl,
-					Branch:         req.Function.Branch,
-					PipelineStatus: "failed",
-					RepoId:         fmt.Sprintf("%v", importResponse.ID),
-					ErrorMessage:   "Failed to get pipeline status",
-					JobName:        "",
-					Resource:       req.Function.Resource,
-					ProvidedName:   req.Function.ProvidedName,
+					Id:               req.Function.Id,
+					Path:             req.Function.Path,
+					Name:             req.Function.Name,
+					Description:      req.Function.Description,
+					ProjectId:        req.Function.ProjectId,
+					EnvironmentId:    req.Function.EnvironmentId,
+					FunctionFolderId: req.Function.FunctionFolderId,
+					Type:             req.Function.Type,
+					Url:              req.Function.Url,
+					SourceUrl:        req.Function.SourceUrl,
+					Branch:           req.Function.Branch,
+					PipelineStatus:   "failed",
+					RepoId:           fmt.Sprintf("%v", importResponse.ID),
+					ErrorMessage:     "Failed to get pipeline status",
+					Resource:         req.Function.Resource,
+					ProvidedName:     req.Function.ProvidedName,
 				},
 			)
 
-			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
+			if err := github.DeleteRepository(gitlabToken, importResponse.ID); err != nil {
 				return github.ImportResponse{}, err
 			}
 			return github.ImportResponse{}, err
 		}
 
 		if pipeline.Status == "failed" {
-			logResp, err := github.GetPipelineLog(fmt.Sprintf("%v", importResponse.ID), h.cfg.GitlabIntegrationURL, h.cfg.GitlabIntegrationToken)
+			logResp, err := github.GetPipelineLog(fmt.Sprintf("%v", importResponse.ID), h.cfg.GitlabIntegrationURL, gitlabToken)
 			if err != nil {
 				return github.ImportResponse{}, err
 			}
@@ -638,7 +1200,7 @@ func (h *Handler) deployFunctionGo(req models.DeployFunctionRequestGo) (github.I
 				},
 			)
 
-			err = github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID)
+			err = github.DeleteRepository(gitlabToken, importResponse.ID)
 			if err != nil {
 				return github.ImportResponse{}, err
 			}
@@ -668,57 +1230,12 @@ func (h *Handler) deployFunctionGo(req models.DeployFunctionRequestGo) (github.I
 			},
 		)
 		if pipeline.Status == "success" || pipeline.Status == "skipped" {
-			if err := github.DeleteRepository(h.cfg.GitlabIntegrationToken, importResponse.ID); err != nil {
+			if err := github.DeleteRepository(gitlabToken, importResponse.ID); err != nil {
 				return github.ImportResponse{}, err
 			}
 			return github.ImportResponse{}, nil
 		}
 	}
+
+	// return github.ImportResponse{}, nil
 }
-
-// func (h *Handler) deployMicrofrontend(req models.DeployFunctionRequest) (github.ImportResponse, error) {
-// 	importResponse, err := github.ImportFromGithub(github.ImportData{
-// 		PersonalAccessToken: req.GithubToken,
-// 		RepoId:              req.RepoId,
-// 		TargetNamespace:     req.TargetNamespace,
-// 		NewName:             req.Function.Path,
-// 		GitlabToken:         h.cfg.GitlabIntegrationTokenMicroFront,
-// 	})
-// 	if err != nil {
-// 		return github.ImportResponse{}, err
-// 	}
-
-// 	_, err = gitlab.UpdateProject(gitlab.IntegrationData{
-// 		GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
-// 		GitlabIntegrationToken: h.cfg.GitlabIntegrationToken,
-// 		GitlabProjectId:        importResponse.ID,
-// 		GitlabGroupId:          h.cfg.GitlabGroupIdMicroFE,
-// 	}, map[string]any{
-// 		"ci_config_path": ".gitlab-ci.yml",
-// 	})
-// 	if err != nil {
-// 		return github.ImportResponse{}, err
-// 	}
-
-// 	var host = make(map[string]any)
-// 	host["key"] = "INGRESS_HOST"
-// 	host["value"] = req.Function.Url
-
-// 	_, err = gitlab.CreateProjectVariable(gitlab.IntegrationData{
-// 		GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
-// 		GitlabIntegrationToken: h.cfg.GitlabIntegrationToken,
-// 		GitlabProjectId:        importResponse.ID,
-// 		GitlabGroupId:          h.cfg.GitlabGroupIdMicroFE,
-// 	}, host)
-// 	if err != nil {
-// 		return github.ImportResponse{}, err
-// 	}
-
-// 	time.Sleep(3 * time.Second)
-
-// 	err = gitlab.AddFilesToRepo(h.cfg.GitlabIntegrationToken, h.cfg.PathToClone, importResponse.ID, function.Branch)
-// 	if err != nil {
-// 		return github.ImportResponse{}, err
-// 	}
-
-// }

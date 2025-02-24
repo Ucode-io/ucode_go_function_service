@@ -9,7 +9,7 @@ import (
 	"ucode/ucode_go_function_service/api/models"
 )
 
-func DoRequest(url string, method string, body interface{}) (responseModel models.InvokeFunctionResponse, err error) {
+func DoRequest(url string, method string, body any) (responseModel models.InvokeFunctionResponse, err error) {
 	data, err := json.Marshal(&body)
 	if err != nil {
 		return
@@ -40,7 +40,7 @@ func DoRequest(url string, method string, body interface{}) (responseModel model
 	return
 }
 
-func DoRequestCheckCodeServer(url string, method string, body interface{}) (status int, err error) {
+func DoRequestCheckCodeServer(url string, method string, body any) (status int, err error) {
 	data, err := json.Marshal(&body)
 	if err != nil {
 		return

@@ -15,6 +15,7 @@ import (
 	pb "ucode/ucode_go_function_service/genproto/company_service"
 	nb "ucode/ucode_go_function_service/genproto/new_object_builder_service"
 	obs "ucode/ucode_go_function_service/genproto/object_builder_service"
+	"ucode/ucode_go_function_service/pkg/github"
 	"ucode/ucode_go_function_service/pkg/gitlab"
 	"ucode/ucode_go_function_service/pkg/helper"
 	"ucode/ucode_go_function_service/pkg/util"
@@ -62,7 +63,7 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 
 	environmentId, ok := c.Get("environment_id")
 	if !ok || !util.IsValidUUID(environmentId.(string)) {
-		h.handleResponse(c, status.BadRequest, "error getting environment id | not valid")
+		h.handleResponse(c, status.InvalidArgument, "error getting environment id | not valid")
 		return
 	}
 
@@ -72,7 +73,7 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 		ctx, &pb.GetSingleServiceResourceReq{
 			ProjectId:     projectId.(string),
 			EnvironmentId: environmentId.(string),
-			ServiceType:   pb.ServiceType_FUNCTION_SERVICE,
+			ServiceType:   pb.ServiceType_BUILDER_SERVICE,
 		},
 	)
 	if err != nil {
@@ -80,27 +81,19 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 		return
 	}
 
-	environment, err := h.services.CompanyService().Environment().GetById(
-		ctx, &pb.EnvironmentPrimaryKey{
-			Id: environmentId.(string),
-		},
-	)
+	environment, err := h.services.CompanyService().Environment().GetById(ctx, &pb.EnvironmentPrimaryKey{Id: environmentId.(string)})
 	if err != nil {
 		h.handleResponse(c, status.GRPCError, err.Error())
 		return
 	}
 
-	project, err := h.services.CompanyService().Project().GetById(
-		ctx, &pb.GetProjectByIdRequest{
-			ProjectId: environment.GetProjectId(),
-		},
-	)
+	project, err := h.services.CompanyService().Project().GetById(ctx, &pb.GetProjectByIdRequest{ProjectId: environment.GetProjectId()})
 	if err != nil {
 		h.handleResponse(c, status.GRPCError, err.Error())
 		return
 	}
 
-	if project.GetTitle() == "" {
+	if len(project.GetTitle()) == 0 {
 		h.handleResponse(c, status.BadRequest, "error project name is required")
 		return
 	}
@@ -110,15 +103,15 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 
 	var (
 		functionPath   = projectName + "_" + strings.ReplaceAll(function.Path, "-", "_")
-		respCreateFork gitlab.GitlabIntegrationResponse
+		respCreateFork gitlab.ForkResponse
 	)
 
 	if function.FrameworkType == "REACT" {
 		respCreateFork, err = gitlab.CreateProjectFork(functionPath, gitlab.IntegrationData{
 			GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
-			GitlabIntegrationToken: h.cfg.GitlabIntegrationTokenMicroFront,
-			GitlabProjectId:        h.cfg.GitlabProjectIdMicroFeReact,
-			GitlabGroupId:          h.cfg.GitlabGroupIdMicroFE,
+			GitlabIntegrationToken: h.cfg.GitlabTokenMicroFront,
+			GitlabProjectId:        h.cfg.GitlabProjectIdMicroFrontReact,
+			GitlabGroupId:          h.cfg.GitlabGroupIdMicroFront,
 		})
 		if err != nil {
 			h.handleResponse(c, status.InvalidArgument, err.Error())
@@ -132,9 +125,9 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 	_, err = gitlab.UpdateProject(
 		gitlab.IntegrationData{
 			GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
-			GitlabIntegrationToken: h.cfg.GitlabIntegrationTokenMicroFront,
-			GitlabProjectId:        int(respCreateFork.Message["id"].(float64)),
-			GitlabGroupId:          h.cfg.GitlabGroupIdMicroFE,
+			GitlabIntegrationToken: h.cfg.GitlabTokenMicroFront,
+			GitlabProjectId:        respCreateFork.ID,
+			GitlabGroupId:          h.cfg.GitlabGroupIdMicroFront,
 		}, map[string]any{
 			"ci_config_path": ".gitlab-ci.yml",
 		})
@@ -145,9 +138,9 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 
 	var (
 		id       = uuid.New().String()
-		repoHost = fmt.Sprintf("%s-%s", id, h.cfg.GitlabHostMicroFE)
-		data     = make([]map[string]interface{}, 0)
-		host     = make(map[string]interface{})
+		repoHost = fmt.Sprintf("%s-%s", id, h.cfg.GitlabHostMicroFront)
+		data     = make([]map[string]any, 0)
+		host     = make(map[string]any)
 	)
 
 	host["key"] = "INGRESS_HOST"
@@ -156,9 +149,9 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 
 	_, err = gitlab.CreateProjectVariable(gitlab.IntegrationData{
 		GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
-		GitlabIntegrationToken: h.cfg.GitlabIntegrationTokenMicroFront,
-		GitlabProjectId:        int(respCreateFork.Message["id"].(float64)),
-		GitlabGroupId:          h.cfg.GitlabGroupIdMicroFE,
+		GitlabIntegrationToken: h.cfg.GitlabTokenMicroFront,
+		GitlabProjectId:        respCreateFork.ID,
+		GitlabGroupId:          h.cfg.GitlabGroupIdMicroFront,
 	}, host)
 	if err != nil {
 		h.handleResponse(c, status.InvalidArgument, err.Error())
@@ -168,9 +161,9 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 	_, err = gitlab.CreatePipeline(
 		gitlab.IntegrationData{
 			GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
-			GitlabIntegrationToken: h.cfg.GitlabIntegrationTokenMicroFront,
-			GitlabProjectId:        int(respCreateFork.Message["id"].(float64)),
-			GitlabGroupId:          h.cfg.GitlabGroupIdMicroFE,
+			GitlabIntegrationToken: h.cfg.GitlabTokenMicroFront,
+			GitlabProjectId:        respCreateFork.ID,
+			GitlabGroupId:          h.cfg.GitlabGroupIdMicroFront,
 		}, map[string]any{
 			"variables": data,
 		},
@@ -191,6 +184,9 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 			Type:             config.MICROFE,
 			Url:              repoHost,
 			FrameworkType:    function.FrameworkType,
+			RepoId:           fmt.Sprintf("%d", respCreateFork.ID),
+			Branch:           respCreateFork.DefaultBranch,
+			Resource:         function.ResourceId,
 		}
 
 		logReq = &models.CreateVersionHistoryRequest{
@@ -280,7 +276,7 @@ func (h *Handler) GetMicroFrontEndByID(c *gin.Context) {
 		ctx, &pb.GetSingleServiceResourceReq{
 			ProjectId:     projectId.(string),
 			EnvironmentId: environmentId.(string),
-			ServiceType:   pb.ServiceType_FUNCTION_SERVICE,
+			ServiceType:   pb.ServiceType_BUILDER_SERVICE,
 		},
 	)
 	if err != nil {
@@ -365,7 +361,7 @@ func (h *Handler) GetAllMicroFrontEnd(c *gin.Context) {
 		ctx, &pb.GetSingleServiceResourceReq{
 			ProjectId:     projectId.(string),
 			EnvironmentId: environmentId.(string),
-			ServiceType:   pb.ServiceType_FUNCTION_SERVICE,
+			ServiceType:   pb.ServiceType_BUILDER_SERVICE,
 		},
 	)
 	if err != nil {
@@ -381,7 +377,7 @@ func (h *Handler) GetAllMicroFrontEnd(c *gin.Context) {
 				Limit:     int32(limit),
 				Offset:    int32(offset),
 				ProjectId: resource.ResourceEnvironmentId,
-				Type:      config.MICROFE,
+				Type:      []string{config.MICROFE},
 			},
 		)
 		if err != nil {
@@ -398,7 +394,7 @@ func (h *Handler) GetAllMicroFrontEnd(c *gin.Context) {
 				Limit:     int32(limit),
 				Offset:    int32(offset),
 				ProjectId: resource.ResourceEnvironmentId,
-				Type:      config.MICROFE,
+				Type:      []string{config.MICROFE},
 			},
 		)
 		if err != nil {
@@ -455,7 +451,7 @@ func (h *Handler) UpdateMicroFrontEnd(c *gin.Context) {
 		ctx, &pb.GetSingleServiceResourceReq{
 			ProjectId:     projectId.(string),
 			EnvironmentId: environmentId.(string),
-			ServiceType:   pb.ServiceType_FUNCTION_SERVICE,
+			ServiceType:   pb.ServiceType_BUILDER_SERVICE,
 		},
 	)
 	if err != nil {
@@ -571,7 +567,7 @@ func (h *Handler) DeleteMicroFrontEnd(c *gin.Context) {
 		ctx, &pb.GetSingleServiceResourceReq{
 			ProjectId:     projectId.(string),
 			EnvironmentId: environmentId.(string),
-			ServiceType:   pb.ServiceType_FUNCTION_SERVICE,
+			ServiceType:   pb.ServiceType_BUILDER_SERVICE,
 		},
 	)
 	if err != nil {
@@ -585,7 +581,7 @@ func (h *Handler) DeleteMicroFrontEnd(c *gin.Context) {
 		resp, err = h.services.GetBuilderServiceByType(resource.NodeType).Function().GetSingle(
 			ctx, &obs.FunctionPrimaryKey{
 				Id:        functionID,
-				ProjectId: environmentId.(string),
+				ProjectId: resource.ResourceEnvironmentId,
 			},
 		)
 		if err != nil {
@@ -596,7 +592,7 @@ func (h *Handler) DeleteMicroFrontEnd(c *gin.Context) {
 		goResp, err := h.services.GoObjectBuilderService().Function().GetSingle(
 			ctx, &nb.FunctionPrimaryKey{
 				Id:        functionID,
-				ProjectId: environmentId.(string),
+				ProjectId: resource.ResourceEnvironmentId,
 			},
 		)
 		if err != nil {
@@ -643,9 +639,15 @@ func (h *Handler) DeleteMicroFrontEnd(c *gin.Context) {
 		}
 	}()
 
+	err = github.DeleteRepository(h.cfg.GitlabTokenMicroFront, cast.ToInt(resp.RepoId))
+	if err != nil {
+		h.handleResponse(c, status.InternalServerError, err.Error())
+		return
+	}
+
 	switch resource.ResourceType {
 	case pb.ResourceType_MONGODB:
-		_, err = h.services.GetBuilderServiceByType(resource.NodeType).Function().Delete(
+		resp, err := h.services.GetBuilderServiceByType(resource.NodeType).Function().Delete(
 			ctx, &obs.FunctionPrimaryKey{
 				Id:        functionID,
 				ProjectId: resource.ResourceEnvironmentId,
@@ -655,8 +657,9 @@ func (h *Handler) DeleteMicroFrontEnd(c *gin.Context) {
 			h.handleResponse(c, status.GRPCError, err.Error())
 			return
 		}
+		h.handleResponse(c, status.NoContent, resp)
 	case pb.ResourceType_POSTGRESQL:
-		_, err = h.services.GoObjectBuilderService().Function().Delete(
+		resp, err := h.services.GoObjectBuilderService().Function().Delete(
 			ctx, &nb.FunctionPrimaryKey{
 				Id:        functionID,
 				ProjectId: resource.ResourceEnvironmentId,
@@ -666,7 +669,6 @@ func (h *Handler) DeleteMicroFrontEnd(c *gin.Context) {
 			h.handleResponse(c, status.GRPCError, err.Error())
 			return
 		}
+		h.handleResponse(c, status.NoContent, resp)
 	}
-
-	h.handleResponse(c, status.NoContent, empty.Empty{})
 }

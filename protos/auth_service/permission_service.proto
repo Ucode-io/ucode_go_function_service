@@ -30,6 +30,7 @@ service PermissionService {
     rpc AddRolePermissions(AddRolePermissionsRequest) returns (AddRolePermissionsResponse) {}
     rpc RemoveRolePermission(RolePermissionPrimaryKey) returns (RolePermission) {}
     rpc PermissionList(PermissionGenerated) returns(google.protobuf.Empty) {}
+    
     //V2
     rpc V2GetRoleById(V2RolePrimaryKey) returns (CommonMessage) {}
     rpc V2GetRolesList(V2GetRolesListRequest) returns (CommonMessage) {}
@@ -238,6 +239,7 @@ message V2GetRolesListRequest {
     string node_type = 7;
     string resource_environment_id = 8;
     bool status = 9;
+    bool from_permission = 10;
 }
 
 message V2AddRoleRequest {

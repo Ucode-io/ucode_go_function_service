@@ -19,7 +19,7 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 
 	r.Use(customCORSMiddleware())
 
-	v1 := r.Group("/v")
+	v1 := r.Group("/v1")
 	v1.Use(h.AuthMiddleware(cfg))
 
 	// @securityDefinitions.apikey ApiKeyAuth
@@ -40,12 +40,20 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 		invokeFunction.POST("/:function-path", h.InvokeFunctionByPath)
 	}
 
-	github := r.Group("/github")
+	github := v1.Group("/github")
 	{
 		github.GET("/login", h.GithubLogin)
 		github.GET("/user", h.GithubGetUser)
 		github.GET("/repos", h.GithubGetRepos)
 		github.GET("/branches", h.GithubGetBranches)
+	}
+
+	gitlab := v1.Group("/gitlab")
+	{
+		gitlab.GET("/login", h.GitlabLogin)
+		gitlab.GET("/user", h.GitlabGetUser)
+		gitlab.GET("/repos", h.GitlabGetRepos)
+		gitlab.GET("/branches", h.GitlabGetBranches)
 	}
 
 	v2 := r.Group("/v2")
@@ -105,36 +113,6 @@ func customCORSMiddleware() gin.HandlerFunc {
 			c.AbortWithStatus(204)
 			return
 		}
-
-		c.Next()
-	}
-}
-
-func MaxAllowed(n int) gin.HandlerFunc {
-	var (
-		countReq int64
-		sem      = make(chan struct{}, n)
-		acquire  = func() {
-			sem <- struct{}{}
-			countReq++
-		}
-		release = func() {
-			select {
-			case <-sem:
-			default:
-			}
-			countReq--
-		}
-	)
-
-	return func(c *gin.Context) {
-		go func() {
-			acquire()       // before request
-			defer release() // after request
-
-			c.Set("sem", sem)
-			c.Set("count_request", countReq)
-		}()
 
 		c.Next()
 	}

@@ -1,4 +1,3 @@
-
 # About
 OpenFaaS (Function as a Service) is an open-source framework for building serverless functions that can run in containers. It allows developers to deploy and manage event-driven functions easily on any cloud or on-premises environment using Kubernetes or Docker. OpenFaaS simplifies scaling, monitoring, and managing functions, enabling a quick and efficient development of microservices and event-driven applications.
 

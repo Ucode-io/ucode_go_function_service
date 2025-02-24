@@ -484,12 +484,12 @@ type GetAllFunctionsRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Search        string `protobuf:"bytes,1,opt,name=search,proto3" json:"search,omitempty"`
-	Limit         int32  `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
-	Offset        int32  `protobuf:"varint,3,opt,name=offset,proto3" json:"offset,omitempty"`
-	ProjectId     string `protobuf:"bytes,4,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
-	EnvironmentId string `protobuf:"bytes,5,opt,name=environment_id,json=environmentId,proto3" json:"environment_id,omitempty"`
-	Type          string `protobuf:"bytes,6,opt,name=type,proto3" json:"type,omitempty"`
+	Search        string   `protobuf:"bytes,1,opt,name=search,proto3" json:"search,omitempty"`
+	Limit         int32    `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
+	Offset        int32    `protobuf:"varint,3,opt,name=offset,proto3" json:"offset,omitempty"`
+	ProjectId     string   `protobuf:"bytes,4,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	EnvironmentId string   `protobuf:"bytes,5,opt,name=environment_id,json=environmentId,proto3" json:"environment_id,omitempty"`
+	Type          []string `protobuf:"bytes,6,rep,name=type,proto3" json:"type,omitempty"`
 }
 
 func (x *GetAllFunctionsRequest) Reset() {
@@ -557,11 +557,11 @@ func (x *GetAllFunctionsRequest) GetEnvironmentId() string {
 	return ""
 }
 
-func (x *GetAllFunctionsRequest) GetType() string {
+func (x *GetAllFunctionsRequest) GetType() []string {
 	if x != nil {
 		return x.Type
 	}
-	return ""
+	return nil
 }
 
 type GetAllFunctionsResponse struct {
@@ -1041,7 +1041,7 @@ var file_function_proto_rawDesc = []byte{
 	0x28, 0x09, 0x52, 0x09, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x49, 0x64, 0x12, 0x25, 0x0a,
 	0x0e, 0x65, 0x6e, 0x76, 0x69, 0x72, 0x6f, 0x6e, 0x6d, 0x65, 0x6e, 0x74, 0x5f, 0x69, 0x64, 0x18,
 	0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x65, 0x6e, 0x76, 0x69, 0x72, 0x6f, 0x6e, 0x6d, 0x65,
-	0x6e, 0x74, 0x49, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x18, 0x06, 0x20, 0x01,
+	0x6e, 0x74, 0x49, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x18, 0x06, 0x20, 0x03,
 	0x28, 0x09, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x22, 0x6f, 0x0a, 0x17, 0x47, 0x65, 0x74, 0x41,
 	0x6c, 0x6c, 0x46, 0x75, 0x6e, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
 	0x6e, 0x73, 0x65, 0x12, 0x3e, 0x0a, 0x09, 0x66, 0x75, 0x6e, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x73,
