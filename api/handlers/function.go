@@ -381,12 +381,13 @@ func (h *Handler) GetAllFunctions(c *gin.Context) {
 	case pb.ResourceType_MONGODB:
 		resp, err := h.services.GetBuilderServiceByType(resource.NodeType).Function().GetList(
 			ctx, &obs.GetAllFunctionsRequest{
-				Search:        c.DefaultQuery("search", ""),
+				Search:        c.Query("search"),
 				Limit:         int32(limit),
 				Offset:        int32(offset),
 				ProjectId:     resource.ResourceEnvironmentId,
 				EnvironmentId: environment.GetId(),
 				Type:          []string{config.FUNCTION, config.KNATIVE},
+				FunctionId:    c.Query("function_id"),
 			},
 		)
 		if err != nil {
@@ -398,12 +399,13 @@ func (h *Handler) GetAllFunctions(c *gin.Context) {
 	case pb.ResourceType_POSTGRESQL:
 		resp, err := h.services.GoObjectBuilderService().Function().GetList(
 			ctx, &nb.GetAllFunctionsRequest{
-				Search:        c.DefaultQuery("search", ""),
+				Search:        c.Query("search"),
 				Limit:         int32(limit),
 				Offset:        int32(offset),
 				ProjectId:     resource.ResourceEnvironmentId,
 				EnvironmentId: environment.GetId(),
 				Type:          []string{config.FUNCTION, config.KNATIVE},
+				FunctionId:    c.Query("function_id"),
 			},
 		)
 		if err != nil {
