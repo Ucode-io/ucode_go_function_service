@@ -142,6 +142,7 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 		uuid         = uuid.New()
 		url          = "https://" + uuid.String() + ".u-code.io"
 		resp         gitlab.ForkResponse
+		gitlabToken  string
 	)
 
 	switch function.Type {
@@ -156,6 +157,7 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 			h.handleResponse(c, status.InvalidArgument, err.Error())
 			return
 		}
+		gitlabToken = h.cfg.GitlabOpenFassToken
 	case config.KNATIVE:
 		resp, err = gitlab.CreateProjectFork(functionPath, gitlab.IntegrationData{
 			GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
@@ -167,6 +169,7 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 			h.handleResponse(c, status.InvalidArgument, err.Error())
 			return
 		}
+		gitlabToken = h.cfg.GitlabKnativeToken
 	default:
 		h.handleResponse(c, status.BadRequest, "not supported function type")
 		return
@@ -204,6 +207,7 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 		response, err := h.services.GetBuilderServiceByType(resource.NodeType).Function().Create(ctx, createFunction)
 		if err != nil {
 			logReq.Response = err.Error()
+			github.DeleteRepository(gitlabToken, cast.ToInt(resp.ID))
 			h.handleResponse(c, status.GRPCError, err.Error())
 		} else {
 			logReq.Response = response
@@ -222,6 +226,7 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 		response, err := h.services.GoObjectBuilderService().Function().Create(ctx, newCreateFunction)
 		if err != nil {
 			logReq.Response = err.Error()
+			github.DeleteRepository(gitlabToken, cast.ToInt(resp.ID))
 			h.handleResponse(c, status.GRPCError, err.Error())
 		} else {
 			logReq.Response = response
