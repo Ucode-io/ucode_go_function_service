@@ -148,6 +148,7 @@ message CreateResourceReq {
     string node_type = 6;
     string client_type_id = 7;
     string role_id = 8;
+    string name = 9;
 }
 
 message CreateResourceRes {

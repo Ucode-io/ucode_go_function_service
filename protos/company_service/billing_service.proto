@@ -41,6 +41,9 @@ service BillingService {
     rpc ListProjectCards(ListRequest) returns (ListProjectCardsResponse);
     rpc ReceiptPay(ReceiptPayRequest) returns (ReceiptPayResponse);
     rpc DeleteProjectCard(PrimaryKey) returns (google.protobuf.Empty);
+
+    //Discount
+    rpc ListDiscounts(ListRequest) returns (ListDiscountsResponse);
 }
 
 message CompareFunctionRequest {
@@ -259,4 +262,15 @@ message CalculatePriceResponse {
     double project_balance = 2;
     double credit_limit = 3;
     double discount_percentage = 4;
+}
+
+message Discount {
+    string id = 1;
+    int32 months = 2;
+    double value = 3;
+}
+
+message ListDiscountsResponse {
+    repeated Discount discounts = 1;
+    int32 count = 2;
 }

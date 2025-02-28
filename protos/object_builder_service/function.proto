@@ -78,6 +78,7 @@ message GetAllFunctionsRequest {
     string project_id = 4;
     string environment_id = 5;
     repeated string type = 6;
+    string function_id = 7;
 }
 
 message GetAllFunctionsResponse {
