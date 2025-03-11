@@ -51,6 +51,7 @@ type DeployFunctionRequest struct {
 	IsGitlab        bool
 	SourcheFullPath string
 	Function        *obs.Function
+	GitlabBaseURL   string
 }
 
 type DeployFunctionRequestGo struct {
@@ -61,4 +62,5 @@ type DeployFunctionRequestGo struct {
 	IsGitlab        bool
 	SourcheFullPath string
 	Function        *nb.Function
+	GitlabBaseURL   string
 }

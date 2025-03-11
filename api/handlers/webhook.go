@@ -31,6 +31,7 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 		createWebhookRequest models.CreateWebhook
 		createFunction       *obs.CreateFunctionRequest
 		exists               bool
+		gitlabBaseURL        string
 	)
 
 	ctx, cancel := context.WithCancel(c.Request.Context())
@@ -104,6 +105,7 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 		createWebhookRequest.RefreshToken = integrationResource.GetSettings().GetGitlab().GetRefreshToken()
 		createWebhookRequest.ExpiresIn = integrationResource.GetSettings().GetGitlab().GetExpiresIn()
 		createWebhookRequest.CreatedAt = integrationResource.GetSettings().GetGitlab().GetCreatedAt()
+		gitlabBaseURL = integrationResource.GetSettings().GetGitlab().GetBaseUrl()
 	}
 
 	if createWebhookRequest.RepoName == "" || createWebhookRequest.Username == "" {
@@ -112,17 +114,16 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 	}
 
 	createFunction = &obs.CreateFunctionRequest{
-		Path:          createWebhookRequest.RepoName,
-		Name:          createWebhookRequest.RepoName,
-		Description:   createWebhookRequest.RepoName,
-		RepoId:        fmt.Sprintf("%d", createWebhookRequest.RepoId),
-		ProjectId:     resource.ResourceEnvironmentId,
-		EnvironmentId: resource.EnvironmentId,
-		Type:          createWebhookRequest.FunctionType,
-		FrameworkType: createWebhookRequest.FrameworkType,
-		Url:           "",
-		Branch:        createWebhookRequest.Branch,
-		// SourceUrl: ,
+		Path:           createWebhookRequest.RepoName,
+		Name:           createWebhookRequest.RepoName,
+		Description:    createWebhookRequest.RepoName,
+		RepoId:         fmt.Sprintf("%d", createWebhookRequest.RepoId),
+		ProjectId:      resource.ResourceEnvironmentId,
+		EnvironmentId:  resource.EnvironmentId,
+		Type:           createWebhookRequest.FunctionType,
+		FrameworkType:  createWebhookRequest.FrameworkType,
+		Url:            "",
+		Branch:         createWebhookRequest.Branch,
 		PipelineStatus: "running",
 		Resource:       createWebhookRequest.Resource,
 	}
@@ -145,13 +146,13 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 			Token:      createWebhookRequest.GithubToken,
 			RepoId:     createWebhookRequest.RepoId,
 			ProjectUrl: h.cfg.ProjectUrl,
-			BaseUrl:    h.cfg.GitlabBaseUrlIntegration,
+			BaseUrl:    gitlabBaseURL,
 		})
 		if err != nil {
 			h.handleResponse(c, status.InternalServerError, err.Error())
 			return
 		}
-		createFunction.SourceUrl = fmt.Sprintf("https://gitlab.com/%s/%s", createWebhookRequest.Username, createWebhookRequest.RepoName)
+		createFunction.SourceUrl = fmt.Sprintf("%s/%s/%s", gitlabBaseURL, createWebhookRequest.Username, createWebhookRequest.RepoName)
 	}
 
 	if exists {
@@ -207,7 +208,7 @@ func (h *Handler) CreateWebhook(c *gin.Context) {
 	case pb.ResourceType_GITLAB.String():
 		err = gitlab.CreateWebhook(gitlab.WebhookConfig{
 			ProjectUrl:    h.cfg.ProjectUrl,
-			BaseUrl:       h.cfg.GitlabBaseUrlIntegration,
+			BaseUrl:       gitlabBaseURL,
 			RepoId:        createWebhookRequest.RepoId,
 			ResourceId:    createWebhookRequest.Resource,
 			EnvironmentId: environmentId.(string),
@@ -254,11 +255,6 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		h.handleResponse(c, status.InvalidArgument, "project resource id is an invalid uuid")
 		return
 	}
-
-	// if !(github.VerifySignature(c.GetHeader("X-Hub-Signature"), body, []byte(h.cfg.WebhookSecret))) {
-	// 	h.handleResponse(c, status.BadRequest, "failed to verify signature")
-	// 	return
-	// }
 
 	projectResource, err := h.services.CompanyService().Resource().GetSingleProjectResouece(
 		c.Request.Context(), &pb.PrimaryKeyProjectResource{
@@ -554,14 +550,15 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 		repoName        = cast.ToString(gitlabProject["name"])
 		repoDescription = cast.ToString(gitlabProject["description"])
 
-		token        = projectResource.GetSettings().GetGitlab().GetToken()
-		createdAt    = projectResource.GetSettings().GetGitlab().GetCreatedAt()
-		expiresIn    = projectResource.GetSettings().GetGitlab().GetExpiresIn()
-		refreshToken = projectResource.GetSettings().GetGitlab().GetRefreshToken()
-		functionType string
-		resourceType string
-		name         string
-		err          error
+		token         = projectResource.GetSettings().GetGitlab().GetToken()
+		createdAt     = projectResource.GetSettings().GetGitlab().GetCreatedAt()
+		expiresIn     = projectResource.GetSettings().GetGitlab().GetExpiresIn()
+		refreshToken  = projectResource.GetSettings().GetGitlab().GetRefreshToken()
+		gitlabBaseURL = projectResource.GetSettings().GetGitlab().GetBaseUrl()
+		functionType  string
+		resourceType  string
+		name          string
+		err           error
 	)
 
 	if gitlab.IsExpired(createdAt, expiresIn) {
@@ -649,6 +646,7 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 				TargetNamespace: config.OpenFassNamespace,
 				IsGitlab:        true,
 				SourcheFullPath: sourceFullPath,
+				GitlabBaseURL:   gitlabBaseURL,
 			})
 		case cfg.KNATIVE:
 			if functionErr != nil {
@@ -683,6 +681,7 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 					TargetNamespace: cfg.KnativeNamespace,
 					IsGitlab:        true,
 					SourcheFullPath: sourceFullPath,
+					GitlabBaseURL:   gitlabBaseURL,
 				},
 			)
 		case cfg.MICROFE:
@@ -717,6 +716,7 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 					TargetNamespace: cfg.MicroFrontNamaspece,
 					IsGitlab:        true,
 					SourcheFullPath: sourceFullPath,
+					GitlabBaseURL:   gitlabBaseURL,
 				},
 			)
 		}
@@ -765,6 +765,7 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 				TargetNamespace: cfg.OpenFassNamespace,
 				IsGitlab:        true,
 				SourcheFullPath: sourceFullPath,
+				GitlabBaseURL:   gitlabBaseURL,
 			})
 		case cfg.KNATIVE:
 			if functionErr != nil {
@@ -798,6 +799,7 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 					TargetNamespace: cfg.KnativeNamespace,
 					IsGitlab:        true,
 					SourcheFullPath: sourceFullPath,
+					GitlabBaseURL:   gitlabBaseURL,
 				},
 			)
 		case cfg.MICROFE:
@@ -832,6 +834,7 @@ func (h *Handler) HandleWebHookGitlab(c *gin.Context, projectResource *pb.Projec
 					TargetNamespace: cfg.MicroFrontNamaspece,
 					IsGitlab:        true,
 					SourcheFullPath: sourceFullPath,
+					GitlabBaseURL:   gitlabBaseURL,
 				},
 			)
 		}
@@ -845,20 +848,31 @@ func (h *Handler) deployFunction(req models.DeployFunctionRequest) (github.Impor
 		gitlabToken    string
 		importResponse github.ImportResponse
 		err            error
+		gitlabGroupId  int
 	)
 
 	switch req.Function.Type {
 	case cfg.FUNCTION:
 		gitlabToken = h.cfg.GitlabOpenFassToken
+		gitlabGroupId = h.cfg.GitlabOpenFassGroupId
 	case cfg.KNATIVE:
 		gitlabToken = h.cfg.GitlabKnativeToken
+		gitlabGroupId = h.cfg.GitlabKnativeGroupId
 	case cfg.MICROFE:
 		gitlabToken = h.cfg.GitlabTokenMicroFront
+		gitlabGroupId = h.cfg.GitlabGroupIdMicroFront
 	}
 
 	if req.IsGitlab {
-		importResponse, err = gitlab.ImportFromGitlabCom(gitlab.ImportData{
-			GitlabToken: gitlabToken,
+		importResponse, err = gitlab.ImportFromGitLab(gitlab.ImportData{
+			PersonalAccessToken: req.GithubToken,
+			RepoId:              req.RepoId,
+			TargetNamespace:     req.TargetNamespace,
+			NewName:             req.Function.Path,
+			GitlabToken:         gitlabToken,
+			SourceFullPath:      req.SourcheFullPath,
+			GitlabGroupId:       gitlabGroupId,
+			GitlabBaseURL:       req.GitlabBaseURL,
 		})
 		if err != nil {
 			return github.ImportResponse{}, err
@@ -1063,6 +1077,7 @@ func (h *Handler) deployFunctionGo(req models.DeployFunctionRequestGo) (github.I
 			GitlabToken:         gitlabToken,
 			SourceFullPath:      req.SourcheFullPath,
 			GitlabGroupId:       gitlabGroupId,
+			GitlabBaseURL:       req.GitlabBaseURL,
 		})
 		if err != nil {
 			return github.ImportResponse{}, err
@@ -1236,6 +1251,4 @@ func (h *Handler) deployFunctionGo(req models.DeployFunctionRequestGo) (github.I
 			return github.ImportResponse{}, nil
 		}
 	}
-
-	// return github.ImportResponse{}, nil
 }

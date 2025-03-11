@@ -233,6 +233,7 @@ message Project {
     Fare fare = 15;
     string status = 16;
     bool new_design = 17;
+    string expire_date = 18;
 }
 
 message CreateProjectRequest {

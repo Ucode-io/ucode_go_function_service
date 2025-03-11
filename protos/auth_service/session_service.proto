@@ -90,6 +90,7 @@ message Project2 {
     repeated Currency currencies = 9;
     bool new_design = 10;
     string status = 11;
+    string expire_date = 12;
 }
 
 message Company2 {

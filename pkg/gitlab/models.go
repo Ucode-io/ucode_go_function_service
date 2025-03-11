@@ -41,9 +41,10 @@ type (
 	}
 
 	GitLabTokenRequest struct {
-		ClinetId     string `json:"client_id"`
-		ClientSecret string `json:"client_secret"`
-		RefreshToken string `json:"refresh_token"`
+		ClinetId      string `json:"client_id"`
+		ClientSecret  string `json:"client_secret"`
+		RefreshToken  string `json:"refresh_token"`
+		GitlabBaseURL string `json:"-"`
 	}
 
 	GitLabTokenResponse struct {
@@ -91,6 +92,7 @@ type ImportData struct {
 	GitlabToken         string `json:"gitlab_token"`
 	SourceFullPath      string `json:"source_full_path"`
 	GitlabGroupId       int    `json:"-"`
+	GitlabBaseURL       string `json:"-"`
 }
 
 type ImportResponse struct {
