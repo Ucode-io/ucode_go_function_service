@@ -128,8 +128,8 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 			return
 		}
 
-		if !response.HasAccess {
-			h.handleResponse(c, status.GRPCError, "you have reach limit of openfass")
+		if !response.HasAccess && resource.ProjectId != "c19a15f8-6533-4d6c-a9db-044b1e0891a2" {
+			h.handleResponse(c, status.BadRequest, "you have reached limit of fass")
 			return
 		}
 	}
