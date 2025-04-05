@@ -1108,7 +1108,7 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 		functionType = function.Type
 
 		if !permission && !function.GetIsPublic() {
-			h.handleResponse(c, status_http.Unauthorized, "you don't have permission to access this function")
+			h.handleResponse(c, status_http.Unauthorized, config.AccessDeniedError)
 			return
 		}
 	case pb.ResourceType_POSTGRESQL:
@@ -1126,9 +1126,24 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 		functionType = function.Type
 
 		if !permission && !function.GetIsPublic() {
-			h.handleResponse(c, status_http.Unauthorized, "you don't have permission to access this function")
+			h.handleResponse(c, status_http.Unauthorized, config.AccessDeniedError)
 			return
 		}
+	}
+
+	apiKeys, err := h.services.AuthService().ApiKey().GetList(c.Request.Context(), &as.GetListReq{
+		EnvironmentId: environmentId.(string),
+		ProjectId:     resource.ProjectId,
+		Limit:         1,
+		Offset:        0,
+	})
+	if err != nil {
+		h.handleResponse(c, status.GRPCError, err.Error())
+		return
+	}
+	if len(apiKeys.Data) < 1 {
+		h.handleResponse(c, status.InvalidArgument, "Api key not found")
+		return
 	}
 
 	authInfo, _ := h.GetAuthInfo(c)
@@ -1136,6 +1151,7 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 	invokeFunction.Data["user_id"] = authInfo.GetUserId()
 	invokeFunction.Data["project_id"] = authInfo.GetProjectId()
 	invokeFunction.Data["environment_id"] = authInfo.GetEnvId()
+	invokeFunction.Data["app_id"] = apiKeys.GetData()[0].GetAppId()
 	request := models.NewInvokeFunctionRequest{Data: invokeFunction.Data}
 
 	resp, err := function.FuncHandlers[functionType](path, h.cfg, request)

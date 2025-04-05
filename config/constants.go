@@ -38,6 +38,8 @@ const (
 	// Fare Types
 	FARE_FUNCTION      string = "function"
 	FARE_MICROFRONTEND string = "microfrontend"
+)
 
-	PUBLIC_STATUS = "unapproved"
+const (
+	AccessDeniedError = "you don't have permission to access this function"
 )
