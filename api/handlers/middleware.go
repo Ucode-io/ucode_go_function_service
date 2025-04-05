@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
 	"ucode/ucode_go_function_service/api/models"
 	"ucode/ucode_go_function_service/api/status_http"
 	"ucode/ucode_go_function_service/config"
@@ -23,12 +24,26 @@ import (
 func (h *Handler) AuthMiddleware(cfg config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var (
-			res         = &as.V2HasAccessUserRes{}
-			bearerToken = c.GetHeader("Authorization")
-			app_id      = c.GetHeader("X-API-KEY")
-			strArr      = strings.Split(bearerToken, " ")
-			ok          bool
+			res                                  = &as.V2HasAccessUserRes{}
+			bearerToken                          = c.GetHeader("Authorization")
+			app_id                               = c.GetHeader("X-API-KEY")
+			strArr                               = strings.Split(bearerToken, " ")
+			ok                                   bool
+			resourceId, environmentId, projectId string
 		)
+
+		if len(bearerToken) == 0 {
+			environmentId = c.GetHeader("Environment-Id")
+			projectId = c.Query("project-id")
+
+			c.Set("Auth", &as.V2HasAccessUserRes{ProjectId: projectId, EnvId: environmentId})
+			c.Set("environment_id", environmentId)
+			c.Set("access", false)
+			c.Set("project_id", projectId)
+			c.Next()
+
+			return
+		}
 
 		if len(strArr) < 1 && (strArr[0] != "Bearer" && strArr[0] != "API-KEY") {
 			h.log.Error("---ERR->Unexpected token format")
@@ -45,11 +60,9 @@ func (h *Handler) AuthMiddleware(cfg config.Config) gin.HandlerFunc {
 				return
 			}
 
-			var (
-				resourceId    = c.GetHeader("Resource-Id")
-				environmentId = c.GetHeader("Environment-Id")
-				projectId     = c.Query("project-id")
-			)
+			resourceId = c.GetHeader("Resource-Id")
+			environmentId = c.GetHeader("Environment-Id")
+			projectId = c.Query("project-id")
 
 			if res.ProjectId != "" {
 				projectId = res.ProjectId
@@ -58,9 +71,6 @@ func (h *Handler) AuthMiddleware(cfg config.Config) gin.HandlerFunc {
 				environmentId = res.EnvId
 			}
 
-			c.Set("resource_id", resourceId)
-			c.Set("environment_id", environmentId)
-			c.Set("project_id", projectId)
 			c.Set("user_id", res.UserIdAuth)
 		case "API-KEY":
 			if app_id == "" {
@@ -205,24 +215,26 @@ func (h *Handler) AuthMiddleware(cfg config.Config) gin.HandlerFunc {
 				return
 			}
 
+			resourceId = resource.GetResource().GetId()
+			environmentId = apikeys.GetEnvironmentId()
+			projectId = apikeys.GetProjectId()
+
 			c.Set("auth", models.AuthData{Type: "API-KEY", Data: data})
-			c.Set("resource_id", resource.GetResource().GetId())
-			c.Set("environment_id", apikeys.GetEnvironmentId())
-			c.Set("project_id", apikeys.GetProjectId())
 			c.Set("resource", string(resourceBody))
 		default:
 			if !strings.Contains(c.Request.URL.Path, "api") {
 				err := errors.New("error invalid authorization method")
-				h.log.Error("--AuthMiddleware--", logger.Error(err))
 				h.handleResponse(c, status_http.BadRequest, err.Error())
 				c.Abort()
 			} else {
-				err := errors.New("error invalid authorization method")
-				h.log.Error("--AuthMiddleware--", logger.Error(err))
 				h.handleResponse(c, status_http.Unauthorized, "The request requires an user authentication.")
 				c.Abort()
 			}
 		}
+
+		c.Set("resource_id", resourceId)
+		c.Set("environment_id", environmentId)
+		c.Set("project_id", projectId)
 		c.Set("Auth", res)
 		c.Next()
 	}

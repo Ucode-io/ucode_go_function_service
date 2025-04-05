@@ -38,4 +38,6 @@ const (
 	// Fare Types
 	FARE_FUNCTION      string = "function"
 	FARE_MICROFRONTEND string = "microfrontend"
+
+	PUBLIC_STATUS = "unapproved"
 )

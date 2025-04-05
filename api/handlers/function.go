@@ -7,8 +7,10 @@ import (
 	"net/http"
 	"strings"
 	"ucode/ucode_go_function_service/api/models"
+	"ucode/ucode_go_function_service/api/status_http"
 	status "ucode/ucode_go_function_service/api/status_http"
 	"ucode/ucode_go_function_service/config"
+	"ucode/ucode_go_function_service/function"
 	as "ucode/ucode_go_function_service/genproto/auth_service"
 	pb "ucode/ucode_go_function_service/genproto/company_service"
 	nb "ucode/ucode_go_function_service/genproto/new_object_builder_service"
@@ -1047,7 +1049,12 @@ func (h *Handler) InvokeFunction(c *gin.Context) {
 // @Response 400 {object} status.Response{data=string} "Bad Request"
 // @Failure 500 {object} status.Response{data=string} "Server Error"
 func (h *Handler) InvokeFuncByPath(c *gin.Context) {
-	var invokeFunction models.CommonMessage
+	var (
+		invokeFunction models.CommonMessage
+		path           = c.Param("function-path")
+		functionType   string
+		permission     bool = true
+	)
 
 	if err := c.ShouldBindJSON(&invokeFunction); err != nil {
 		h.handleResponse(c, status.BadRequest, err.Error())
@@ -1067,6 +1074,11 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 		return
 	}
 
+	access, exists := c.Get("access")
+	if exists {
+		permission = access.(bool)
+	}
+
 	resource, err := h.services.CompanyService().ServiceResource().GetSingle(
 		c.Request.Context(),
 		&pb.GetSingleServiceResourceReq{
@@ -1080,17 +1092,43 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 		return
 	}
 
-	apiKeys, err := h.services.AuthService().ApiKey().GetList(c.Request.Context(), &as.GetListReq{
-		EnvironmentId: environmentId.(string),
-		ProjectId:     resource.ProjectId,
-	})
-	if err != nil {
-		h.handleResponse(c, status.GRPCError, err.Error())
-		return
-	}
-	if len(apiKeys.Data) < 1 {
-		h.handleResponse(c, status.InvalidArgument, "Api key not found")
-		return
+	switch resource.ResourceType {
+	case pb.ResourceType_MONGODB:
+		function, err := h.services.GetBuilderServiceByType(resource.NodeType).Function().GetSingle(
+			c.Request.Context(), &obs.FunctionPrimaryKey{
+				ProjectId: resource.ResourceEnvironmentId,
+				Path:      path,
+			},
+		)
+		if err != nil {
+			h.handleResponse(c, status_http.GRPCError, err.Error())
+			return
+		}
+
+		functionType = function.Type
+
+		if !permission && !function.GetIsPublic() {
+			h.handleResponse(c, status_http.Unauthorized, "you don't have permission to access this function")
+			return
+		}
+	case pb.ResourceType_POSTGRESQL:
+		function, err := h.services.GoObjectBuilderService().Function().GetSingle(
+			c.Request.Context(), &nb.FunctionPrimaryKey{
+				ProjectId: resource.ResourceEnvironmentId,
+				Path:      path,
+			},
+		)
+		if err != nil {
+			h.handleResponse(c, status_http.GRPCError, err.Error())
+			return
+		}
+
+		functionType = function.Type
+
+		if !permission && !function.GetIsPublic() {
+			h.handleResponse(c, status_http.Unauthorized, "you don't have permission to access this function")
+			return
+		}
 	}
 
 	authInfo, _ := h.GetAuthInfo(c)
@@ -1098,12 +1136,9 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 	invokeFunction.Data["user_id"] = authInfo.GetUserId()
 	invokeFunction.Data["project_id"] = authInfo.GetProjectId()
 	invokeFunction.Data["environment_id"] = authInfo.GetEnvId()
-	invokeFunction.Data["app_id"] = apiKeys.GetData()[0].GetAppId()
+	request := models.NewInvokeFunctionRequest{Data: invokeFunction.Data}
 
-	url := fmt.Sprintf("http://%s.%s", c.Param("function-path"), h.cfg.KnativeBaseUrl)
-	resp, err := util.DoRequest(url, http.MethodPost, models.NewInvokeFunctionRequest{
-		Data: invokeFunction.Data,
-	})
+	resp, err := function.FuncHandlers[functionType](path, h.cfg, request)
 	if err != nil {
 		h.handleResponse(c, status.InvalidArgument, err.Error())
 		return

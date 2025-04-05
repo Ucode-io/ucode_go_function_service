@@ -196,6 +196,9 @@ message GlobalPermission {
     bool version_button = 13;
     bool project_button = 14;
     bool sms_button = 15;
+    bool gitbook_button = 16;
+    bool chatwoot_button = 17;
+    bool gpt_button = 18;
 }
 
 message GetListWithRoleAppTablePermissionsResponse {

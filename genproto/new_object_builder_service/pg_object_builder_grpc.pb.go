@@ -33,6 +33,7 @@ const (
 	ObjectBuilderService_GetListForDocx_FullMethodName            = "/new_object_builder_service.ObjectBuilderService/GetListForDocx"
 	ObjectBuilderService_GetAllForDocx_FullMethodName             = "/new_object_builder_service.ObjectBuilderService/GetAllForDocx"
 	ObjectBuilderService_GetAllFieldsForDocx_FullMethodName       = "/new_object_builder_service.ObjectBuilderService/GetAllFieldsForDocx"
+	ObjectBuilderService_GetListAggregation_FullMethodName        = "/new_object_builder_service.ObjectBuilderService/GetListAggregation"
 	ObjectBuilderService_AgGridTree_FullMethodName                = "/new_object_builder_service.ObjectBuilderService/AgGridTree"
 )
 
@@ -54,6 +55,7 @@ type ObjectBuilderServiceClient interface {
 	GetListForDocx(ctx context.Context, in *CommonForDocxMessage, opts ...grpc.CallOption) (*CommonMessage, error)
 	GetAllForDocx(ctx context.Context, in *CommonMessage, opts ...grpc.CallOption) (*CommonMessage, error)
 	GetAllFieldsForDocx(ctx context.Context, in *CommonMessage, opts ...grpc.CallOption) (*CommonMessage, error)
+	GetListAggregation(ctx context.Context, in *CommonMessage, opts ...grpc.CallOption) (*CommonMessage, error)
 	AgGridTree(ctx context.Context, in *CommonMessage, opts ...grpc.CallOption) (*CommonMessage, error)
 }
 
@@ -205,6 +207,16 @@ func (c *objectBuilderServiceClient) GetAllFieldsForDocx(ctx context.Context, in
 	return out, nil
 }
 
+func (c *objectBuilderServiceClient) GetListAggregation(ctx context.Context, in *CommonMessage, opts ...grpc.CallOption) (*CommonMessage, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CommonMessage)
+	err := c.cc.Invoke(ctx, ObjectBuilderService_GetListAggregation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *objectBuilderServiceClient) AgGridTree(ctx context.Context, in *CommonMessage, opts ...grpc.CallOption) (*CommonMessage, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CommonMessage)
@@ -233,6 +245,7 @@ type ObjectBuilderServiceServer interface {
 	GetListForDocx(context.Context, *CommonForDocxMessage) (*CommonMessage, error)
 	GetAllForDocx(context.Context, *CommonMessage) (*CommonMessage, error)
 	GetAllFieldsForDocx(context.Context, *CommonMessage) (*CommonMessage, error)
+	GetListAggregation(context.Context, *CommonMessage) (*CommonMessage, error)
 	AgGridTree(context.Context, *CommonMessage) (*CommonMessage, error)
 	mustEmbedUnimplementedObjectBuilderServiceServer()
 }
@@ -285,6 +298,9 @@ func (UnimplementedObjectBuilderServiceServer) GetAllForDocx(context.Context, *C
 }
 func (UnimplementedObjectBuilderServiceServer) GetAllFieldsForDocx(context.Context, *CommonMessage) (*CommonMessage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAllFieldsForDocx not implemented")
+}
+func (UnimplementedObjectBuilderServiceServer) GetListAggregation(context.Context, *CommonMessage) (*CommonMessage, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetListAggregation not implemented")
 }
 func (UnimplementedObjectBuilderServiceServer) AgGridTree(context.Context, *CommonMessage) (*CommonMessage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AgGridTree not implemented")
@@ -562,6 +578,24 @@ func _ObjectBuilderService_GetAllFieldsForDocx_Handler(srv interface{}, ctx cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ObjectBuilderService_GetListAggregation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CommonMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ObjectBuilderServiceServer).GetListAggregation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ObjectBuilderService_GetListAggregation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ObjectBuilderServiceServer).GetListAggregation(ctx, req.(*CommonMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ObjectBuilderService_AgGridTree_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CommonMessage)
 	if err := dec(in); err != nil {
@@ -642,6 +676,10 @@ var ObjectBuilderService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetAllFieldsForDocx",
 			Handler:    _ObjectBuilderService_GetAllFieldsForDocx_Handler,
+		},
+		{
+			MethodName: "GetListAggregation",
+			Handler:    _ObjectBuilderService_GetListAggregation_Handler,
 		},
 		{
 			MethodName: "AgGridTree",

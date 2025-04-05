@@ -42,6 +42,10 @@ service BillingService {
     rpc ReceiptPay(ReceiptPayRequest) returns (ReceiptPayResponse);
     rpc DeleteProjectCard(PrimaryKey) returns (google.protobuf.Empty);
 
+    // Subscription
+    rpc GetSubscription(PrimaryKey) returns (Subscription);
+    rpc UpdateSubscription(Subscription) returns (Subscription);
+
     //Discount
     rpc ListDiscounts(ListRequest) returns (ListDiscountsResponse);
 }
@@ -254,6 +258,8 @@ message Subscription {
     string start_date = 5;
     string end_date = 6;
     string renewal_date = 7;
+    string type = 8;
+    string discount_id = 9;
 }
 
 message CalculatePriceRequest {
