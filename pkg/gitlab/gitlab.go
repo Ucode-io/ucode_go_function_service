@@ -197,6 +197,8 @@ func DeleteForkedProject(repoName string, cfg config.Config) (response GitlabInt
 	}, nil
 }
 
+// Integration gitlab.com
+
 func RefreshGitLabToken(request GitLabTokenRequest) (*GitLabTokenResponse, error) {
 	client := &http.Client{}
 
@@ -210,7 +212,7 @@ func RefreshGitLabToken(request GitLabTokenRequest) (*GitLabTokenResponse, error
 		return nil, err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/oauth/token", request.GitlabBaseURL), bytes.NewBuffer(requestBody))
+	req, err := http.NewRequest(http.MethodPost, "https://gitlab.com/oauth/token", bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, err
 	}
@@ -366,12 +368,12 @@ func ImportFromGitLab(cfg ImportData) (response github.ImportResponse, err error
 		return github.ImportResponse{}, err
 	}
 
-	err = checkExportStatusWithTimeout(fmt.Sprintf("%s/api/v4/projects", cfg.GitlabBaseURL), cfg.RepoId, cfg.PersonalAccessToken)
+	err = checkExportStatusWithTimeout("https://gitlab.com/api/v4/projects", cfg.RepoId, cfg.PersonalAccessToken)
 	if err != nil {
 		return github.ImportResponse{}, err
 	}
 
-	err = exportProject(fmt.Sprintf("%s/api/v4/projects/%v/export/download", cfg.GitlabBaseURL, cfg.RepoId), cfg.PersonalAccessToken, cfg.NewName+".tar.gz")
+	err = exportProject(fmt.Sprintf("https://gitlab.com/api/v4/projects/%v/export/download", cfg.RepoId), cfg.PersonalAccessToken, cfg.NewName+".tar.gz")
 	if err != nil {
 		return github.ImportResponse{}, err
 	}
@@ -395,7 +397,7 @@ func ImportFromGitLab(cfg ImportData) (response github.ImportResponse, err error
 }
 
 func ExportRepo(cfg ImportData) error {
-	url := fmt.Sprintf("%s/api/v4/projects/%s/export", cfg.GitlabBaseURL, cfg.RepoId)
+	url := fmt.Sprintf("https://gitlab.com/api/v4/projects/%s/export", cfg.RepoId)
 	req, err := http.NewRequest(http.MethodPost, url, nil)
 	if err != nil {
 		return err
