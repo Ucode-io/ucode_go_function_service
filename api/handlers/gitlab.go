@@ -33,7 +33,7 @@ import (
 func (h *Handler) GitlabLogin(c *gin.Context) {
 	var (
 		code                  = c.Query("code")
-		accessTokenUrl string = c.Query("base_url") + "/oauth/token"
+		accessTokenUrl string = h.cfg.GitlabBaseUrlIntegration + "/oauth/token"
 		params                = map[string]any{
 			"client_id":     h.cfg.GitlabClientIdIntegration,
 			"client_secret": h.cfg.GitlabClientSecretIntegration,
@@ -72,7 +72,7 @@ func (h *Handler) GitlabLogin(c *gin.Context) {
 func (h *Handler) GitlabGetUser(c *gin.Context) {
 	var (
 		token      = c.Query("token")
-		getUserUrl = c.Query("base_url") + "/api/v4/user"
+		getUserUrl = h.cfg.GitlabBaseUrlIntegration + "/api/v4/user"
 		response   models.GitlabUser
 	)
 
@@ -105,6 +105,7 @@ func (h *Handler) GitlabGetUser(c *gin.Context) {
 func (h *Handler) GitlabGetRepos(c *gin.Context) {
 	var (
 		token      = c.Query("token")
+		url        = fmt.Sprintf("%s/api/v4/projects?membership=true", h.cfg.GitlabBaseUrlIntegration)
 		response   = models.GitlabProjectResponse{}
 		resourceId = c.Query("resource_id")
 		resp       *http.Response
@@ -122,21 +123,7 @@ func (h *Handler) GitlabGetRepos(c *gin.Context) {
 		return
 	}
 
-	projectResource, err := h.services.CompanyService().Resource().GetSingleProjectResouece(
-		c.Request.Context(), &pb.PrimaryKeyProjectResource{
-			Id:            resourceId,
-			ProjectId:     projectId.(string),
-			EnvironmentId: environmentId.(string),
-		},
-	)
-	if err != nil {
-		h.handleResponse(c, status.InternalServerError, err.Error())
-		return
-	}
-
-	url := fmt.Sprintf("%s/api/v4/projects?membership=true", projectResource.GetSettings().GetGitlab().GetBaseUrl())
-
-	resp, err = gitlab.MakeGitLabRequest(http.MethodGet, url, map[string]any{}, token)
+	resp, err := gitlab.MakeGitLabRequest(http.MethodGet, url, map[string]any{}, token)
 	if err != nil {
 		h.handleResponse(c, status_http.InternalServerError, err.Error())
 		return
@@ -144,6 +131,18 @@ func (h *Handler) GitlabGetRepos(c *gin.Context) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusUnauthorized {
+		projectResource, err := h.services.CompanyService().Resource().GetSingleProjectResouece(
+			c.Request.Context(), &pb.PrimaryKeyProjectResource{
+				Id:            resourceId,
+				ProjectId:     projectId.(string),
+				EnvironmentId: environmentId.(string),
+			},
+		)
+		if err != nil {
+			h.handleResponse(c, status.InternalServerError, err.Error())
+			return
+		}
+
 		refreshToken := projectResource.GetSettings().GetGitlab().GetRefreshToken()
 
 		retoken, err := gitlab.RefreshGitLabToken(gitlab.GitLabTokenRequest{
@@ -218,7 +217,9 @@ func (h *Handler) GitlabGetBranches(c *gin.Context) {
 		repoId     = c.Query("repo_id")
 		token      = c.Query("token")
 		resourceId = c.Query("resource_id")
-		response   models.GitlabBranch
+
+		url      = fmt.Sprintf("%s/api/v4/projects/%s/repository/branches", h.cfg.GitlabBaseUrlIntegration, repoId)
+		response models.GitlabBranch
 	)
 
 	projectId, ok := c.Get("project_id")
@@ -249,7 +250,6 @@ func (h *Handler) GitlabGetBranches(c *gin.Context) {
 	refreshToken := projectResource.GetSettings().GetGitlab().GetRefreshToken()
 	createdAt := projectResource.GetSettings().GetGitlab().GetCreatedAt()
 	expiresIn := projectResource.GetSettings().GetGitlab().GetExpiresIn()
-	url := fmt.Sprintf("%s/api/v4/projects/%s/repository/branches", projectResource.GetSettings().GetGitlab().GetBaseUrl(), repoId)
 
 	if gitlab.IsExpired(createdAt, expiresIn) {
 		refresh, err := gitlab.RefreshGitLabToken(gitlab.GitLabTokenRequest{
