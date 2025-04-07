@@ -87,7 +87,8 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 		microFe.DELETE("/micro-frontend/:micro-frontend-id", h.DeleteMicroFrontEnd)
 	}
 
-	knativeFunc := v2.Group("invoke_function")
+	knativeFunc := r.Group("/v2/invoke_function")
+	knativeFunc.Use(h.AuthFunctionMiddleware(cfg))
 	{
 		knativeFunc.POST("/:function-path", h.InvokeFuncByPath)
 	}

@@ -233,6 +233,9 @@ message Project {
     Fare fare = 15;
     string status = 16;
     bool new_design = 17;
+    string expire_date = 18;
+    bool new_layout = 19;
+    string subscription_type = 20;
 }
 
 message CreateProjectRequest {
@@ -240,6 +243,7 @@ message CreateProjectRequest {
     string k8s_namespace = 2;
     string title = 3;
     repeated Resource resources = 4;
+    string fare_id = 5;
 }
 
 message CreateProjectResponse {

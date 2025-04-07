@@ -41,6 +41,7 @@ message CreateFunctionRequest {
     string job_name = 22;
     string resource = 23;
     string provided_name = 24;
+    bool is_public = 25;
 }
 
 message Function {
@@ -67,6 +68,7 @@ message Function {
     string resource = 22;
     string provided_name = 23;
     string request_type = 24;
+    bool is_public = 25;
 }
 
 message GetAllFunctionsRequest {

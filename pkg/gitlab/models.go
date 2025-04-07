@@ -41,9 +41,9 @@ type (
 	}
 
 	GitLabTokenRequest struct {
-		ClinetId     string `json:"client_id"`
-		ClientSecret string `json:"client_secret"`
-		RefreshToken string `json:"refresh_token"`
+		ClinetId      string `json:"client_id"`
+		ClientSecret  string `json:"client_secret"`
+		RefreshToken  string `json:"refresh_token"`
 	}
 
 	GitLabTokenResponse struct {
