@@ -33,6 +33,7 @@ message RegisterCompanyRequest {
     string name = 1;
     RegisterUserInfo user_info = 2;
     GoogleToken googleToken = 3;
+    string fare_id = 4;
 }
 
 message CompanyPrimaryKey {

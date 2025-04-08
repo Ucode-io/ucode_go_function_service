@@ -25,6 +25,8 @@ message GetAllRquest {
     string api_key = 9;
     bool order_by = 10;
     repeated string version_ids = 11;
+    string collection = 12;
+    string action_type = 13;
 }
 
 message VersionHistory {

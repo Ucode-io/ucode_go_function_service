@@ -90,6 +90,9 @@ message Project2 {
     repeated Currency currencies = 9;
     bool new_design = 10;
     string status = 11;
+    string expire_date = 12;
+    bool new_layout = 13;
+    string subscription_type = 14;
 }
 
 message Company2 {
@@ -326,6 +329,9 @@ message GlobalPermission {
     bool version_button = 13;
     bool project_button = 14;
     bool sms_button = 15;
+    bool gitbook_button = 16;
+    bool chatwoot_button = 17;
+    bool gpt_button = 18;
 }
 
 message V2LoginResponse {
@@ -464,26 +470,8 @@ message V2MultiCompanyLoginReq {
 }
 
 message V2MultiCompanyLoginRes {
-    message Company {
-        message Project {
-            string id = 1;
-            string company_id = 2;
-            string name = 3;
-            string domain = 4;
-            string created_at = 5;
-            string updated_at = 6;
-        }
-        string id = 1;
-        string name = 2;
-        string logo = 3;
-        string description = 4;
-        string created_at = 5;
-        string updated_at = 6;
-        string owner_id = 7;
-        repeated Project projects = 8;
-        string user_id = 9;
-    }
-    repeated Company companies = 1;
+    repeated Company2 companies = 1;
+    string user_id = 2;
 }
 
 message MultiCompanyLoginResponse {

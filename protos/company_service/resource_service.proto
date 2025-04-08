@@ -365,4 +365,5 @@ message Gitlab {
     string refresh_token = 3;
     int64 created_at = 4;
     int32 expires_in = 5; 
+    string base_url = 6;
 }

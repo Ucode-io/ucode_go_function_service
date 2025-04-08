@@ -9,11 +9,11 @@ import "google/protobuf/struct.proto";
 import "google/protobuf/empty.proto";
 
 service LanguageService {
-    rpc Create(CreateLanguageRequest) returns (LanguageSettings);
-    rpc GetById(PrimaryKey) returns (LanguageSettings);
-    rpc GetList(GetListLanguagesRequest) returns (GetListLanguagesResponse);
-    rpc Update(UpdateLanguageRequest) returns (LanguageSettings);
-    rpc Delete(PrimaryKey) returns (google.protobuf.Empty);
+    rpc Create(CreateLanguageRequest) returns (LanguageSettings) {}
+    rpc GetById(PrimaryKey) returns (LanguageSettings) {}
+    rpc GetList(GetListLanguagesRequest) returns (GetListLanguagesResponse) {}
+    rpc Update(UpdateLanguageRequest) returns (LanguageSettings) {}
+    rpc Delete(PrimaryKey) returns (google.protobuf.Empty) {}
 }
 
 message LanguageSettings {

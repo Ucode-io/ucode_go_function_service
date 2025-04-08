@@ -39,3 +39,7 @@ const (
 	FARE_FUNCTION      string = "function"
 	FARE_MICROFRONTEND string = "microfrontend"
 )
+
+const (
+	AccessDeniedError = "you don't have permission to access this function"
+)

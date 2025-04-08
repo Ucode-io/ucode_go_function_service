@@ -45,6 +45,8 @@ const (
 	BillingService_ListProjectCards_FullMethodName     = "/company_service.BillingService/ListProjectCards"
 	BillingService_ReceiptPay_FullMethodName           = "/company_service.BillingService/ReceiptPay"
 	BillingService_DeleteProjectCard_FullMethodName    = "/company_service.BillingService/DeleteProjectCard"
+	BillingService_GetSubscription_FullMethodName      = "/company_service.BillingService/GetSubscription"
+	BillingService_UpdateSubscription_FullMethodName   = "/company_service.BillingService/UpdateSubscription"
 	BillingService_ListDiscounts_FullMethodName        = "/company_service.BillingService/ListDiscounts"
 )
 
@@ -82,6 +84,9 @@ type BillingServiceClient interface {
 	ListProjectCards(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListProjectCardsResponse, error)
 	ReceiptPay(ctx context.Context, in *ReceiptPayRequest, opts ...grpc.CallOption) (*ReceiptPayResponse, error)
 	DeleteProjectCard(ctx context.Context, in *PrimaryKey, opts ...grpc.CallOption) (*empty.Empty, error)
+	// Subscription
+	GetSubscription(ctx context.Context, in *PrimaryKey, opts ...grpc.CallOption) (*Subscription, error)
+	UpdateSubscription(ctx context.Context, in *Subscription, opts ...grpc.CallOption) (*Subscription, error)
 	// Discount
 	ListDiscounts(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListDiscountsResponse, error)
 }
@@ -344,6 +349,26 @@ func (c *billingServiceClient) DeleteProjectCard(ctx context.Context, in *Primar
 	return out, nil
 }
 
+func (c *billingServiceClient) GetSubscription(ctx context.Context, in *PrimaryKey, opts ...grpc.CallOption) (*Subscription, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Subscription)
+	err := c.cc.Invoke(ctx, BillingService_GetSubscription_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *billingServiceClient) UpdateSubscription(ctx context.Context, in *Subscription, opts ...grpc.CallOption) (*Subscription, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Subscription)
+	err := c.cc.Invoke(ctx, BillingService_UpdateSubscription_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *billingServiceClient) ListDiscounts(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListDiscountsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListDiscountsResponse)
@@ -388,6 +413,9 @@ type BillingServiceServer interface {
 	ListProjectCards(context.Context, *ListRequest) (*ListProjectCardsResponse, error)
 	ReceiptPay(context.Context, *ReceiptPayRequest) (*ReceiptPayResponse, error)
 	DeleteProjectCard(context.Context, *PrimaryKey) (*empty.Empty, error)
+	// Subscription
+	GetSubscription(context.Context, *PrimaryKey) (*Subscription, error)
+	UpdateSubscription(context.Context, *Subscription) (*Subscription, error)
 	// Discount
 	ListDiscounts(context.Context, *ListRequest) (*ListDiscountsResponse, error)
 	mustEmbedUnimplementedBillingServiceServer()
@@ -474,6 +502,12 @@ func (UnimplementedBillingServiceServer) ReceiptPay(context.Context, *ReceiptPay
 }
 func (UnimplementedBillingServiceServer) DeleteProjectCard(context.Context, *PrimaryKey) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteProjectCard not implemented")
+}
+func (UnimplementedBillingServiceServer) GetSubscription(context.Context, *PrimaryKey) (*Subscription, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSubscription not implemented")
+}
+func (UnimplementedBillingServiceServer) UpdateSubscription(context.Context, *Subscription) (*Subscription, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateSubscription not implemented")
 }
 func (UnimplementedBillingServiceServer) ListDiscounts(context.Context, *ListRequest) (*ListDiscountsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListDiscounts not implemented")
@@ -949,6 +983,42 @@ func _BillingService_DeleteProjectCard_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _BillingService_GetSubscription_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PrimaryKey)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BillingServiceServer).GetSubscription(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BillingService_GetSubscription_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BillingServiceServer).GetSubscription(ctx, req.(*PrimaryKey))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _BillingService_UpdateSubscription_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Subscription)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BillingServiceServer).UpdateSubscription(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BillingService_UpdateSubscription_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BillingServiceServer).UpdateSubscription(ctx, req.(*Subscription))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _BillingService_ListDiscounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListRequest)
 	if err := dec(in); err != nil {
@@ -1073,6 +1143,14 @@ var BillingService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteProjectCard",
 			Handler:    _BillingService_DeleteProjectCard_Handler,
+		},
+		{
+			MethodName: "GetSubscription",
+			Handler:    _BillingService_GetSubscription_Handler,
+		},
+		{
+			MethodName: "UpdateSubscription",
+			Handler:    _BillingService_UpdateSubscription_Handler,
 		},
 		{
 			MethodName: "ListDiscounts",
