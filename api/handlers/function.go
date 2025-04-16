@@ -130,7 +130,7 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 			return
 		}
 
-		if !response.HasAccess && resource.ProjectId != "c19a15f8-6533-4d6c-a9db-044b1e0891a2" && resource.ProjectId != "36aeec31-639f-41ad-890b-6aba6464695d" {
+		if !response.HasAccess {
 			h.handleResponse(c, status.BadRequest, "you have reached limit of fass")
 			return
 		}
