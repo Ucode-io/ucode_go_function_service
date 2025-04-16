@@ -1169,3 +1169,44 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 
 	h.handleResponse(c, status.Created, resp)
 }
+
+func (h *Handler) InvokeFuncWithoutAuth(c *gin.Context) {
+	var (
+		invokeFunction models.CommonMessage
+		path           = c.Param("function-path")
+	)
+
+	fmt.Println("here agauin")
+
+	if err := c.ShouldBindJSON(&invokeFunction); err != nil {
+		h.handleResponse(c, status.BadRequest, err.Error())
+		return
+	}
+
+	request := models.NewInvokeFunctionRequest{Data: invokeFunction.Data}
+
+	resp, err := h.ExecKnative(path, request)
+	if err != nil {
+		h.handleResponse(c, status.InvalidArgument, err.Error())
+		return
+	} else if resp.Status == "error" {
+		var errStr = resp.Status
+		if resp.Data != nil && resp.Data["message"] != nil {
+			errStr = resp.Data["message"].(string)
+		}
+		h.handleResponse(c, status.InvalidArgument, errStr)
+		return
+	}
+
+	h.handleResponse(c, status.Created, resp)
+}
+
+func (h *Handler) ExecKnative(path string, req models.NewInvokeFunctionRequest) (models.InvokeFunctionResponse, error) {
+	url := fmt.Sprintf("http://%s.%s", path, h.cfg.KnativeBaseUrl)
+	resp, err := util.DoRequest(url, http.MethodPost, req)
+	if err != nil {
+		return models.InvokeFunctionResponse{}, err
+	}
+
+	return resp, nil
+}
