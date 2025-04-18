@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -10,7 +11,6 @@ import (
 	"ucode/ucode_go_function_service/api/status_http"
 	status "ucode/ucode_go_function_service/api/status_http"
 	"ucode/ucode_go_function_service/config"
-	"ucode/ucode_go_function_service/function"
 	as "ucode/ucode_go_function_service/genproto/auth_service"
 	pb "ucode/ucode_go_function_service/genproto/company_service"
 	nb "ucode/ucode_go_function_service/genproto/new_object_builder_service"
@@ -1051,9 +1051,10 @@ func (h *Handler) InvokeFunction(c *gin.Context) {
 func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 	var (
 		invokeFunction models.CommonMessage
-		path           = c.Param("function-path")
-		functionType   string
+		path                = c.Param("function-path")
 		permission     bool = true
+		apiKey         models.ApiKey
+		isPublic       bool
 	)
 
 	if err := c.ShouldBindJSON(&invokeFunction); err != nil {
@@ -1079,71 +1080,92 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 		permission = access.(bool)
 	}
 
-	resource, err := h.services.CompanyService().ServiceResource().GetSingle(
-		c.Request.Context(),
-		&pb.GetSingleServiceResourceReq{
-			ProjectId:     projectId.(string),
+	resourceBody, exist := h.cache.Get(fmt.Sprintf("project:%s:env:%s", projectId.(string), environmentId.(string)))
+	if !exist {
+		resource, err := h.services.CompanyService().ServiceResource().GetSingle(
+			c.Request.Context(),
+			&pb.GetSingleServiceResourceReq{
+				ProjectId:     projectId.(string),
+				EnvironmentId: environmentId.(string),
+				ServiceType:   pb.ServiceType_BUILDER_SERVICE,
+			},
+		)
+		if err != nil {
+			h.handleResponse(c, status.GRPCError, err.Error())
+			return
+		}
+
+		switch resource.ResourceType {
+		case pb.ResourceType_MONGODB:
+			function, err := h.services.GetBuilderServiceByType(resource.NodeType).Function().GetSingle(
+				c.Request.Context(), &obs.FunctionPrimaryKey{
+					ProjectId: resource.ResourceEnvironmentId,
+					Path:      path,
+				},
+			)
+			if err != nil {
+				h.handleResponse(c, status_http.GRPCError, err.Error())
+				return
+			}
+
+			isPublic = function.GetIsPublic()
+
+			if !permission && isPublic {
+				h.handleResponse(c, status_http.Unauthorized, config.AccessDeniedError)
+				return
+			}
+		case pb.ResourceType_POSTGRESQL:
+			function, err := h.services.GoObjectBuilderService().Function().GetSingle(
+				c.Request.Context(), &nb.FunctionPrimaryKey{
+					ProjectId: resource.ResourceEnvironmentId,
+					Path:      path,
+				},
+			)
+			if err != nil {
+				h.handleResponse(c, status_http.GRPCError, err.Error())
+				return
+			}
+
+			isPublic = function.GetIsPublic()
+
+			if !permission && isPublic {
+				h.handleResponse(c, status_http.Unauthorized, config.AccessDeniedError)
+				return
+			}
+		}
+
+		apiKeys, err := h.services.AuthService().ApiKey().GetList(c.Request.Context(), &as.GetListReq{
 			EnvironmentId: environmentId.(string),
-			ServiceType:   pb.ServiceType_BUILDER_SERVICE,
-		},
-	)
-	if err != nil {
-		h.handleResponse(c, status.GRPCError, err.Error())
-		return
-	}
-
-	switch resource.ResourceType {
-	case pb.ResourceType_MONGODB:
-		function, err := h.services.GetBuilderServiceByType(resource.NodeType).Function().GetSingle(
-			c.Request.Context(), &obs.FunctionPrimaryKey{
-				ProjectId: resource.ResourceEnvironmentId,
-				Path:      path,
-			},
-		)
+			ProjectId:     resource.ProjectId,
+			Limit:         1,
+			Offset:        0,
+		})
 		if err != nil {
-			h.handleResponse(c, status_http.GRPCError, err.Error())
+			h.handleResponse(c, status.GRPCError, err.Error())
+			return
+		}
+		if len(apiKeys.Data) < 1 {
+			h.handleResponse(c, status.InvalidArgument, "Api key not found")
 			return
 		}
 
-		functionType = function.Type
+		appIdByte, err := json.Marshal(models.ApiKey{AppId: apiKeys.GetData()[0].GetAppId(), IsPublic: isPublic})
+		if err != nil {
+			h.handleResponse(c, status.InvalidArgument, err.Error())
+			return
+		}
 
-		if !permission && !function.GetIsPublic() {
+		h.cache.Add(fmt.Sprintf("project:%s:env:%s", projectId.(string), environmentId.(string)), appIdByte, config.REDIS_KEY_TIMEOUT)
+	} else {
+		if err := json.Unmarshal(resourceBody, &apiKey); err != nil {
+			h.handleResponse(c, status.InvalidArgument, err.Error())
+			return
+		}
+
+		if !permission && apiKey.IsPublic {
 			h.handleResponse(c, status_http.Unauthorized, config.AccessDeniedError)
 			return
 		}
-	case pb.ResourceType_POSTGRESQL:
-		function, err := h.services.GoObjectBuilderService().Function().GetSingle(
-			c.Request.Context(), &nb.FunctionPrimaryKey{
-				ProjectId: resource.ResourceEnvironmentId,
-				Path:      path,
-			},
-		)
-		if err != nil {
-			h.handleResponse(c, status_http.GRPCError, err.Error())
-			return
-		}
-
-		functionType = function.Type
-
-		if !permission && !function.GetIsPublic() {
-			h.handleResponse(c, status_http.Unauthorized, config.AccessDeniedError)
-			return
-		}
-	}
-
-	apiKeys, err := h.services.AuthService().ApiKey().GetList(c.Request.Context(), &as.GetListReq{
-		EnvironmentId: environmentId.(string),
-		ProjectId:     resource.ProjectId,
-		Limit:         1,
-		Offset:        0,
-	})
-	if err != nil {
-		h.handleResponse(c, status.GRPCError, err.Error())
-		return
-	}
-	if len(apiKeys.Data) < 1 {
-		h.handleResponse(c, status.InvalidArgument, "Api key not found")
-		return
 	}
 
 	authInfo, _ := h.GetAuthInfo(c)
@@ -1151,38 +1173,7 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 	invokeFunction.Data["user_id"] = authInfo.GetUserId()
 	invokeFunction.Data["project_id"] = authInfo.GetProjectId()
 	invokeFunction.Data["environment_id"] = authInfo.GetEnvId()
-	invokeFunction.Data["app_id"] = apiKeys.GetData()[0].GetAppId()
-	request := models.NewInvokeFunctionRequest{Data: invokeFunction.Data}
-
-	resp, err := function.FuncHandlers[functionType](path, h.cfg, request)
-	if err != nil {
-		h.handleResponse(c, status.InvalidArgument, err.Error())
-		return
-	} else if resp.Status == "error" {
-		var errStr = resp.Status
-		if resp.Data != nil && resp.Data["message"] != nil {
-			errStr = resp.Data["message"].(string)
-		}
-		h.handleResponse(c, status.InvalidArgument, errStr)
-		return
-	}
-
-	h.handleResponse(c, status.Created, resp)
-}
-
-func (h *Handler) InvokeFuncWithoutAuth(c *gin.Context) {
-	var (
-		invokeFunction models.CommonMessage
-		path           = c.Param("function-path")
-	)
-
-	fmt.Println("here agauin")
-
-	if err := c.ShouldBindJSON(&invokeFunction); err != nil {
-		h.handleResponse(c, status.BadRequest, err.Error())
-		return
-	}
-
+	invokeFunction.Data["app_id"] = apiKey.AppId
 	request := models.NewInvokeFunctionRequest{Data: invokeFunction.Data}
 
 	resp, err := h.ExecKnative(path, request)

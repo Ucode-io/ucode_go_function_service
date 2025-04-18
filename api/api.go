@@ -18,7 +18,6 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 	docs.SwaggerInfo.Schemes = []string{cfg.HTTPScheme}
 
 	r.Use(customCORSMiddleware())
-	r.POST("/v1/knative/:function-path/proxy/noauth", h.InvokeFuncWithoutAuth)
 
 	v1 := r.Group("/v1")
 	v1.Use(h.AuthMiddleware(cfg))
