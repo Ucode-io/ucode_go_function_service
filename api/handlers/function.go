@@ -1110,7 +1110,7 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 
 			isPublic = function.GetIsPublic()
 
-			if !permission && isPublic {
+			if !permission && !isPublic {
 				h.handleResponse(c, status_http.Unauthorized, config.AccessDeniedError)
 				return
 			}
@@ -1128,7 +1128,7 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 
 			isPublic = function.GetIsPublic()
 
-			if !permission && isPublic {
+			if !permission && !isPublic {
 				h.handleResponse(c, status_http.Unauthorized, config.AccessDeniedError)
 				return
 			}
@@ -1162,7 +1162,7 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 			return
 		}
 
-		if !permission && apiKey.IsPublic {
+		if !permission && !apiKey.IsPublic {
 			h.handleResponse(c, status_http.Unauthorized, config.AccessDeniedError)
 			return
 		}
