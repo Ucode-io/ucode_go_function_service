@@ -1149,7 +1149,12 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 			return
 		}
 
-		appIdByte, err := json.Marshal(models.ApiKey{AppId: apiKeys.GetData()[0].GetAppId(), IsPublic: isPublic})
+		apiKey = models.ApiKey{
+			AppId:    apiKeys.GetData()[0].GetAppId(),
+			IsPublic: isPublic,
+		}
+
+		appIdByte, err := json.Marshal(apiKey)
 		if err != nil {
 			h.handleResponse(c, status.InvalidArgument, err.Error())
 			return
