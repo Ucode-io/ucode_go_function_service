@@ -40,7 +40,7 @@ extraVolumes:
 
 extraVolumeMounts:
   - name: knative-patch-sa-token
-    mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+    mountPath: /var/run/secrets/knative-patch-sa
     readOnly: true
 
 podAnnotations:
