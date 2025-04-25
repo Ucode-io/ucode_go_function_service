@@ -40,7 +40,7 @@ func DoRequest(url string, method string, body any) (responseModel models.Invoke
 	return
 }
 
-func DoDynamicRequest(url string, method string, body any) (map[string]any, int, error) {
+func DoDynamicRequest(url string, headers map[string]string, method string, body any) (map[string]any, int, error) {
 	data, err := json.Marshal(&body)
 	if err != nil {
 		return nil, http.StatusBadRequest, err
@@ -51,6 +51,10 @@ func DoDynamicRequest(url string, method string, body any) (map[string]any, int,
 	req, err := http.NewRequest(method, url, bytes.NewBuffer(data))
 	if err != nil {
 		return nil, http.StatusBadRequest, err
+	}
+
+	for key, value := range headers {
+		req.Header.Set(key, value)
 	}
 
 	resp, err := client.Do(req)

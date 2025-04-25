@@ -1208,6 +1208,7 @@ func (h *Handler) InvokeFuncByApiPath(c *gin.Context) {
 		apiKey         models.ApiKey
 		isPublic       bool
 		apiPath        = c.Param("any")
+		headers        = make(map[string]string)
 	)
 
 	if err := c.ShouldBindJSON(&invokeFunction); err != nil {
@@ -1226,6 +1227,13 @@ func (h *Handler) InvokeFuncByApiPath(c *gin.Context) {
 		err := errors.New("error getting environment id | not valid")
 		h.handleResponse(c, status.BadRequest, err)
 		return
+	}
+
+	// Get the headers from the request and add them to the headers map
+	for key, values := range c.Request.Header {
+		for _, value := range values {
+			headers[key] = value
+		}
 	}
 
 	access, exists := c.Get("access")
@@ -1328,6 +1336,7 @@ func (h *Handler) InvokeFuncByApiPath(c *gin.Context) {
 
 	resp, statusCode, err := util.DoDynamicRequest(
 		fmt.Sprintf("http://%s.%s%s", path, h.cfg.KnativeBaseUrl, apiPath),
+		headers,
 		http.MethodPost,
 		invokeFunction,
 	)
