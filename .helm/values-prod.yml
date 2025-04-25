@@ -33,10 +33,6 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name: "vault-auth"
 
-customServiceAccountToken:
-  enabled: true
-  secretName: knative-patch-sa-token
-  mountPath: /var/run/secrets/knative-patch-sa
 
 podAnnotations:
   vault.hashicorp.com/agent-inject: "true"
@@ -70,6 +66,16 @@ podAnnotations:
     {{ $key }}: {{ $value }}
     {{- end }}
     {{ end -}}
+  
+  extraVolumes:
+  - name: knative-patch-sa-token
+    secret:
+      secretName: knative-patch-sa-token
+
+  extraVolumeMounts:
+    - name: knative-patch-sa-token
+      mountPath: /var/run/secrets/knative-patch-sa
+      readOnly: true
 
 podLabels:
   app: ucode-go-function-service
