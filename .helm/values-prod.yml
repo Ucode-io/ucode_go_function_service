@@ -67,15 +67,7 @@ podAnnotations:
     {{- end }}
     {{ end -}}
   
-  extraVolumes:
-  - name: knative-patch-sa-token
-    secret:
-      secretName: knative-patch-sa-token
-
-  extraVolumeMounts:
-    - name: knative-patch-sa-token
-      mountPath: /var/run/secrets/knative-patch-sa
-      readOnly: true
+ 
 
 podLabels:
   app: ucode-go-function-service
@@ -111,6 +103,15 @@ volumes:
     class:
     accessModes:
       - ReadWriteOnce
+extraVolumes:
+- name: knative-patch-sa-token
+  secret:
+    secretName: knative-patch-sa-token
+
+extraVolumeMounts:
+  - name: knative-patch-sa-token
+    mountPath: /var/run/secrets/knative-patch-sa
+    readOnly: true
 
 service:
   type: ClusterIP
