@@ -33,15 +33,10 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name: "vault-auth"
 
-extraVolumes:
-  - name: knative-patch-sa-token
-    secret:
-      secretName: knative-patch-sa-token
-
-extraVolumeMounts:
-  - name: knative-patch-sa-token
-    mountPath: /var/run/secrets/knative-patch-sa
-    readOnly: true
+customServiceAccountToken:
+  enabled: true
+  secretName: knative-patch-sa-token
+  mountPath: /var/run/secrets/knative-patch-sa
 
 podAnnotations:
   vault.hashicorp.com/agent-inject: "true"
