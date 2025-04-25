@@ -1326,12 +1326,10 @@ func (h *Handler) InvokeFuncByApiPath(c *gin.Context) {
 		}
 	}
 
-	request := models.NewInvokeFunctionRequest{Data: invokeFunction}
-
 	resp, statusCode, err := util.DoDynamicRequest(
 		fmt.Sprintf("http://%s.%s%s", path, h.cfg.KnativeBaseUrl, apiPath),
 		http.MethodPost,
-		request,
+		invokeFunction,
 	)
 
 	if err != nil {
