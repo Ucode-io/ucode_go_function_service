@@ -1,12 +1,17 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"strings"
+
 	"ucode/ucode_go_function_service/api/models"
 	"ucode/ucode_go_function_service/api/status_http"
 	status "ucode/ucode_go_function_service/api/status_http"
@@ -15,11 +20,9 @@ import (
 	pb "ucode/ucode_go_function_service/genproto/company_service"
 	nb "ucode/ucode_go_function_service/genproto/new_object_builder_service"
 	obs "ucode/ucode_go_function_service/genproto/object_builder_service"
-
 	"ucode/ucode_go_function_service/pkg/github"
 	"ucode/ucode_go_function_service/pkg/gitlab"
 	"ucode/ucode_go_function_service/pkg/helper"
-
 	"ucode/ucode_go_function_service/pkg/util"
 
 	"github.com/gin-gonic/gin"
@@ -1195,6 +1198,229 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 	}
 
 	h.handleResponse(c, status.Created, resp)
+}
+
+func (h *Handler) InvokeFuncByApiPath(c *gin.Context) {
+	var (
+		invokeFunction map[string]any
+		path                = c.Param("function-path")
+		permission     bool = true
+		apiKey         models.ApiKey
+		isPublic       bool
+		apiPath        = c.Param("any")
+	)
+
+	if err := c.ShouldBindJSON(&invokeFunction); err != nil {
+		h.handleResponse(c, status.BadRequest, err.Error())
+		return
+	}
+
+	projectId, ok := c.Get("project_id")
+	if !ok || !util.IsValidUUID(projectId.(string)) {
+		h.handleResponse(c, status.InvalidArgument, "project id is an invalid uuid")
+		return
+	}
+
+	environmentId, ok := c.Get("environment_id")
+	if !ok || !util.IsValidUUID(environmentId.(string)) {
+		err := errors.New("error getting environment id | not valid")
+		h.handleResponse(c, status.BadRequest, err)
+		return
+	}
+
+	access, exists := c.Get("access")
+	if exists {
+		permission = access.(bool)
+	}
+
+	resourceBody, exist := h.cache.Get(fmt.Sprintf("project:%s:env:%s", projectId.(string), environmentId.(string)))
+	if !exist {
+		resource, err := h.services.CompanyService().ServiceResource().GetSingle(
+			c.Request.Context(),
+			&pb.GetSingleServiceResourceReq{
+				ProjectId:     projectId.(string),
+				EnvironmentId: environmentId.(string),
+				ServiceType:   pb.ServiceType_BUILDER_SERVICE,
+			},
+		)
+		if err != nil {
+			h.handleResponse(c, status.GRPCError, err.Error())
+			return
+		}
+
+		switch resource.ResourceType {
+		case pb.ResourceType_MONGODB:
+			function, err := h.services.GetBuilderServiceByType(resource.NodeType).Function().GetSingle(
+				c.Request.Context(), &obs.FunctionPrimaryKey{
+					ProjectId: resource.ResourceEnvironmentId,
+					Path:      path,
+				},
+			)
+			if err != nil {
+				h.handleResponse(c, status_http.GRPCError, err.Error())
+				return
+			}
+
+			isPublic = function.GetIsPublic()
+
+			if !permission && !isPublic {
+				h.handleResponse(c, status_http.Unauthorized, config.AccessDeniedError)
+				return
+			}
+		case pb.ResourceType_POSTGRESQL:
+			function, err := h.services.GoObjectBuilderService().Function().GetSingle(
+				c.Request.Context(), &nb.FunctionPrimaryKey{
+					ProjectId: resource.ResourceEnvironmentId,
+					Path:      path,
+				},
+			)
+			if err != nil {
+				h.handleResponse(c, status_http.GRPCError, err.Error())
+				return
+			}
+
+			isPublic = function.GetIsPublic()
+
+			if !permission && !isPublic {
+				h.handleResponse(c, status_http.Unauthorized, config.AccessDeniedError)
+				return
+			}
+		}
+
+		apiKeys, err := h.services.AuthService().ApiKey().GetList(c.Request.Context(), &as.GetListReq{
+			EnvironmentId: environmentId.(string),
+			ProjectId:     resource.ProjectId,
+			Limit:         1,
+			Offset:        0,
+		})
+		if err != nil {
+			h.handleResponse(c, status.GRPCError, err.Error())
+			return
+		}
+		if len(apiKeys.Data) < 1 {
+			h.handleResponse(c, status.InvalidArgument, "Api key not found")
+			return
+		}
+
+		apiKey = models.ApiKey{
+			AppId:    apiKeys.GetData()[0].GetAppId(),
+			IsPublic: isPublic,
+		}
+
+		appIdByte, err := json.Marshal(apiKey)
+		if err != nil {
+			h.handleResponse(c, status.InvalidArgument, err.Error())
+			return
+		}
+
+		h.cache.Add(fmt.Sprintf("project:%s:env:%s", projectId.(string), environmentId.(string)), appIdByte, config.REDIS_KEY_TIMEOUT)
+	} else {
+		if err := json.Unmarshal(resourceBody, &apiKey); err != nil {
+			h.handleResponse(c, status.InvalidArgument, err.Error())
+			return
+		}
+
+		if !permission && !apiKey.IsPublic {
+			h.handleResponse(c, status_http.Unauthorized, config.AccessDeniedError)
+			return
+		}
+	}
+
+	request := models.NewInvokeFunctionRequest{Data: invokeFunction}
+
+	resp, statusCode, err := util.DoDynamicRequest(
+		fmt.Sprintf("http://%s.%s%s", path, h.cfg.KnativeBaseUrl, apiPath),
+		http.MethodPost,
+		request,
+	)
+
+	if err != nil {
+		c.JSON(statusCode, resp)
+		return
+	}
+
+	c.JSON(statusCode, resp)
+}
+
+func (h *Handler) AlterScale(c *gin.Context) {
+	m := make(map[string]any)
+
+	err := c.ShouldBindJSON(&m)
+	if err != nil {
+		h.handleResponse(c, status.InvalidArgument, err.Error())
+		return
+	}
+
+	token, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
+	if err != nil {
+		fmt.Println("Error reading token file:", err)
+	}
+
+	fmt.Println("GOT TOKEN:", string(token))
+
+	// Construct the URL
+	kubeHost := os.Getenv("KUBERNETES_SERVICE_HOST")
+	kubePort := os.Getenv("KUBERNETES_SERVICE_PORT")
+
+	fmt.Println("Kube host:", kubeHost)
+	fmt.Println("Kube port:", kubePort)
+
+	url := fmt.Sprintf("https://%s:%s/apis/serving.knative.dev/v1/namespaces/knative-fn/services/%s", kubeHost, kubePort, m["name"])
+
+	payload := map[string]any{
+		"spec": map[string]any{
+			"template": map[string]any{
+				"metadata": map[string]any{
+					"annotations": map[string]any{
+						"autoscaling.knative.dev/minScale": "0",
+						"autoscaling.knative.dev/maxScale": cast.ToString(m["max_scale"]),
+					},
+				},
+			},
+		},
+	}
+
+	payloadByte, err := json.Marshal(payload)
+	if err != nil {
+		h.handleResponse(c, status.InvalidArgument, err.Error())
+		return
+	}
+
+	// Prepare the HTTP PATCH request
+	req, err := http.NewRequest(http.MethodPatch, url, bytes.NewBuffer(payloadByte))
+	if err != nil {
+		fmt.Println("Error creating request:", err)
+		h.handleResponse(c, status.InvalidArgument, err.Error())
+		return
+	}
+	req.Header.Set("Authorization", "Bearer "+string(token))
+	req.Header.Set("Content-Type", "application/merge-patch+json")
+
+	// Disable TLS verification (like `-k` in curl)
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
+
+	// Send the request
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Error sending request:", err)
+		h.handleResponse(c, status.InternalServerError, err.Error())
+		return
+	}
+	defer resp.Body.Close()
+
+	// Read and print the response
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("Error reading response body:", err)
+		h.handleResponse(c, status.InternalServerError, err.Error())
+		return
+	}
+
+	fmt.Printf("Status: %s\n", resp.Status)
+	fmt.Println("Response: ", string(body))
 }
 
 func (h *Handler) ExecKnative(path string, req models.NewInvokeFunctionRequest) (models.InvokeFunctionResponse, error) {

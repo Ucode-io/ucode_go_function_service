@@ -19,6 +19,8 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 
 	r.Use(customCORSMiddleware())
 
+	r.PATCH("/scale", h.AlterScale)
+
 	v1 := r.Group("/v1")
 	v1.Use(h.AuthMiddleware(cfg))
 
@@ -91,6 +93,7 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 	knativeFunc.Use(h.AuthFunctionMiddleware(cfg))
 	{
 		knativeFunc.POST("/:function-path", h.InvokeFuncByPath)
+		knativeFunc.POST("/:function-path/*any", h.InvokeFuncByApiPath)
 	}
 
 	v2Webhook := v2.Group("/webhook")
