@@ -442,14 +442,14 @@ func (h *Handler) GetAllFunctions(c *gin.Context) {
 // @Failure 500 {object} status.Response{data=string} "Server Error"
 func (h *Handler) UpdateFunction(c *gin.Context) {
 	var (
-		function models.Function
-		resp     = &empty.Empty{}
+		updateFunction *obs.Function
+		resp           = &empty.Empty{}
 	)
 
 	ctx, cancel := context.WithCancel(c.Request.Context())
 	defer cancel()
 
-	if err := c.ShouldBindJSON(&function); err != nil {
+	if err := c.ShouldBindJSON(&updateFunction); err != nil {
 		h.handleResponse(c, status.BadRequest, err.Error())
 		return
 	}
@@ -487,16 +487,10 @@ func (h *Handler) UpdateFunction(c *gin.Context) {
 		return
 	}
 
+	updateFunction.EnvironmentId = environment.GetId()
+	updateFunction.ProjectId = resource.ResourceEnvironmentId
+
 	var (
-		updateFunction = &obs.Function{
-			Id:               function.ID,
-			Description:      function.Description,
-			Name:             function.Name,
-			Path:             function.Path,
-			EnvironmentId:    environment.GetId(),
-			ProjectId:        resource.ResourceEnvironmentId,
-			FunctionFolderId: function.FuncitonFolderId,
-		}
 		logReq = &models.CreateVersionHistoryRequest{
 			Services:     h.services,
 			NodeType:     resource.NodeType,
