@@ -118,6 +118,7 @@ message Transaction {
     string payment_type = 17;
     string subscription_id = 18;
     Fare fare = 19;
+    string project_name = 20;
 }
 
 // Requests and Responses

@@ -36,8 +36,6 @@ message CreateAirbyteRequest {
     string destination_id = 7;
     string connection_id = 8;
     string connection_name = 9;
-    string superset_username = 10;
-    string superset_password = 11;
 }
 
 message CreateAirbyteResponse {

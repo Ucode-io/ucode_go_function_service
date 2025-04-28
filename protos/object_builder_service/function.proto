@@ -44,6 +44,8 @@ message CreateFunctionRequest {
     string provided_name = 24;
     string request_type = 25;
     bool is_public = 26;
+    int32 max_scale = 27;
+    int32 former_max_scale = 28;
 }
 
 message Function {
@@ -71,6 +73,8 @@ message Function {
     string provided_name = 23;
     string request_type = 24;
     bool is_public = 25;
+    int32 max_scale = 26;
+    int32 former_max_scale = 27;
 }
 
 message GetAllFunctionsRequest {

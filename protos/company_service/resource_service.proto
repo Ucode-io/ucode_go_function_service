@@ -67,6 +67,11 @@ message AddResourceToProjectRequest {
     repeated VariableResource variables = 5;
     IntegrationResource integration_resource = 6;
     Settings settings = 7;
+    string role_id = 8;
+    string user_id = 9;
+    string client_type_id = 10;
+    string company_id = 11;
+    string node_type = 12;
 }
 
 message GetProjectResourceListRequest {
@@ -149,6 +154,7 @@ message CreateResourceReq {
     string client_type_id = 7;
     string role_id = 8;
     string name = 9;
+    bool is_superset = 10;
 }
 
 message CreateResourceRes {
@@ -336,6 +342,7 @@ message Settings {
     SMTPCredentials smtp = 2;
     Github github = 3;
     Gitlab gitlab = 4;
+    SupersetCredentials superset = 5;
 }
 
 message SmsCredentials {
@@ -352,6 +359,12 @@ message SMTPCredentials {
     string password = 2;
     int32 number_of_otp = 3;
     string default_otp = 4;
+}
+
+message SupersetCredentials {
+    string username = 1;
+    string password = 2;
+    string url = 3;
 }
 
 message Github {
