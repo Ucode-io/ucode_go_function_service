@@ -528,14 +528,12 @@ func (h *Handler) UpdateFunction(c *gin.Context) {
 	case pb.ResourceType_MONGODB:
 		resp, err = h.services.GetBuilderServiceByType(resource.NodeType).Function().Update(ctx, updateFunction)
 		if err != nil {
-			h.handleResponse(c, status.GRPCError, err.Error())
 			return
 		}
 
 		if updateFunction.MaxScale != updateFunction.FormerMaxScale {
 			err = h.AlterScale(updateFunction.Path, updateFunction.MaxScale)
 			if err != nil {
-				h.handleResponse(c, status.InternalServerError, err.Error())
 				return
 			}
 		}
@@ -543,20 +541,17 @@ func (h *Handler) UpdateFunction(c *gin.Context) {
 		function := &nb.Function{}
 
 		if err = helper.MarshalToStruct(updateFunction, &function); err != nil {
-			h.handleResponse(c, status.InternalServerError, err.Error())
 			return
 		}
 
 		resp, err = h.services.GoObjectBuilderService().Function().Update(ctx, function)
 		if err != nil {
-			h.handleResponse(c, status.GRPCError, err.Error())
 			return
 		}
 
 		if updateFunction.MaxScale != updateFunction.FormerMaxScale {
 			err = h.AlterScale(updateFunction.Path, updateFunction.MaxScale)
 			if err != nil {
-				h.handleResponse(c, status.InternalServerError, err.Error())
 				return
 			}
 		}
