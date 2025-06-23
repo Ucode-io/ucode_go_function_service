@@ -60,6 +60,8 @@ func DoDynamicRequest(url string, headers map[string]string, method string, body
 		req.Header.Set(key, value)
 	}
 
+	log.Printf("Final Request:\nMETHOD: %s\nURL: %s\nHEADERS: %v\nBODY: %s\n", req.Method, req.URL.String(), req.Header, string(data))
+
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Printf("Request failed: %v", err)
