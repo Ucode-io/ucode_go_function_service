@@ -1335,16 +1335,12 @@ func (h *Handler) InvokeFuncByApiPath(c *gin.Context) {
 		}
 	}
 
-	fmt.Println("affter ifs")
 	resp, statusCode, err := util.DoDynamicRequest(
 		fmt.Sprintf("http://%s.%s%s", path, h.cfg.KnativeBaseUrl, apiPath),
 		headers,
 		http.MethodPost,
 		invokeFunction,
 	)
-
-	jsonBytes, _ := json.Marshal(resp)
-	fmt.Println("Ressssp->", string(jsonBytes))
 
 	if err != nil {
 		c.JSON(statusCode, resp)

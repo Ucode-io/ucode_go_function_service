@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"time"
 	"ucode/ucode_go_function_service/api/models"
@@ -44,15 +45,18 @@ func DoRequest(url string, method string, body any) (responseModel models.Invoke
 func DoDynamicRequest(url string, headers map[string]string, method string, body any) (map[string]any, int, error) {
 	data, err := json.Marshal(&body)
 	if err != nil {
+		log.Printf("Failed to marshal request body: %v", err)
 		return nil, http.StatusBadRequest, err
 	}
-
-	respBody := make([]byte, 0)
+	log.Printf("Request URL: %s", url)
+	log.Printf("Request Method: %s", method)
+	log.Printf("Request Headers: %v", headers)
+	log.Printf("Request Body: %s", data)
 
 	client := &http.Client{}
-
 	req, err := http.NewRequest(method, url, bytes.NewBuffer(data))
 	if err != nil {
+		log.Printf("Failed to create request: %v", err)
 		return nil, http.StatusBadRequest, err
 	}
 
@@ -62,35 +66,44 @@ func DoDynamicRequest(url string, headers map[string]string, method string, body
 
 	resp, err := client.Do(req)
 	if err != nil {
+		log.Printf("Request failed: %v", err)
 		return nil, http.StatusBadRequest, err
 	}
 	defer resp.Body.Close()
 
+	log.Printf("Response Status: %s", resp.Status)
+	log.Printf("Response Headers: %v", resp.Header)
+
 	respHeader := resp.Header.Get("Content-Encoding")
+	var respBody []byte
 	switch respHeader {
 	case "gzip":
 		reader, err := gzip.NewReader(resp.Body)
 		if err != nil {
+			log.Printf("Failed to create gzip reader: %v", err)
 			return nil, http.StatusInternalServerError, err
 		}
 		defer reader.Close()
 
 		respBody, err = io.ReadAll(reader)
 		if err != nil {
+			log.Printf("Failed to read gzipped response body: %v", err)
 			return nil, http.StatusInternalServerError, err
 		}
 	default:
 		respBody, err = io.ReadAll(resp.Body)
 		if err != nil {
+			log.Printf("Failed to read response body: %v", err)
 			return nil, http.StatusInternalServerError, err
 		}
-
 	}
 
-	responseModel := make(map[string]any)
+	log.Printf("Response Body: %s", respBody)
 
+	responseModel := make(map[string]any)
 	err = json.Unmarshal(respBody, &responseModel)
 	if err != nil {
+		log.Printf("Failed to unmarshal response body: %v", err)
 		return nil, resp.StatusCode, err
 	}
 
