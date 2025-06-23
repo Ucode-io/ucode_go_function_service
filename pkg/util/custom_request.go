@@ -48,10 +48,6 @@ func DoDynamicRequest(url string, headers map[string]string, method string, body
 		log.Printf("Failed to marshal request body: %v", err)
 		return nil, http.StatusBadRequest, err
 	}
-	log.Printf("Request URL: %s", url)
-	log.Printf("Request Method: %s", method)
-	log.Printf("Request Headers: %v", headers)
-	log.Printf("Request Body: %s", data)
 
 	client := &http.Client{}
 	req, err := http.NewRequest(method, url, bytes.NewBuffer(data))
@@ -71,8 +67,8 @@ func DoDynamicRequest(url string, headers map[string]string, method string, body
 	}
 	defer resp.Body.Close()
 
-	log.Printf("Response Status: %s", resp.Status)
-	log.Printf("Response Headers: %v", resp.Header)
+	log.Printf("Response Status: %s %s", resp.Status, url)
+	log.Printf("Response Headers: %v %v", resp.Header, url)
 
 	respHeader := resp.Header.Get("Content-Encoding")
 	var respBody []byte
@@ -98,7 +94,7 @@ func DoDynamicRequest(url string, headers map[string]string, method string, body
 		}
 	}
 
-	log.Printf("Response Body: %s", respBody)
+	log.Printf("Response Body: %s %v", respBody, url)
 
 	responseModel := make(map[string]any)
 	err = json.Unmarshal(respBody, &responseModel)
