@@ -4,11 +4,14 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"time"
 	"ucode/ucode_go_function_service/api/models"
+
+	"github.com/andybalholm/brotli"
 )
 
 func DoRequest(url string, method string, body any) (responseModel models.InvokeFunctionResponse, err error) {
@@ -86,6 +89,14 @@ func DoDynamicRequest(url string, headers map[string]string, method string, body
 		respBody, err = io.ReadAll(reader)
 		if err != nil {
 			log.Printf("Failed to read gzipped response body: %v", err)
+			return nil, http.StatusInternalServerError, err
+		}
+	case "br":
+		fmt.Println("I am inside")
+		reader := brotli.NewReader(resp.Body)
+		respBody, err = io.ReadAll(reader)
+		if err != nil {
+			log.Printf("Failed to read brotli response: %v", err)
 			return nil, http.StatusInternalServerError, err
 		}
 	default:

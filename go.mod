@@ -3,6 +3,7 @@ module ucode/ucode_go_function_service
 go 1.23.2
 
 require (
+	github.com/andybalholm/brotli v1.1.1
 	github.com/gin-gonic/gin v1.10.0
 	github.com/golang/protobuf v1.5.4
 	github.com/google/uuid v1.6.0
