@@ -94,7 +94,7 @@ func DoDynamicRequest(url string, headers map[string]string, method string, body
 		}
 	}
 
-	log.Printf("Response Body: %s %v", respBody, url)
+	log.Printf("Response Body: %s %v", string(respBody), url)
 
 	responseModel := make(map[string]any)
 	err = json.Unmarshal(respBody, &responseModel)
