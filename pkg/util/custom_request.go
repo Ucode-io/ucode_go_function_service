@@ -103,7 +103,7 @@ func DoDynamicRequest(url string, headers map[string]string, method string, body
 	responseModel := make(map[string]any)
 	err = json.Unmarshal(respBody, &responseModel)
 	if err != nil {
-		log.Printf("Failed to unmarshal response body: %v", err)
+		log.Printf("Failed to unmarshal response body: %v %v", err, url)
 		return nil, resp.StatusCode, err
 	}
 
