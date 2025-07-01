@@ -65,6 +65,11 @@ podAnnotations:
     {{ $key }}: {{ $value }}
     {{- end }}
     {{ end -}}
+    {{- with secret "secret/data/k8s/ucode-prod/redis" -}}
+    {{- range $key, $value := .Data.data }}
+    {{ $key }}: {{ $value }}
+    {{- end }}
+    {{ end -}}
 
 podLabels:
   app: ucode-go-function-service
