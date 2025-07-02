@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"time"
 	"ucode/ucode_go_function_service/api/models"
+
+	"github.com/andybalholm/brotli"
 )
 
 func DoRequest(url string, method string, body any) (responseModel models.InvokeFunctionResponse, err error) {
@@ -47,10 +49,7 @@ func DoDynamicRequest(url string, headers map[string]string, method string, body
 		return nil, http.StatusBadRequest, err
 	}
 
-	respBody := make([]byte, 0)
-
 	client := &http.Client{}
-
 	req, err := http.NewRequest(method, url, bytes.NewBuffer(data))
 	if err != nil {
 		return nil, http.StatusBadRequest, err
@@ -67,6 +66,7 @@ func DoDynamicRequest(url string, headers map[string]string, method string, body
 	defer resp.Body.Close()
 
 	respHeader := resp.Header.Get("Content-Encoding")
+	var respBody []byte
 	switch respHeader {
 	case "gzip":
 		reader, err := gzip.NewReader(resp.Body)
@@ -79,16 +79,20 @@ func DoDynamicRequest(url string, headers map[string]string, method string, body
 		if err != nil {
 			return nil, http.StatusInternalServerError, err
 		}
+	case "br":
+		reader := brotli.NewReader(resp.Body)
+		respBody, err = io.ReadAll(reader)
+		if err != nil {
+			return nil, http.StatusInternalServerError, err
+		}
 	default:
 		respBody, err = io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, http.StatusInternalServerError, err
 		}
-
 	}
 
 	responseModel := make(map[string]any)
-
 	err = json.Unmarshal(respBody, &responseModel)
 	if err != nil {
 		return nil, resp.StatusCode, err

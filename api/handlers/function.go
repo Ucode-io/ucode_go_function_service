@@ -1372,14 +1372,9 @@ func (h *Handler) AlterScale(c *gin.Context) {
 		fmt.Println("Error reading token file:", err)
 	}
 
-	fmt.Println("GOT TOKEN:", string(token))
-
 	// Construct the URL
 	kubeHost := os.Getenv("KUBERNETES_SERVICE_HOST")
 	kubePort := os.Getenv("KUBERNETES_SERVICE_PORT")
-
-	fmt.Println("Kube host:", kubeHost)
-	fmt.Println("Kube port:", kubePort)
 
 	url := fmt.Sprintf("https://%s:%s/apis/serving.knative.dev/v1/namespaces/knative-fn/services/%s", kubeHost, kubePort, m["name"])
 
