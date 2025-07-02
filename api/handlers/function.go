@@ -1373,7 +1373,7 @@ func (h *Handler) AlterScale(name string, maxScale int32) error {
 	kubeHost := os.Getenv("KUBERNETES_SERVICE_HOST")
 	kubePort := os.Getenv("KUBERNETES_SERVICE_PORT")
 
-	url := fmt.Sprintf("https://%s:%s/apis/serving.knative.dev/v1/namespaces/knative-fn/services/%s", kubeHost, kubePort, m["name"])
+	url := fmt.Sprintf("https://%s:%s/apis/serving.knative.dev/v1/namespaces/knative-fn/services/%s", kubeHost, kubePort, name)
 
 	payload := map[string]any{
 		"spec": map[string]any{
