@@ -18,16 +18,17 @@ const (
 
 type Config struct {
 	// Service Creds
-	ServiceName   string
-	ServiceHost   string
-	ServicePort   string
-	Environment   string
-	Version       string
-	HTTPBaseURL   string
-	HTTPPort      string
-	HTTPScheme    string
-	DefaultOffset string
-	DefaultLimit  string
+	ServiceName    string
+	ServiceHost    string
+	ServicePort    string
+	Environment    string
+	Version        string
+	HTTPBaseURL    string
+	HTTPPort       string
+	HTTPScheme     string
+	DefaultOffset  string
+	DefaultLimit   string
+	UcodeNamespace string
 
 	// LOW
 	ObjectBuilderServiceHost string
@@ -90,6 +91,12 @@ type Config struct {
 	// Grafana
 	GrafanaBaseUrl string
 	GrafanaAuth    string
+
+	// Redis
+	GetRequestRedisHost     string
+	GetRequestRedisPort     string
+	GetRequestRedisDatabase int
+	GetRequestRedisPassword string
 }
 
 func Load() Config {
@@ -112,6 +119,7 @@ func Load() Config {
 	config.Version = cast.ToString(getOrReturnDefaultValue("VERSION", "1.0"))
 	config.DefaultOffset = cast.ToString(getOrReturnDefaultValue("DEFAULT_OFFSET", "0"))
 	config.DefaultLimit = cast.ToString(getOrReturnDefaultValue("DEFAULT_LIMIT", "10"))
+	config.UcodeNamespace = "u-code"
 
 	// Company Service Creds
 	config.CompanyServiceHost = cast.ToString(getOrReturnDefaultValue("COMPANY_SERVICE_HOST", ""))
@@ -177,6 +185,11 @@ func Load() Config {
 	// Grafana Creds
 	config.GrafanaBaseUrl = cast.ToString(getOrReturnDefaultValue("GRAFANA_BASE_URL", ""))
 	config.GrafanaAuth = cast.ToString(getOrReturnDefaultValue("GRAFANA_AUTH", ""))
+
+	config.GetRequestRedisHost = cast.ToString(getOrReturnDefaultValue("GET_REQUEST_REDIS_HOST", ""))
+	config.GetRequestRedisPort = cast.ToString(getOrReturnDefaultValue("GET_REQUEST_REDIS_PORT", ""))
+	config.GetRequestRedisDatabase = cast.ToInt(getOrReturnDefaultValue("GET_REQUEST_REDIS_DATABASE", 0))
+	config.GetRequestRedisPassword = cast.ToString(getOrReturnDefaultValue("GET_REQUEST_REDIS_PASSWORD", ""))
 
 	return config
 }

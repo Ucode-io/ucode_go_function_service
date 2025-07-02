@@ -31,6 +31,7 @@ const (
 	TableService_InsertVersionsToCommit_FullMethodName = "/object_builder_service.TableService/InsertVersionsToCommit"
 	TableService_GetTablesByLabel_FullMethodName       = "/object_builder_service.TableService/GetTablesByLabel"
 	TableService_GetFieldsByTable_FullMethodName       = "/object_builder_service.TableService/GetFieldsByTable"
+	TableService_GetChart_FullMethodName               = "/object_builder_service.TableService/GetChart"
 )
 
 // TableServiceClient is the client API for TableService service.
@@ -48,6 +49,7 @@ type TableServiceClient interface {
 	InsertVersionsToCommit(ctx context.Context, in *InsertVersionsToCommitRequest, opts ...grpc.CallOption) (*TableHistory, error)
 	GetTablesByLabel(ctx context.Context, in *GetTablesByLabelReq, opts ...grpc.CallOption) (*GetAllTablesResponse, error)
 	GetFieldsByTable(ctx context.Context, in *GetFieldsByTableReq, opts ...grpc.CallOption) (*GetFieldsByTableRes, error)
+	GetChart(ctx context.Context, in *ChartPrimaryKey, opts ...grpc.CallOption) (*GetChartResponse, error)
 }
 
 type tableServiceClient struct {
@@ -168,6 +170,16 @@ func (c *tableServiceClient) GetFieldsByTable(ctx context.Context, in *GetFields
 	return out, nil
 }
 
+func (c *tableServiceClient) GetChart(ctx context.Context, in *ChartPrimaryKey, opts ...grpc.CallOption) (*GetChartResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetChartResponse)
+	err := c.cc.Invoke(ctx, TableService_GetChart_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TableServiceServer is the server API for TableService service.
 // All implementations must embed UnimplementedTableServiceServer
 // for forward compatibility.
@@ -183,6 +195,7 @@ type TableServiceServer interface {
 	InsertVersionsToCommit(context.Context, *InsertVersionsToCommitRequest) (*TableHistory, error)
 	GetTablesByLabel(context.Context, *GetTablesByLabelReq) (*GetAllTablesResponse, error)
 	GetFieldsByTable(context.Context, *GetFieldsByTableReq) (*GetFieldsByTableRes, error)
+	GetChart(context.Context, *ChartPrimaryKey) (*GetChartResponse, error)
 	mustEmbedUnimplementedTableServiceServer()
 }
 
@@ -225,6 +238,9 @@ func (UnimplementedTableServiceServer) GetTablesByLabel(context.Context, *GetTab
 }
 func (UnimplementedTableServiceServer) GetFieldsByTable(context.Context, *GetFieldsByTableReq) (*GetFieldsByTableRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFieldsByTable not implemented")
+}
+func (UnimplementedTableServiceServer) GetChart(context.Context, *ChartPrimaryKey) (*GetChartResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetChart not implemented")
 }
 func (UnimplementedTableServiceServer) mustEmbedUnimplementedTableServiceServer() {}
 func (UnimplementedTableServiceServer) testEmbeddedByValue()                      {}
@@ -445,6 +461,24 @@ func _TableService_GetFieldsByTable_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TableService_GetChart_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChartPrimaryKey)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TableServiceServer).GetChart(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TableService_GetChart_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TableServiceServer).GetChart(ctx, req.(*ChartPrimaryKey))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TableService_ServiceDesc is the grpc.ServiceDesc for TableService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -495,6 +529,10 @@ var TableService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetFieldsByTable",
 			Handler:    _TableService_GetFieldsByTable_Handler,
+		},
+		{
+			MethodName: "GetChart",
+			Handler:    _TableService_GetChart_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

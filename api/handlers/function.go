@@ -1083,8 +1083,10 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 		permission = access.(bool)
 	}
 
-	resourceBody, exist := h.cache.Get(fmt.Sprintf("project:%s:env:%s", projectId.(string), environmentId.(string)))
-	if !exist {
+	// resourceBody, exist := h.cache.Get(fmt.Sprintf("project:%s:env:%s", projectId.(string), environmentId.(string)))
+
+	resourceBody, err := h.redis.Get(c.Request.Context(), fmt.Sprintf("project:%s:env:%s", projectId.(string), environmentId.(string)))
+	if err != nil {
 		resource, err := h.services.CompanyService().ServiceResource().GetSingle(
 			c.Request.Context(),
 			&pb.GetSingleServiceResourceReq{
@@ -1163,9 +1165,13 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 			return
 		}
 
-		h.cache.Add(fmt.Sprintf("project:%s:env:%s", projectId.(string), environmentId.(string)), appIdByte, config.REDIS_KEY_TIMEOUT)
+		// h.cache.Add(fmt.Sprintf("project:%s:env:%s", projectId.(string), environmentId.(string)), appIdByte, config.REDIS_KEY_TIMEOUT)
+		h.redis.SetX(c.Request.Context(), fmt.Sprintf("project:%s:env:%s", projectId.(string), environmentId.(string)), string(appIdByte), config.REDIS_KEY_TIMEOUT)
+
 	} else {
-		if err := json.Unmarshal(resourceBody, &apiKey); err != nil {
+		fmt.Println("Resource body found in cache")
+
+		if err := json.Unmarshal([]byte(resourceBody), &apiKey); err != nil {
 			h.handleResponse(c, status.InvalidArgument, err.Error())
 			return
 		}
@@ -1241,8 +1247,10 @@ func (h *Handler) InvokeFuncByApiPath(c *gin.Context) {
 		permission = access.(bool)
 	}
 
-	resourceBody, exist := h.cache.Get(fmt.Sprintf("project:%s:env:%s", projectId.(string), environmentId.(string)))
-	if !exist {
+	resourceBody, err := h.redis.Get(c.Request.Context(), fmt.Sprintf("project:%s:env:%s", projectId.(string), environmentId.(string)))
+
+	// resourceBody, exist := h.cache.Get(fmt.Sprintf("project:%s:env:%s", projectId.(string), environmentId.(string)))
+	if err != nil {
 		resource, err := h.services.CompanyService().ServiceResource().GetSingle(
 			c.Request.Context(),
 			&pb.GetSingleServiceResourceReq{
@@ -1321,9 +1329,10 @@ func (h *Handler) InvokeFuncByApiPath(c *gin.Context) {
 			return
 		}
 
-		h.cache.Add(fmt.Sprintf("project:%s:env:%s", projectId.(string), environmentId.(string)), appIdByte, config.REDIS_KEY_TIMEOUT)
+		h.redis.SetX(c.Request.Context(), fmt.Sprintf("project:%s:env:%s", projectId.(string), environmentId.(string)), string(appIdByte), config.REDIS_KEY_TIMEOUT)
 	} else {
-		if err := json.Unmarshal(resourceBody, &apiKey); err != nil {
+		fmt.Println("Resource body found in cache")
+		if err := json.Unmarshal([]byte(resourceBody), &apiKey); err != nil {
 			h.handleResponse(c, status.InvalidArgument, err.Error())
 			return
 		}

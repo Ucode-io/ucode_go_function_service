@@ -7,6 +7,7 @@ import (
 	"ucode/ucode_go_function_service/pkg/caching"
 	"ucode/ucode_go_function_service/pkg/logger"
 	"ucode/ucode_go_function_service/services"
+	"ucode/ucode_go_function_service/storage"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,14 +17,16 @@ type Handler struct {
 	log      logger.LoggerI
 	services services.ServiceManagerI
 	cache    *caching.ExpiringLRUCache
+	redis    storage.RedisStorageI
 }
 
-func NewHandler(cfg config.Config, log logger.LoggerI, svcs services.ServiceManagerI, cache *caching.ExpiringLRUCache) Handler {
+func NewHandler(cfg config.Config, log logger.LoggerI, svcs services.ServiceManagerI, cache *caching.ExpiringLRUCache, redis storage.RedisStorageI) Handler {
 	return Handler{
 		cfg:      cfg,
 		log:      log,
 		services: svcs,
 		cache:    cache,
+		redis:    redis,
 	}
 }
 
