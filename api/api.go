@@ -19,8 +19,6 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 
 	r.Use(customCORSMiddleware())
 
-	r.PATCH("/scale", h.AlterScale)
-
 	v1 := r.Group("/v1")
 	v1.Use(h.AuthMiddleware(cfg))
 

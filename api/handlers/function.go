@@ -442,14 +442,14 @@ func (h *Handler) GetAllFunctions(c *gin.Context) {
 // @Failure 500 {object} status.Response{data=string} "Server Error"
 func (h *Handler) UpdateFunction(c *gin.Context) {
 	var (
-		function models.Function
-		resp     = &empty.Empty{}
+		updateFunction *obs.Function
+		resp           = &empty.Empty{}
 	)
 
 	ctx, cancel := context.WithCancel(c.Request.Context())
 	defer cancel()
 
-	if err := c.ShouldBindJSON(&function); err != nil {
+	if err := c.ShouldBindJSON(&updateFunction); err != nil {
 		h.handleResponse(c, status.BadRequest, err.Error())
 		return
 	}
@@ -487,16 +487,10 @@ func (h *Handler) UpdateFunction(c *gin.Context) {
 		return
 	}
 
+	updateFunction.EnvironmentId = environment.GetId()
+	updateFunction.ProjectId = resource.ResourceEnvironmentId
+
 	var (
-		updateFunction = &obs.Function{
-			Id:               function.ID,
-			Description:      function.Description,
-			Name:             function.Name,
-			Path:             function.Path,
-			EnvironmentId:    environment.GetId(),
-			ProjectId:        resource.ResourceEnvironmentId,
-			FunctionFolderId: function.FuncitonFolderId,
-		}
 		logReq = &models.CreateVersionHistoryRequest{
 			Services:     h.services,
 			NodeType:     resource.NodeType,
@@ -528,21 +522,32 @@ func (h *Handler) UpdateFunction(c *gin.Context) {
 	case pb.ResourceType_MONGODB:
 		resp, err = h.services.GetBuilderServiceByType(resource.NodeType).Function().Update(ctx, updateFunction)
 		if err != nil {
-			h.handleResponse(c, status.GRPCError, err.Error())
 			return
+		}
+
+		if updateFunction.MaxScale != updateFunction.FormerMaxScale {
+			err = h.AlterScale(updateFunction.Path, updateFunction.MaxScale)
+			if err != nil {
+				return
+			}
 		}
 	case pb.ResourceType_POSTGRESQL:
-		updateFunction := &nb.Function{}
+		function := &nb.Function{}
 
-		if err = helper.MarshalToStruct(updateFunction, &updateFunction); err != nil {
-			h.handleResponse(c, status.InternalServerError, err.Error())
+		if err = helper.MarshalToStruct(updateFunction, &function); err != nil {
 			return
 		}
 
-		resp, err = h.services.GoObjectBuilderService().Function().Update(ctx, updateFunction)
+		resp, err = h.services.GoObjectBuilderService().Function().Update(ctx, function)
 		if err != nil {
-			h.handleResponse(c, status.GRPCError, err.Error())
 			return
+		}
+
+		if updateFunction.MaxScale != updateFunction.FormerMaxScale {
+			err = h.AlterScale(updateFunction.Path, updateFunction.MaxScale)
+			if err != nil {
+				return
+			}
 		}
 	}
 
@@ -1358,18 +1363,10 @@ func (h *Handler) InvokeFuncByApiPath(c *gin.Context) {
 	c.JSON(statusCode, resp)
 }
 
-func (h *Handler) AlterScale(c *gin.Context) {
-	m := make(map[string]any)
-
-	err := c.ShouldBindJSON(&m)
-	if err != nil {
-		h.handleResponse(c, status.InvalidArgument, err.Error())
-		return
-	}
-
+func (h *Handler) AlterScale(name string, maxScale int32) error {
 	token, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
 	if err != nil {
-		fmt.Println("Error reading token file:", err)
+		return err
 	}
 
 	// Construct the URL
@@ -1384,7 +1381,7 @@ func (h *Handler) AlterScale(c *gin.Context) {
 				"metadata": map[string]any{
 					"annotations": map[string]any{
 						"autoscaling.knative.dev/minScale": "0",
-						"autoscaling.knative.dev/maxScale": cast.ToString(m["max_scale"]),
+						"autoscaling.knative.dev/maxScale": fmt.Sprintf("%d", maxScale),
 					},
 				},
 			},
@@ -1393,16 +1390,13 @@ func (h *Handler) AlterScale(c *gin.Context) {
 
 	payloadByte, err := json.Marshal(payload)
 	if err != nil {
-		h.handleResponse(c, status.InvalidArgument, err.Error())
-		return
+		return err
 	}
 
 	// Prepare the HTTP PATCH request
 	req, err := http.NewRequest(http.MethodPatch, url, bytes.NewBuffer(payloadByte))
 	if err != nil {
-		fmt.Println("Error creating request:", err)
-		h.handleResponse(c, status.InvalidArgument, err.Error())
-		return
+		return err
 	}
 	req.Header.Set("Authorization", "Bearer "+string(token))
 	req.Header.Set("Content-Type", "application/merge-patch+json")
@@ -1416,22 +1410,20 @@ func (h *Handler) AlterScale(c *gin.Context) {
 	// Send the request
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("Error sending request:", err)
-		h.handleResponse(c, status.InternalServerError, err.Error())
-		return
+		return err
 	}
 	defer resp.Body.Close()
 
 	// Read and print the response
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("Error reading response body:", err)
-		h.handleResponse(c, status.InternalServerError, err.Error())
-		return
+		return err
 	}
 
 	fmt.Printf("Status: %s\n", resp.Status)
 	fmt.Println("Response: ", string(body))
+
+	return nil
 }
 
 func (h *Handler) ExecKnative(path string, req models.NewInvokeFunctionRequest) (models.InvokeFunctionResponse, error) {

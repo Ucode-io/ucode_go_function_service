@@ -29,6 +29,7 @@ enum ResourceType {
     GITLAB = 8;
     GIT = 9;
     BITBUCKET = 10;
+    SUPERSET = 11;
 }
 
 enum SettingType {
