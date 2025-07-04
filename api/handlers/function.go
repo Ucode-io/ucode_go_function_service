@@ -1213,7 +1213,7 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 
 func (h *Handler) InvokeFuncByApiPath(c *gin.Context) {
 	var (
-		invokeFunction map[string]any
+		invokeFunction models.CommonMessage
 		path                = c.Param("function-path")
 		permission     bool = true
 		apiKey         models.ApiKey
@@ -1347,6 +1347,13 @@ func (h *Handler) InvokeFuncByApiPath(c *gin.Context) {
 			return
 		}
 	}
+
+	authInfo, _ := h.GetAuthInfo(c)
+
+	invokeFunction.Data["user_id"] = authInfo.GetUserId()
+	invokeFunction.Data["project_id"] = authInfo.GetProjectId()
+	invokeFunction.Data["environment_id"] = authInfo.GetEnvId()
+	invokeFunction.Data["app_id"] = apiKey.AppId
 
 	resp, statusCode, err := util.DoDynamicRequest(
 		fmt.Sprintf("http://%s.%s%s", path, h.cfg.KnativeBaseUrl, apiPath),
