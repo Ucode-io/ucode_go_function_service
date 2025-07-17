@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -1088,9 +1089,9 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 		permission = access.(bool)
 	}
 
-	// resourceBody, exist := h.cache.Get(fmt.Sprintf("project:%s:env:%s", projectId.(string), environmentId.(string)))
+	redisKey := base64.StdEncoding.EncodeToString(fmt.Appendf(nil, "%s-%s", environmentId.(string), path))
 
-	resourceBody, err := h.redis.Get(c.Request.Context(), fmt.Sprintf("project:%s:env:%s", projectId.(string), environmentId.(string)))
+	resourceBody, err := h.redis.Get(c.Request.Context(), redisKey)
 	if err != nil {
 		resource, err := h.services.CompanyService().ServiceResource().GetSingle(
 			c.Request.Context(),
@@ -1170,12 +1171,8 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 			return
 		}
 
-		// h.cache.Add(fmt.Sprintf("project:%s:env:%s", projectId.(string), environmentId.(string)), appIdByte, config.REDIS_KEY_TIMEOUT)
-		h.redis.SetX(c.Request.Context(), fmt.Sprintf("project:%s:env:%s", projectId.(string), environmentId.(string)), string(appIdByte), config.REDIS_KEY_TIMEOUT)
-
+		h.redis.SetX(c.Request.Context(), redisKey, string(appIdByte), config.REDIS_KEY_TIMEOUT)
 	} else {
-		fmt.Println("Resource body found in cache")
-
 		if err := json.Unmarshal([]byte(resourceBody), &apiKey); err != nil {
 			h.handleResponse(c, status.InvalidArgument, err.Error())
 			return
@@ -1240,7 +1237,6 @@ func (h *Handler) InvokeFuncByApiPath(c *gin.Context) {
 		return
 	}
 
-	// Get the headers from the request and add them to the headers map
 	for key, values := range c.Request.Header {
 		for _, value := range values {
 			headers[key] = value
@@ -1252,9 +1248,9 @@ func (h *Handler) InvokeFuncByApiPath(c *gin.Context) {
 		permission = access.(bool)
 	}
 
-	resourceBody, err := h.redis.Get(c.Request.Context(), fmt.Sprintf("project:%s:env:%s", projectId.(string), environmentId.(string)))
+	redisKey := base64.StdEncoding.EncodeToString(fmt.Appendf(nil, "%s-%s", environmentId.(string), path))
 
-	// resourceBody, exist := h.cache.Get(fmt.Sprintf("project:%s:env:%s", projectId.(string), environmentId.(string)))
+	resourceBody, err := h.redis.Get(c.Request.Context(), redisKey)
 	if err != nil {
 		resource, err := h.services.CompanyService().ServiceResource().GetSingle(
 			c.Request.Context(),
@@ -1334,9 +1330,8 @@ func (h *Handler) InvokeFuncByApiPath(c *gin.Context) {
 			return
 		}
 
-		h.redis.SetX(c.Request.Context(), fmt.Sprintf("project:%s:env:%s", projectId.(string), environmentId.(string)), string(appIdByte), config.REDIS_KEY_TIMEOUT)
+		h.redis.SetX(c.Request.Context(), redisKey, string(appIdByte), config.REDIS_KEY_TIMEOUT)
 	} else {
-		fmt.Println("Resource body found in cache")
 		if err := json.Unmarshal([]byte(resourceBody), &apiKey); err != nil {
 			h.handleResponse(c, status.InvalidArgument, err.Error())
 			return
