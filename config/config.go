@@ -50,6 +50,7 @@ type Config struct {
 	// Fass urls
 	OpeFassBaseUrl string
 	KnativeBaseUrl string
+	N8NBaseUrl     string
 
 	// Github Creds
 	GithubBaseUrl      string
@@ -144,6 +145,7 @@ func Load() Config {
 	// Fass Urls
 	config.OpeFassBaseUrl = cast.ToString(getOrReturnDefaultValue("OPENFASS_BASE_URL", "https://ofs.u-code.io/function/"))
 	config.KnativeBaseUrl = cast.ToString(getOrReturnDefaultValue("KNATIVE_BASE_URL", "knative-fn.u-code.io"))
+	config.N8NBaseUrl = cast.ToString(getOrReturnDefaultValue("N8N_BASE_URL", ""))
 
 	// Github Creds
 	config.GithubBaseUrl = cast.ToString(getOrReturnDefaultValue("GITHUB_BASE_URL", "https://github.com"))

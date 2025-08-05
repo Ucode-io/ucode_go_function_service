@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -176,6 +175,7 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 			return
 		}
 		gitlabToken = h.cfg.GitlabKnativeToken
+	case config.WORKFLOW:
 	default:
 		h.handleResponse(c, status.BadRequest, "not supported function type")
 		return
@@ -1415,15 +1415,6 @@ func (h *Handler) AlterScale(name string, maxScale int32) error {
 		return err
 	}
 	defer resp.Body.Close()
-
-	// Read and print the response
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("Status: %s\n", resp.Status)
-	fmt.Println("Response: ", string(body))
 
 	return nil
 }

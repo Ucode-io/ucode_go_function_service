@@ -11,6 +11,7 @@ const (
 	FUNCTION string = "FUNCTION"
 	MICROFE  string = "MICRO_FRONTEND"
 	KNATIVE  string = "KNATIVE"
+	WORKFLOW string = "WORKFLOW"
 
 	// ACTION TYPES
 	DELETE string = "DELETE"
