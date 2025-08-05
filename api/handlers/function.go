@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -175,6 +175,7 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 			return
 		}
 		gitlabToken = h.cfg.GitlabKnativeToken
+	case config.WORKFLOW:
 	default:
 		h.handleResponse(c, status.BadRequest, "not supported function type")
 		return
@@ -1088,8 +1089,10 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 		permission = access.(bool)
 	}
 
-	resourceBody, exist := h.cache.Get(fmt.Sprintf("project:%s:env:%s", projectId.(string), environmentId.(string)))
-	if !exist {
+	redisKey := base64.StdEncoding.EncodeToString(fmt.Appendf(nil, "%s-%s", environmentId.(string), path))
+
+	resourceBody, err := h.redis.Get(c.Request.Context(), redisKey)
+	if err != nil {
 		resource, err := h.services.CompanyService().ServiceResource().GetSingle(
 			c.Request.Context(),
 			&pb.GetSingleServiceResourceReq{
@@ -1168,9 +1171,9 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 			return
 		}
 
-		h.cache.Add(fmt.Sprintf("project:%s:env:%s", projectId.(string), environmentId.(string)), appIdByte, config.REDIS_KEY_TIMEOUT)
+		h.redis.SetX(c.Request.Context(), redisKey, string(appIdByte), config.REDIS_KEY_TIMEOUT)
 	} else {
-		if err := json.Unmarshal(resourceBody, &apiKey); err != nil {
+		if err := json.Unmarshal([]byte(resourceBody), &apiKey); err != nil {
 			h.handleResponse(c, status.InvalidArgument, err.Error())
 			return
 		}
@@ -1234,7 +1237,6 @@ func (h *Handler) InvokeFuncByApiPath(c *gin.Context) {
 		return
 	}
 
-	// Get the headers from the request and add them to the headers map
 	for key, values := range c.Request.Header {
 		for _, value := range values {
 			headers[key] = value
@@ -1246,8 +1248,10 @@ func (h *Handler) InvokeFuncByApiPath(c *gin.Context) {
 		permission = access.(bool)
 	}
 
-	resourceBody, exist := h.cache.Get(fmt.Sprintf("project:%s:env:%s", projectId.(string), environmentId.(string)))
-	if !exist {
+	redisKey := base64.StdEncoding.EncodeToString(fmt.Appendf(nil, "%s-%s", environmentId.(string), path))
+
+	resourceBody, err := h.redis.Get(c.Request.Context(), redisKey)
+	if err != nil {
 		resource, err := h.services.CompanyService().ServiceResource().GetSingle(
 			c.Request.Context(),
 			&pb.GetSingleServiceResourceReq{
@@ -1326,9 +1330,9 @@ func (h *Handler) InvokeFuncByApiPath(c *gin.Context) {
 			return
 		}
 
-		h.cache.Add(fmt.Sprintf("project:%s:env:%s", projectId.(string), environmentId.(string)), appIdByte, config.REDIS_KEY_TIMEOUT)
+		h.redis.SetX(c.Request.Context(), redisKey, string(appIdByte), config.REDIS_KEY_TIMEOUT)
 	} else {
-		if err := json.Unmarshal(resourceBody, &apiKey); err != nil {
+		if err := json.Unmarshal([]byte(resourceBody), &apiKey); err != nil {
 			h.handleResponse(c, status.InvalidArgument, err.Error())
 			return
 		}
@@ -1367,14 +1371,9 @@ func (h *Handler) AlterScale(name string, maxScale int32) error {
 		return err
 	}
 
-	fmt.Println("GOT TOKEN:", string(token))
-
 	// Construct the URL
 	kubeHost := os.Getenv("KUBERNETES_SERVICE_HOST")
 	kubePort := os.Getenv("KUBERNETES_SERVICE_PORT")
-
-	fmt.Println("Kube host:", kubeHost)
-	fmt.Println("Kube port:", kubePort)
 
 	url := fmt.Sprintf("https://%s:%s/apis/serving.knative.dev/v1/namespaces/knative-fn/services/%s", kubeHost, kubePort, name)
 
@@ -1416,15 +1415,6 @@ func (h *Handler) AlterScale(name string, maxScale int32) error {
 		return err
 	}
 	defer resp.Body.Close()
-
-	// Read and print the response
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("Status: %s\n", resp.Status)
-	fmt.Println("Response: ", string(body))
 
 	return nil
 }

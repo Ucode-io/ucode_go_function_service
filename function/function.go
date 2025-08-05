@@ -13,6 +13,7 @@ type HandlerFunc func(string, config.Config, models.NewInvokeFunctionRequest) (m
 var FuncHandlers = map[string]HandlerFunc{
 	"FUNCTION": ExecOpenFaaS,
 	"KNATIVE":  ExecKnative,
+	"WORKFLOW": ExecWorkflow,
 }
 
 func ExecOpenFaaS(path string, cfg config.Config, req models.NewInvokeFunctionRequest) (models.InvokeFunctionResponse, error) {
@@ -27,6 +28,16 @@ func ExecOpenFaaS(path string, cfg config.Config, req models.NewInvokeFunctionRe
 
 func ExecKnative(path string, cfg config.Config, req models.NewInvokeFunctionRequest) (models.InvokeFunctionResponse, error) {
 	url := fmt.Sprintf("http://%s.%s", path, cfg.KnativeBaseUrl)
+	resp, err := util.DoRequest(url, http.MethodPost, req)
+	if err != nil {
+		return models.InvokeFunctionResponse{}, err
+	}
+
+	return resp, nil
+}
+
+func ExecWorkflow(path string, cfg config.Config, req models.NewInvokeFunctionRequest) (models.InvokeFunctionResponse, error) {
+	url := fmt.Sprintf("%s/webhook/%s", cfg.N8NBaseUrl, path)
 	resp, err := util.DoRequest(url, http.MethodPost, req)
 	if err != nil {
 		return models.InvokeFunctionResponse{}, err

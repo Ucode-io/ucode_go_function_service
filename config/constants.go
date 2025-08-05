@@ -11,6 +11,7 @@ const (
 	FUNCTION string = "FUNCTION"
 	MICROFE  string = "MICRO_FRONTEND"
 	KNATIVE  string = "KNATIVE"
+	WORKFLOW string = "WORKFLOW"
 
 	// ACTION TYPES
 	DELETE string = "DELETE"
@@ -38,6 +39,8 @@ const (
 	// Fare Types
 	FARE_FUNCTION      string = "function"
 	FARE_MICROFRONTEND string = "microfrontend"
+
+	ENTER_PRICE_TYPE string = "ENTER_PRICE"
 )
 
 const (

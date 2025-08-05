@@ -8,6 +8,7 @@ import (
 	"ucode/ucode_go_function_service/pkg/caching"
 	"ucode/ucode_go_function_service/pkg/logger"
 	"ucode/ucode_go_function_service/services"
+	"ucode/ucode_go_function_service/storage/redis"
 
 	"github.com/gin-gonic/gin"
 )
@@ -50,8 +51,10 @@ func main() {
 		log.Error("Error adding caching.", logger.Error(err))
 	}
 
+	newRedis := redis.NewRedis(cfg)
+
 	var (
-		h = handlers.NewHandler(cfg, log, grpcSvcs, cache)
+		h = handlers.NewHandler(cfg, log, grpcSvcs, cache, newRedis)
 		r = gin.New()
 	)
 
