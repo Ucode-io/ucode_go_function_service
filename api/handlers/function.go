@@ -397,7 +397,7 @@ func (h *Handler) GetAllFunctions(c *gin.Context) {
 				Offset:        int32(offset),
 				ProjectId:     resource.ResourceEnvironmentId,
 				EnvironmentId: environment.GetId(),
-				Type:          []string{config.FUNCTION, config.KNATIVE},
+				Type:          []string{config.FUNCTION, config.KNATIVE, config.WORKFLOW},
 				FunctionId:    c.Query("function_id"),
 			},
 		)
@@ -415,7 +415,7 @@ func (h *Handler) GetAllFunctions(c *gin.Context) {
 				Offset:        int32(offset),
 				ProjectId:     resource.ResourceEnvironmentId,
 				EnvironmentId: environment.GetId(),
-				Type:          []string{config.FUNCTION, config.KNATIVE},
+				Type:          []string{config.FUNCTION, config.KNATIVE, config.WORKFLOW},
 				FunctionId:    c.Query("function_id"),
 			},
 		)
@@ -771,7 +771,7 @@ func (h *Handler) GetAllFunctionsForApp(c *gin.Context) {
 				Limit:     int32(limit),
 				Offset:    int32(offset),
 				ProjectId: resource.ResourceEnvironmentId,
-				Type:      []string{config.FUNCTION, config.KNATIVE},
+				Type:      []string{config.FUNCTION, config.KNATIVE, config.WORKFLOW},
 			},
 		)
 		if err != nil {
@@ -788,7 +788,7 @@ func (h *Handler) GetAllFunctionsForApp(c *gin.Context) {
 				Limit:     int32(limit),
 				Offset:    int32(offset),
 				ProjectId: resource.ResourceEnvironmentId,
-				Type:      []string{config.FUNCTION, config.KNATIVE},
+				Type:      []string{config.FUNCTION, config.KNATIVE, config.WORKFLOW},
 			},
 		)
 		if err != nil {
