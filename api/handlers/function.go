@@ -2,15 +2,20 @@ package handlers
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"ucode/ucode_go_function_service/api/models"
 	"ucode/ucode_go_function_service/api/status_http"
@@ -25,6 +30,7 @@ import (
 	"ucode/ucode_go_function_service/pkg/helper"
 	"ucode/ucode_go_function_service/pkg/util"
 
+	"github.com/andybalholm/brotli"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/google/uuid"
@@ -1219,10 +1225,7 @@ func (h *Handler) InvokeFuncByApiPath(c *gin.Context) {
 		headers        = make(map[string]string)
 	)
 
-	if err := c.ShouldBindJSON(&invokeFunction); err != nil {
-		h.handleResponse(c, status.BadRequest, err.Error())
-		return
-	}
+	contentType := c.GetHeader("Content-Type")
 
 	projectId, ok := c.Get("project_id")
 	if !ok || !util.IsValidUUID(projectId.(string)) {
@@ -1345,6 +1348,123 @@ func (h *Handler) InvokeFuncByApiPath(c *gin.Context) {
 
 	authInfo, _ := h.GetAuthInfo(c)
 
+	// Handle multipart/form-data separately
+	if strings.HasPrefix(strings.ToLower(contentType), "multipart/form-data") {
+		// Ensure form is parsed
+		if err := c.Request.ParseMultipartForm(32 << 20); err != nil { // 32MB
+			h.handleResponse(c, status.BadRequest, err.Error())
+			return
+		}
+
+		var bodyBuffer bytes.Buffer
+		writer := multipart.NewWriter(&bodyBuffer)
+
+		// Copy existing form fields
+		if c.Request.MultipartForm != nil {
+			for key, vals := range c.Request.MultipartForm.Value {
+				for _, val := range vals {
+					writer.WriteField(key, val)
+				}
+			}
+			// Copy files
+			for key, fhs := range c.Request.MultipartForm.File {
+				for _, fh := range fhs {
+					file, err := fh.Open()
+					if err != nil {
+						writer.Close()
+						h.handleResponse(c, status.BadRequest, err.Error())
+						return
+					}
+					part, err := writer.CreateFormFile(key, fh.Filename)
+					if err != nil {
+						file.Close()
+						writer.Close()
+						h.handleResponse(c, status.BadRequest, err.Error())
+						return
+					}
+					if _, err := io.Copy(part, file); err != nil {
+						file.Close()
+						writer.Close()
+						h.handleResponse(c, status.BadRequest, err.Error())
+						return
+					}
+					file.Close()
+				}
+			}
+		}
+
+		// Append auth fields
+		writer.WriteField("user_id", authInfo.GetUserId())
+		writer.WriteField("project_id", authInfo.GetProjectId())
+		writer.WriteField("environment_id", authInfo.GetEnvId())
+		writer.WriteField("app_id", apiKey.AppId)
+
+		writer.Close()
+
+		url := fmt.Sprintf("http://%s.%s%s", path, h.cfg.KnativeBaseUrl, apiPath)
+		req, err := http.NewRequest(http.MethodPost, url, &bodyBuffer)
+		if err != nil {
+			h.handleResponse(c, status.BadRequest, err.Error())
+			return
+		}
+
+		// Set headers, but override Content-Type to multipart boundary
+		for k, v := range headers {
+			// Skip original content-length/content-type
+			if strings.EqualFold(k, "Content-Length") || strings.EqualFold(k, "Content-Type") {
+				continue
+			}
+			req.Header.Set(k, v)
+		}
+		req.Header.Set("Content-Type", writer.FormDataContentType())
+
+		client := &http.Client{Timeout: 60 * time.Second}
+		res, err := client.Do(req)
+		if err != nil {
+			h.handleResponse(c, status.BadRequest, err.Error())
+			return
+		}
+		defer res.Body.Close()
+
+		respHeader := res.Header.Get("Content-Encoding")
+		var respBody []byte
+		switch respHeader {
+		case "gzip":
+			gzr, gzErr := gzip.NewReader(res.Body)
+			if gzErr != nil {
+				handleErr := fmt.Errorf("gzip decode error: %w", gzErr)
+				h.handleResponse(c, status.InternalServerError, handleErr.Error())
+				return
+			}
+			defer gzr.Close()
+			respBody, err = io.ReadAll(gzr)
+		case "br":
+			br := brotli.NewReader(res.Body)
+			respBody, err = io.ReadAll(br)
+		default:
+			respBody, err = io.ReadAll(res.Body)
+		}
+		if err != nil {
+			h.handleResponse(c, status.InternalServerError, err.Error())
+			return
+		}
+
+		var jsonResp map[string]any
+		if err := json.Unmarshal(respBody, &jsonResp); err != nil {
+			// Not JSON; return as text
+			c.Data(res.StatusCode, "text/plain; charset=utf-8", respBody)
+			return
+		}
+		c.JSON(res.StatusCode, jsonResp)
+		return
+	}
+
+	// JSON handler
+	if err := c.ShouldBindJSON(&invokeFunction); err != nil {
+		h.handleResponse(c, status.BadRequest, err.Error())
+		return
+	}
+
 	invokeFunction.Data["user_id"] = authInfo.GetUserId()
 	invokeFunction.Data["project_id"] = authInfo.GetProjectId()
 	invokeFunction.Data["environment_id"] = authInfo.GetEnvId()
@@ -1356,11 +1476,6 @@ func (h *Handler) InvokeFuncByApiPath(c *gin.Context) {
 		http.MethodPost,
 		invokeFunction,
 	)
-
-	if err != nil {
-		c.JSON(statusCode, resp)
-		return
-	}
 
 	c.JSON(statusCode, resp)
 }
@@ -1427,4 +1542,72 @@ func (h *Handler) ExecKnative(path string, req models.NewInvokeFunctionRequest) 
 	}
 
 	return resp, nil
+}
+
+func sendFormDataWithFiles(url string, data map[string]any) error {
+	var requestBody bytes.Buffer
+	writer := multipart.NewWriter(&requestBody)
+
+	for key, value := range data {
+		switch v := value.(type) {
+		case string:
+			writer.WriteField(key, v)
+		case int:
+			writer.WriteField(key, strconv.Itoa(v))
+		case int64:
+			writer.WriteField(key, strconv.FormatInt(v, 10))
+		case float64:
+			writer.WriteField(key, strconv.FormatFloat(v, 'f', -1, 64))
+		case bool:
+			writer.WriteField(key, strconv.FormatBool(v))
+		case *os.File:
+			// Reset file pointer to beginning
+			v.Seek(0, 0)
+			part, err := writer.CreateFormFile(key, v.Name())
+			if err != nil {
+				return err
+			}
+			if _, err := io.Copy(part, v); err != nil {
+				return err
+			}
+		case []byte:
+			// Treat byte slice as file content
+			part, err := writer.CreateFormFile(key, key+".bin")
+			if err != nil {
+				return err
+			}
+			part.Write(v)
+		default:
+			// Convert any other type to JSON string
+			jsonBytes, err := json.Marshal(v)
+			if err != nil {
+				writer.WriteField(key, fmt.Sprintf("%v", v))
+			} else {
+				writer.WriteField(key, string(jsonBytes))
+			}
+		}
+	}
+
+	writer.Close()
+
+	req, err := http.NewRequest("POST", url, &requestBody)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.Header.Set("User-Agent", "Go-HTTP-Client")
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Read response if needed
+	body, _ := io.ReadAll(resp.Body)
+	fmt.Printf("Response: %s\n", string(body))
+
+	return nil
 }
