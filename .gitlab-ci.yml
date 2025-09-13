@@ -1,65 +1,12 @@
 include:
-  - .gitlab/ci/*.gitlab-ci.yml
+  - project: 'ucode/ops/ci-cd'
+    ref: master
+    file: 'microservices/ci.gitlab-ci.yml'
+
+  - project: 'ucode/ops/ci-cd'
+    ref: master
+    file: 'microservices/cd.gitlab-ci.yml'
 
 stages:
   - build
   - deploy
-  - rollback
-
-build-test:
-  stage: build
-  extends: .build_template
-  variables:
-    ENV_TAG: test
-    DOCKERFILE: Dockerfile
-  only:
-    - staging
-
-build-prod:
-  stage: build
-  extends: .build_template
-  variables:
-    ENV_TAG: latest
-    DOCKERFILE: Dockerfile
-  only:
-    - master
-
-
-deploy-test:
-  stage: deploy
-  extends: .deploy_template
-  variables:
-    NAMESPACE: ucode-test
-    VALUES_FILE: .helm/values-test.yml
-    K8SCONFIGJSON: $UCODE_HZN_KUBECONFIG
-  only:
-    - staging
-
-deploy-prod:
-  stage: deploy
-  extends: .deploy_template
-  variables:
-    NAMESPACE: ucode-prod
-    VALUES_FILE: .helm/values-prod.yml
-    K8SCONFIGJSON: $UCODE_KUBECONFIG
-  only:
-    - master
-
-
-
-rollback-test:
-  stage: rollback
-  extends: .rollback_template
-  variables:
-    NAMESPACE: ucode-test
-    K8SCONFIGJSON: $UCODE_HZN_KUBECONFIG
-  when: manual
-
-rollback-prod:
-  stage: rollback
-  extends: .rollback_template
-  variables:
-    NAMESPACE: ucode-prod
-    K8SCONFIGJSON: $UCODE_KUBECONFIG
-  when: manual
-
