@@ -1179,6 +1179,7 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 
 		h.redis.SetX(c.Request.Context(), redisKey, string(appIdByte), config.REDIS_KEY_TIMEOUT)
 	} else {
+		fmt.Println("GETTING FROM REDIS ANYWAY")
 		if err := json.Unmarshal([]byte(resourceBody), &apiKey); err != nil {
 			h.handleResponse(c, status.InvalidArgument, err.Error())
 			return

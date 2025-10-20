@@ -1,3 +1,6 @@
 .env
 vendor
 any.go
+.DS_Store
+.idea
+.vscode
