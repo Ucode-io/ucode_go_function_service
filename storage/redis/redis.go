@@ -19,8 +19,9 @@ func NewRedis(cfg config.Config) storage.RedisStorageI {
 	var redisPool *redis.Client
 
 	redisPool = redis.NewClient(&redis.Options{
-		Addr: fmt.Sprintf("%s:%s", cfg.GetRequestRedisHost, cfg.GetRequestRedisPort),
-		DB:   cfg.GetRequestRedisDatabase,
+		Addr:     fmt.Sprintf("%s:%s", cfg.GetRequestRedisHost, cfg.GetRequestRedisPort),
+		DB:       cfg.GetRequestRedisDatabase,
+		Password: cfg.GetRequestRedisPassword,
 	})
 
 	conf := config.Load()
