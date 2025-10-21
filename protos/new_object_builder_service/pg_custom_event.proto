@@ -32,6 +32,7 @@ message CreateCustomEventRequest {
     string action_type = 11;
     google.protobuf.Struct attributes = 12;
     string env_id = 13;
+    string path = 14;
 }
 
 message CustomEvent {
@@ -49,6 +50,7 @@ message CustomEvent {
     google.protobuf.Struct attributes = 12;
     google.protobuf.Struct action_permission = 13;
     string env_id = 14;
+    string path = 15;
 }
 
 message GetCustomEventsListResponse {

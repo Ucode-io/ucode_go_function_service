@@ -48,6 +48,8 @@ const (
 	ObjectBuilderService_UpsertMany_FullMethodName                = "/object_builder_service.ObjectBuilderService/UpsertMany"
 	ObjectBuilderService_UpdateByUserIdAuth_FullMethodName        = "/object_builder_service.ObjectBuilderService/UpdateByUserIdAuth"
 	ObjectBuilderService_AgGridTree_FullMethodName                = "/object_builder_service.ObjectBuilderService/AgGridTree"
+	ObjectBuilderService_GetBoardStructure_FullMethodName         = "/object_builder_service.ObjectBuilderService/GetBoardStructure"
+	ObjectBuilderService_GetBoardData_FullMethodName              = "/object_builder_service.ObjectBuilderService/GetBoardData"
 )
 
 // ObjectBuilderServiceClient is the client API for ObjectBuilderService service.
@@ -83,6 +85,8 @@ type ObjectBuilderServiceClient interface {
 	UpsertMany(ctx context.Context, in *CommonMessage, opts ...grpc.CallOption) (*CommonMessage, error)
 	UpdateByUserIdAuth(ctx context.Context, in *CommonMessage, opts ...grpc.CallOption) (*CommonMessage, error)
 	AgGridTree(ctx context.Context, in *CommonMessage, opts ...grpc.CallOption) (*CommonMessage, error)
+	GetBoardStructure(ctx context.Context, in *CommonMessage, opts ...grpc.CallOption) (*CommonMessage, error)
+	GetBoardData(ctx context.Context, in *CommonMessage, opts ...grpc.CallOption) (*CommonMessage, error)
 }
 
 type objectBuilderServiceClient struct {
@@ -383,6 +387,26 @@ func (c *objectBuilderServiceClient) AgGridTree(ctx context.Context, in *CommonM
 	return out, nil
 }
 
+func (c *objectBuilderServiceClient) GetBoardStructure(ctx context.Context, in *CommonMessage, opts ...grpc.CallOption) (*CommonMessage, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CommonMessage)
+	err := c.cc.Invoke(ctx, ObjectBuilderService_GetBoardStructure_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *objectBuilderServiceClient) GetBoardData(ctx context.Context, in *CommonMessage, opts ...grpc.CallOption) (*CommonMessage, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CommonMessage)
+	err := c.cc.Invoke(ctx, ObjectBuilderService_GetBoardData_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ObjectBuilderServiceServer is the server API for ObjectBuilderService service.
 // All implementations must embed UnimplementedObjectBuilderServiceServer
 // for forward compatibility.
@@ -416,6 +440,8 @@ type ObjectBuilderServiceServer interface {
 	UpsertMany(context.Context, *CommonMessage) (*CommonMessage, error)
 	UpdateByUserIdAuth(context.Context, *CommonMessage) (*CommonMessage, error)
 	AgGridTree(context.Context, *CommonMessage) (*CommonMessage, error)
+	GetBoardStructure(context.Context, *CommonMessage) (*CommonMessage, error)
+	GetBoardData(context.Context, *CommonMessage) (*CommonMessage, error)
 	mustEmbedUnimplementedObjectBuilderServiceServer()
 }
 
@@ -512,6 +538,12 @@ func (UnimplementedObjectBuilderServiceServer) UpdateByUserIdAuth(context.Contex
 }
 func (UnimplementedObjectBuilderServiceServer) AgGridTree(context.Context, *CommonMessage) (*CommonMessage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AgGridTree not implemented")
+}
+func (UnimplementedObjectBuilderServiceServer) GetBoardStructure(context.Context, *CommonMessage) (*CommonMessage, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetBoardStructure not implemented")
+}
+func (UnimplementedObjectBuilderServiceServer) GetBoardData(context.Context, *CommonMessage) (*CommonMessage, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetBoardData not implemented")
 }
 func (UnimplementedObjectBuilderServiceServer) mustEmbedUnimplementedObjectBuilderServiceServer() {}
 func (UnimplementedObjectBuilderServiceServer) testEmbeddedByValue()                              {}
@@ -1056,6 +1088,42 @@ func _ObjectBuilderService_AgGridTree_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ObjectBuilderService_GetBoardStructure_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CommonMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ObjectBuilderServiceServer).GetBoardStructure(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ObjectBuilderService_GetBoardStructure_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ObjectBuilderServiceServer).GetBoardStructure(ctx, req.(*CommonMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ObjectBuilderService_GetBoardData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CommonMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ObjectBuilderServiceServer).GetBoardData(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ObjectBuilderService_GetBoardData_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ObjectBuilderServiceServer).GetBoardData(ctx, req.(*CommonMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ObjectBuilderService_ServiceDesc is the grpc.ServiceDesc for ObjectBuilderService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1178,6 +1246,14 @@ var ObjectBuilderService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AgGridTree",
 			Handler:    _ObjectBuilderService_AgGridTree_Handler,
+		},
+		{
+			MethodName: "GetBoardStructure",
+			Handler:    _ObjectBuilderService_GetBoardStructure_Handler,
+		},
+		{
+			MethodName: "GetBoardData",
+			Handler:    _ObjectBuilderService_GetBoardData_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

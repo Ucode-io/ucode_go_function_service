@@ -24,7 +24,7 @@ message ExcelToDbRequest {
 }
 
 message ExcelToDbResponse {
-
+    repeated google.protobuf.Struct rows = 1;
 }
 
 message ExcelReadResponse {

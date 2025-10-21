@@ -20,12 +20,13 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	RelationService_Create_FullMethodName  = "/new_object_builder_service.RelationService/Create"
-	RelationService_GetAll_FullMethodName  = "/new_object_builder_service.RelationService/GetAll"
-	RelationService_GetByID_FullMethodName = "/new_object_builder_service.RelationService/GetByID"
-	RelationService_Update_FullMethodName  = "/new_object_builder_service.RelationService/Update"
-	RelationService_Delete_FullMethodName  = "/new_object_builder_service.RelationService/Delete"
-	RelationService_GetIds_FullMethodName  = "/new_object_builder_service.RelationService/GetIds"
+	RelationService_Create_FullMethodName                  = "/new_object_builder_service.RelationService/Create"
+	RelationService_GetAll_FullMethodName                  = "/new_object_builder_service.RelationService/GetAll"
+	RelationService_GetByID_FullMethodName                 = "/new_object_builder_service.RelationService/GetByID"
+	RelationService_Update_FullMethodName                  = "/new_object_builder_service.RelationService/Update"
+	RelationService_Delete_FullMethodName                  = "/new_object_builder_service.RelationService/Delete"
+	RelationService_GetIds_FullMethodName                  = "/new_object_builder_service.RelationService/GetIds"
+	RelationService_GetRelationsByTableFrom_FullMethodName = "/new_object_builder_service.RelationService/GetRelationsByTableFrom"
 )
 
 // RelationServiceClient is the client API for RelationService service.
@@ -38,6 +39,7 @@ type RelationServiceClient interface {
 	Update(ctx context.Context, in *UpdateRelationRequest, opts ...grpc.CallOption) (*RelationForGetAll, error)
 	Delete(ctx context.Context, in *RelationPrimaryKey, opts ...grpc.CallOption) (*empty.Empty, error)
 	GetIds(ctx context.Context, in *GetIdsReq, opts ...grpc.CallOption) (*GetIdsResp, error)
+	GetRelationsByTableFrom(ctx context.Context, in *GetRelationsByTableFromRequest, opts ...grpc.CallOption) (*GetRelationsByTableFromResponse, error)
 }
 
 type relationServiceClient struct {
@@ -108,6 +110,16 @@ func (c *relationServiceClient) GetIds(ctx context.Context, in *GetIdsReq, opts 
 	return out, nil
 }
 
+func (c *relationServiceClient) GetRelationsByTableFrom(ctx context.Context, in *GetRelationsByTableFromRequest, opts ...grpc.CallOption) (*GetRelationsByTableFromResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetRelationsByTableFromResponse)
+	err := c.cc.Invoke(ctx, RelationService_GetRelationsByTableFrom_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RelationServiceServer is the server API for RelationService service.
 // All implementations must embed UnimplementedRelationServiceServer
 // for forward compatibility.
@@ -118,6 +130,7 @@ type RelationServiceServer interface {
 	Update(context.Context, *UpdateRelationRequest) (*RelationForGetAll, error)
 	Delete(context.Context, *RelationPrimaryKey) (*empty.Empty, error)
 	GetIds(context.Context, *GetIdsReq) (*GetIdsResp, error)
+	GetRelationsByTableFrom(context.Context, *GetRelationsByTableFromRequest) (*GetRelationsByTableFromResponse, error)
 	mustEmbedUnimplementedRelationServiceServer()
 }
 
@@ -145,6 +158,9 @@ func (UnimplementedRelationServiceServer) Delete(context.Context, *RelationPrima
 }
 func (UnimplementedRelationServiceServer) GetIds(context.Context, *GetIdsReq) (*GetIdsResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetIds not implemented")
+}
+func (UnimplementedRelationServiceServer) GetRelationsByTableFrom(context.Context, *GetRelationsByTableFromRequest) (*GetRelationsByTableFromResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRelationsByTableFrom not implemented")
 }
 func (UnimplementedRelationServiceServer) mustEmbedUnimplementedRelationServiceServer() {}
 func (UnimplementedRelationServiceServer) testEmbeddedByValue()                         {}
@@ -275,6 +291,24 @@ func _RelationService_GetIds_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RelationService_GetRelationsByTableFrom_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRelationsByTableFromRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelationServiceServer).GetRelationsByTableFrom(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RelationService_GetRelationsByTableFrom_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelationServiceServer).GetRelationsByTableFrom(ctx, req.(*GetRelationsByTableFromRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RelationService_ServiceDesc is the grpc.ServiceDesc for RelationService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -305,6 +339,10 @@ var RelationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetIds",
 			Handler:    _RelationService_GetIds_Handler,
+		},
+		{
+			MethodName: "GetRelationsByTableFrom",
+			Handler:    _RelationService_GetRelationsByTableFrom_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

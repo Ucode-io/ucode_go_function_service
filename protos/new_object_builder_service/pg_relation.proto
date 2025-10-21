@@ -17,6 +17,7 @@ service RelationService {
     rpc Delete(RelationPrimaryKey) returns (google.protobuf.Empty) {}
 
     rpc GetIds(GetIdsReq) returns (GetIdsResp) {}
+    rpc GetRelationsByTableFrom(GetRelationsByTableFromRequest) returns (GetRelationsByTableFromResponse) {}
 }
 
 message CreateRelationRequest {
@@ -59,6 +60,8 @@ message CreateRelationRequest {
     string env_id = 37;
     string relation_field_id = 38;
     string relation_to_field_id = 39;
+    string field_from = 40;
+    string field_to = 41;
 }
 
 message AutoFilter {
@@ -109,6 +112,7 @@ message UpdateRelationRequest {
     bool relation_buttons = 35;
     google.protobuf.Struct attributes = 36;
     string env_id = 37;
+    bool required = 38;
 }
 
 
@@ -164,6 +168,8 @@ message GetAllRelationsRequest {
     string relation_table_slug = 5;
     string project_id = 6;
     string version_id = 7;
+    bool disable_table_from = 8;
+    bool disable_table_to = 9;
 }
 
 message RelationPrimaryKey {
@@ -201,4 +207,13 @@ message GetIdsReq {
 
 message GetIdsResp {
     repeated string ids = 1;
+}
+
+message GetRelationsByTableFromRequest {
+    string project_id = 1;
+    string table_from = 2;
+}
+
+message GetRelationsByTableFromResponse {
+    repeated CreateRelationRequest relations = 1;
 }

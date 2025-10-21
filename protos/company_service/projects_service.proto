@@ -19,6 +19,7 @@ service ProjectService {
     rpc UpdateProjectUserData (UpdateProjectUserDataReq) returns (UpdateProjectUserDataRes) {}
     rpc GetListSetting(GetListSettingReq) returns (Setting) {};
     rpc AttachFare(AttachFareRequest) returns (Project) {};
+    rpc AttachCustomer(AttachCustomerRequest) returns (EmptyProto) {};
 
 
     rpc CreateProjectLoginMicroFront(ProjectLoginMicroFrontend) returns (ProjectLoginMicroFrontend) {};
@@ -91,6 +92,8 @@ message ProjectConfig {
     string REDIS_PORT = 41;
     string REDIS_DATABASE = 42;
     string REDIS_PASSWORD = 43;
+    string DOC_GENERATOR_GRPC_PORT = 44;
+    string DOC_GENERATOR_SERVICE_HOST = 45;
 }
 
 message ProjectLoginMicroFrontend {
@@ -148,6 +151,10 @@ message GetProjectsByCompanyIdRes {
             string updated_at = 6;
             string logo = 7;
             string fare_id = 8;
+            bool new_design = 9;
+            bool new_router = 10;
+            bool new_layout = 11;
+            string customer_id = 12;
         }
         string id = 1;
         string name = 2;
@@ -237,6 +244,9 @@ message Project {
     bool new_layout = 19;
     string subscription_type = 20;
     bool balance_set = 21;
+    bool new_router = 22;
+    repeated string icon_categories = 23;
+    string customer_id = 24;
 }
 
 message CreateProjectRequest {
@@ -428,4 +438,9 @@ message AttachFareRequest {
     string project_id = 1;
     string fare_id = 2;
     string discount_id = 3;
+}
+
+message AttachCustomerRequest {
+    string project_id = 1;
+    string customer_id = 2;
 }

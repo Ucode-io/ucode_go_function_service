@@ -188,8 +188,8 @@ func Load() Config {
 	config.GrafanaBaseUrl = cast.ToString(getOrReturnDefaultValue("GRAFANA_BASE_URL", ""))
 	config.GrafanaAuth = cast.ToString(getOrReturnDefaultValue("GRAFANA_AUTH", ""))
 
-	config.GetRequestRedisHost = cast.ToString(getOrReturnDefaultValue("GET_REQUEST_REDIS_HOST", ""))
-	config.GetRequestRedisPort = cast.ToString(getOrReturnDefaultValue("GET_REQUEST_REDIS_PORT", ""))
+	config.GetRequestRedisHost = cast.ToString(getOrReturnDefaultValue("GET_REQUEST_REDIS_HOST", "localhost"))
+	config.GetRequestRedisPort = cast.ToString(getOrReturnDefaultValue("GET_REQUEST_REDIS_PORT", "6379"))
 	config.GetRequestRedisDatabase = cast.ToInt(getOrReturnDefaultValue("GET_REQUEST_REDIS_DATABASE", 0))
 	config.GetRequestRedisPassword = cast.ToString(getOrReturnDefaultValue("GET_REQUEST_REDIS_PASSWORD", ""))
 

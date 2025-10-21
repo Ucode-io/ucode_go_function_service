@@ -62,7 +62,7 @@ type ResourceServiceClient interface {
 	ConfigureResource(ctx context.Context, in *ConfigureResourceRequest, opts ...grpc.CallOption) (*ConfigureResourceResponse, error)
 	RemoveResource(ctx context.Context, in *RemoveResourceRequest, opts ...grpc.CallOption) (*EmptyProto, error)
 	UpdateResource(ctx context.Context, in *UpdateResourceRequest, opts ...grpc.CallOption) (*ResourceWithoutPassword, error)
-	GetResource(ctx context.Context, in *GetResourceRequest, opts ...grpc.CallOption) (*ResourceWithoutPassword, error)
+	GetResource(ctx context.Context, in *GetResourceRequest, opts ...grpc.CallOption) (*Resource, error)
 	GetResourceList(ctx context.Context, in *GetResourceListRequest, opts ...grpc.CallOption) (*GetResourceListResponse, error)
 	CreateResource(ctx context.Context, in *CreateResourceReq, opts ...grpc.CallOption) (*CreateResourceRes, error)
 	AddResourceInUcode(ctx context.Context, in *AddResourceInUcodeRequest, opts ...grpc.CallOption) (*AddResourceResponse, error)
@@ -142,9 +142,9 @@ func (c *resourceServiceClient) UpdateResource(ctx context.Context, in *UpdateRe
 	return out, nil
 }
 
-func (c *resourceServiceClient) GetResource(ctx context.Context, in *GetResourceRequest, opts ...grpc.CallOption) (*ResourceWithoutPassword, error) {
+func (c *resourceServiceClient) GetResource(ctx context.Context, in *GetResourceRequest, opts ...grpc.CallOption) (*Resource, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ResourceWithoutPassword)
+	out := new(Resource)
 	err := c.cc.Invoke(ctx, ResourceService_GetResource_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -440,7 +440,7 @@ type ResourceServiceServer interface {
 	ConfigureResource(context.Context, *ConfigureResourceRequest) (*ConfigureResourceResponse, error)
 	RemoveResource(context.Context, *RemoveResourceRequest) (*EmptyProto, error)
 	UpdateResource(context.Context, *UpdateResourceRequest) (*ResourceWithoutPassword, error)
-	GetResource(context.Context, *GetResourceRequest) (*ResourceWithoutPassword, error)
+	GetResource(context.Context, *GetResourceRequest) (*Resource, error)
 	GetResourceList(context.Context, *GetResourceListRequest) (*GetResourceListResponse, error)
 	CreateResource(context.Context, *CreateResourceReq) (*CreateResourceRes, error)
 	AddResourceInUcode(context.Context, *AddResourceInUcodeRequest) (*AddResourceResponse, error)
@@ -492,7 +492,7 @@ func (UnimplementedResourceServiceServer) RemoveResource(context.Context, *Remov
 func (UnimplementedResourceServiceServer) UpdateResource(context.Context, *UpdateResourceRequest) (*ResourceWithoutPassword, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateResource not implemented")
 }
-func (UnimplementedResourceServiceServer) GetResource(context.Context, *GetResourceRequest) (*ResourceWithoutPassword, error) {
+func (UnimplementedResourceServiceServer) GetResource(context.Context, *GetResourceRequest) (*Resource, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetResource not implemented")
 }
 func (UnimplementedResourceServiceServer) GetResourceList(context.Context, *GetResourceListRequest) (*GetResourceListResponse, error) {

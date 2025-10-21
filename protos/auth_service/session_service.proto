@@ -18,6 +18,7 @@ service SessionService {
     rpc V2LoginSuperAdmin(V2LoginSuperAdminReq) returns (V2LoginSuperAdminRes) {}
     rpc V2HasAccess(HasAccessRequest) returns (HasAccessResponse) {}
     rpc V2HasAccessUser(V2HasAccessUserReq) returns (V2HasAccessUserRes) {}
+    rpc HasAccessUser(V2HasAccessUserReq) returns (V2HasAccessUserRes) {}
     rpc V2RefreshToken(RefreshTokenRequest) returns (V2LoginResponse) {}
     rpc V2RefreshTokenSuperAdmin(RefreshTokenRequest) returns (V2RefreshTokenSuperAdminResponse) {}
     rpc SessionAndTokenGenerator (SessionAndTokenRequest) returns (V2LoginResponse) {}
@@ -93,6 +94,7 @@ message Project2 {
     string expire_date = 12;
     bool new_layout = 13;
     string subscription_type = 14;
+    bool new_router = 15;
 }
 
 message Company2 {
@@ -118,6 +120,7 @@ message V2HasAccessUserReq {
     string path = 3;
     string method = 4;
     string environment_id = 5;
+    string table_slug = 6;
 }
 
 message V2HasAccessUserRes {
@@ -166,6 +169,7 @@ message RefreshTokenRequest {
     string client_type_id = 3;
     string env_id = 4;
     string project_id = 5;
+    repeated TableBody tables = 6;
 }
 
 message RefreshTokenResponse {
@@ -212,6 +216,7 @@ message HasAccessSuperAdminReq {
     string project_id = 2;
     string path = 3;
     string method = 4;
+    string table_slug = 5;
 }
 
 message HasAccessSuperAdminRes {
@@ -393,6 +398,8 @@ message V2LoginRequest {
     string client_id = 17;
     string user_agent = 18;
     string client_ip = 19;
+    string service_type = 20;
+    string session_info = 21;
 }
 
 message V2LoginWithOptionRequest {
@@ -467,6 +474,8 @@ message V2MultiCompanyLoginReq {
     string email = 7;
     string google_token = 8;
     string env_id = 9;
+    string session_info = 10;
+    string service_type = 11;
 }
 
 message V2MultiCompanyLoginRes {

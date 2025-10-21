@@ -36,6 +36,8 @@ service ObjectBuilderService {
     rpc UpsertMany(CommonMessage) returns (CommonMessage) {}
     rpc UpdateByUserIdAuth(CommonMessage) returns (CommonMessage) {}
     rpc AgGridTree(CommonMessage) returns (CommonMessage) {}
+    rpc GetBoardStructure(CommonMessage) returns (CommonMessage) {}
+    rpc GetBoardData(CommonMessage) returns (CommonMessage) {}
 }
 
 message CommonMessage {

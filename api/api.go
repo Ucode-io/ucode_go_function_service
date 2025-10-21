@@ -91,7 +91,7 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 	knativeFunc.Use(h.AuthFunctionMiddleware(cfg))
 	{
 		knativeFunc.POST("/:function-path", h.InvokeFuncByPath)
-		knativeFunc.POST("/:function-path/*any", h.InvokeFuncByApiPath)
+		knativeFunc.POST("/:function-path/*any", h.InvokeFunctionByApiPath)
 	}
 
 	v2Webhook := v2.Group("/webhook")

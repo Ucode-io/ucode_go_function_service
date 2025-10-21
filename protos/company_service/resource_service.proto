@@ -12,7 +12,7 @@ service ResourceService {
     rpc ConfigureResource(ConfigureResourceRequest) returns (ConfigureResourceResponse) {}
     rpc RemoveResource(RemoveResourceRequest) returns (EmptyProto) {}
     rpc UpdateResource(UpdateResourceRequest) returns (ResourceWithoutPassword) {}
-    rpc GetResource(GetResourceRequest) returns (ResourceWithoutPassword) {}
+    rpc GetResource(GetResourceRequest) returns (Resource) {}
     rpc GetResourceList(GetResourceListRequest) returns (GetResourceListResponse) {}
     rpc CreateResource(CreateResourceReq) returns (CreateResourceRes) {}
     rpc AddResourceInUcode(AddResourceInUcodeRequest) returns (AddResourceResponse) {}
@@ -311,7 +311,8 @@ message GetResourceByEnvIDResponse {
     }
 
     Resourse resource = 1;
-    repeated ResourceEnvironmentWithPassword service_resources = 2;
+    ResourceEnvironmentWithPassword resource_environment = 2;
+    string project_status = 3;
 }
 
 
@@ -343,6 +344,9 @@ message Settings {
     Github github = 3;
     Gitlab gitlab = 4;
     SupersetCredentials superset = 5;
+    PostgresCredentials postgres = 6;
+    MetabaseCredentials metabase = 7;
+    MailchimpCredentials mailchimp = 8;
 }
 
 message SmsCredentials {
@@ -367,9 +371,34 @@ message SupersetCredentials {
     string url = 3;
 }
 
+message MetabaseCredentials {
+    string username = 1;
+    string password = 2;
+    string url = 3;
+}
+
+message PostgresCredentials {
+    string username = 1;
+    string password = 2;
+    string host = 3;
+    string port = 4;
+    string database = 5;
+    string connection_name = 6;
+    bool ssl_mode = 7;
+}
+
+message MailchimpCredentials {
+    string api_key = 1;
+    string from_email = 2;
+    int32 number_of_otp = 3;
+    string default_otp = 4;
+}
+
 message Github {
     string username = 1;
     string token = 2;
+    int32 number_of_otp = 3;
+    string default_otp = 4;
 }
 
 message Gitlab {

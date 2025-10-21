@@ -30,6 +30,7 @@ const (
 	ProjectService_UpdateProjectUserData_FullMethodName        = "/company_service.ProjectService/UpdateProjectUserData"
 	ProjectService_GetListSetting_FullMethodName               = "/company_service.ProjectService/GetListSetting"
 	ProjectService_AttachFare_FullMethodName                   = "/company_service.ProjectService/AttachFare"
+	ProjectService_AttachCustomer_FullMethodName               = "/company_service.ProjectService/AttachCustomer"
 	ProjectService_CreateProjectLoginMicroFront_FullMethodName = "/company_service.ProjectService/CreateProjectLoginMicroFront"
 	ProjectService_GetProjectLoginMicroFront_FullMethodName    = "/company_service.ProjectService/GetProjectLoginMicroFront"
 	ProjectService_UpdateProjectLoginMicroFront_FullMethodName = "/company_service.ProjectService/UpdateProjectLoginMicroFront"
@@ -55,6 +56,7 @@ type ProjectServiceClient interface {
 	UpdateProjectUserData(ctx context.Context, in *UpdateProjectUserDataReq, opts ...grpc.CallOption) (*UpdateProjectUserDataRes, error)
 	GetListSetting(ctx context.Context, in *GetListSettingReq, opts ...grpc.CallOption) (*Setting, error)
 	AttachFare(ctx context.Context, in *AttachFareRequest, opts ...grpc.CallOption) (*Project, error)
+	AttachCustomer(ctx context.Context, in *AttachCustomerRequest, opts ...grpc.CallOption) (*EmptyProto, error)
 	CreateProjectLoginMicroFront(ctx context.Context, in *ProjectLoginMicroFrontend, opts ...grpc.CallOption) (*ProjectLoginMicroFrontend, error)
 	GetProjectLoginMicroFront(ctx context.Context, in *GetProjectLoginMicroFrontRequest, opts ...grpc.CallOption) (*ProjectLoginMicroFrontend, error)
 	UpdateProjectLoginMicroFront(ctx context.Context, in *ProjectLoginMicroFrontend, opts ...grpc.CallOption) (*ProjectLoginMicroFrontend, error)
@@ -174,6 +176,16 @@ func (c *projectServiceClient) AttachFare(ctx context.Context, in *AttachFareReq
 	return out, nil
 }
 
+func (c *projectServiceClient) AttachCustomer(ctx context.Context, in *AttachCustomerRequest, opts ...grpc.CallOption) (*EmptyProto, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyProto)
+	err := c.cc.Invoke(ctx, ProjectService_AttachCustomer_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *projectServiceClient) CreateProjectLoginMicroFront(ctx context.Context, in *ProjectLoginMicroFrontend, opts ...grpc.CallOption) (*ProjectLoginMicroFrontend, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ProjectLoginMicroFrontend)
@@ -278,6 +290,7 @@ type ProjectServiceServer interface {
 	UpdateProjectUserData(context.Context, *UpdateProjectUserDataReq) (*UpdateProjectUserDataRes, error)
 	GetListSetting(context.Context, *GetListSettingReq) (*Setting, error)
 	AttachFare(context.Context, *AttachFareRequest) (*Project, error)
+	AttachCustomer(context.Context, *AttachCustomerRequest) (*EmptyProto, error)
 	CreateProjectLoginMicroFront(context.Context, *ProjectLoginMicroFrontend) (*ProjectLoginMicroFrontend, error)
 	GetProjectLoginMicroFront(context.Context, *GetProjectLoginMicroFrontRequest) (*ProjectLoginMicroFrontend, error)
 	UpdateProjectLoginMicroFront(context.Context, *ProjectLoginMicroFrontend) (*ProjectLoginMicroFrontend, error)
@@ -326,6 +339,9 @@ func (UnimplementedProjectServiceServer) GetListSetting(context.Context, *GetLis
 }
 func (UnimplementedProjectServiceServer) AttachFare(context.Context, *AttachFareRequest) (*Project, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AttachFare not implemented")
+}
+func (UnimplementedProjectServiceServer) AttachCustomer(context.Context, *AttachCustomerRequest) (*EmptyProto, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AttachCustomer not implemented")
 }
 func (UnimplementedProjectServiceServer) CreateProjectLoginMicroFront(context.Context, *ProjectLoginMicroFrontend) (*ProjectLoginMicroFrontend, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateProjectLoginMicroFront not implemented")
@@ -555,6 +571,24 @@ func _ProjectService_AttachFare_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ProjectService_AttachCustomer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AttachCustomerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).AttachCustomer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_AttachCustomer_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).AttachCustomer(ctx, req.(*AttachCustomerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ProjectService_CreateProjectLoginMicroFront_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ProjectLoginMicroFrontend)
 	if err := dec(in); err != nil {
@@ -763,6 +797,10 @@ var ProjectService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AttachFare",
 			Handler:    _ProjectService_AttachFare_Handler,
+		},
+		{
+			MethodName: "AttachCustomer",
+			Handler:    _ProjectService_AttachCustomer_Handler,
 		},
 		{
 			MethodName: "CreateProjectLoginMicroFront",

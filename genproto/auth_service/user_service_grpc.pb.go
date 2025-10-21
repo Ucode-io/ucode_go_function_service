@@ -20,32 +20,33 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	UserService_CreateUser_FullMethodName            = "/auth_service.UserService/CreateUser"
-	UserService_GetUserByID_FullMethodName           = "/auth_service.UserService/GetUserByID"
-	UserService_GetUserListByIDs_FullMethodName      = "/auth_service.UserService/GetUserListByIDs"
-	UserService_GetUserList_FullMethodName           = "/auth_service.UserService/GetUserList"
-	UserService_UpdateUser_FullMethodName            = "/auth_service.UserService/UpdateUser"
-	UserService_DeleteUser_FullMethodName            = "/auth_service.UserService/DeleteUser"
-	UserService_ResetPassword_FullMethodName         = "/auth_service.UserService/ResetPassword"
-	UserService_SendMessageToEmail_FullMethodName    = "/auth_service.UserService/SendMessageToEmail"
-	UserService_AddUserRelation_FullMethodName       = "/auth_service.UserService/AddUserRelation"
-	UserService_RemoveUserRelation_FullMethodName    = "/auth_service.UserService/RemoveUserRelation"
-	UserService_UpsertUserInfo_FullMethodName        = "/auth_service.UserService/UpsertUserInfo"
-	UserService_V2CreateUser_FullMethodName          = "/auth_service.UserService/V2CreateUser"
-	UserService_V2GetUserByID_FullMethodName         = "/auth_service.UserService/V2GetUserByID"
-	UserService_V2GetUserListByIDs_FullMethodName    = "/auth_service.UserService/V2GetUserListByIDs"
-	UserService_V2GetUserList_FullMethodName         = "/auth_service.UserService/V2GetUserList"
-	UserService_V2UpdateUser_FullMethodName          = "/auth_service.UserService/V2UpdateUser"
-	UserService_V2DeleteUser_FullMethodName          = "/auth_service.UserService/V2DeleteUser"
-	UserService_V2ResetPassword_FullMethodName       = "/auth_service.UserService/V2ResetPassword"
-	UserService_AddUserToProject_FullMethodName      = "/auth_service.UserService/AddUserToProject"
-	UserService_GetProjectsByUserId_FullMethodName   = "/auth_service.UserService/GetProjectsByUserId"
-	UserService_V2GetUserByLoginTypes_FullMethodName = "/auth_service.UserService/V2GetUserByLoginTypes"
-	UserService_RegisterUserViaEmail_FullMethodName  = "/auth_service.UserService/RegisterUserViaEmail"
-	UserService_RegisterWithGoogle_FullMethodName    = "/auth_service.UserService/RegisterWithGoogle"
-	UserService_GetListSetting_FullMethodName        = "/auth_service.UserService/GetListSetting"
-	UserService_GetUserByUsername_FullMethodName     = "/auth_service.UserService/GetUserByUsername"
-	UserService_GetUserProjects_FullMethodName       = "/auth_service.UserService/GetUserProjects"
+	UserService_CreateUser_FullMethodName                = "/auth_service.UserService/CreateUser"
+	UserService_GetUserByID_FullMethodName               = "/auth_service.UserService/GetUserByID"
+	UserService_GetUserListByIDs_FullMethodName          = "/auth_service.UserService/GetUserListByIDs"
+	UserService_GetUserList_FullMethodName               = "/auth_service.UserService/GetUserList"
+	UserService_UpdateUser_FullMethodName                = "/auth_service.UserService/UpdateUser"
+	UserService_DeleteUser_FullMethodName                = "/auth_service.UserService/DeleteUser"
+	UserService_ResetPassword_FullMethodName             = "/auth_service.UserService/ResetPassword"
+	UserService_SendMessageToEmail_FullMethodName        = "/auth_service.UserService/SendMessageToEmail"
+	UserService_AddUserRelation_FullMethodName           = "/auth_service.UserService/AddUserRelation"
+	UserService_RemoveUserRelation_FullMethodName        = "/auth_service.UserService/RemoveUserRelation"
+	UserService_UpsertUserInfo_FullMethodName            = "/auth_service.UserService/UpsertUserInfo"
+	UserService_V2CreateUser_FullMethodName              = "/auth_service.UserService/V2CreateUser"
+	UserService_V2GetUserByID_FullMethodName             = "/auth_service.UserService/V2GetUserByID"
+	UserService_V2GetUserListByIDs_FullMethodName        = "/auth_service.UserService/V2GetUserListByIDs"
+	UserService_V2GetUserList_FullMethodName             = "/auth_service.UserService/V2GetUserList"
+	UserService_V2UpdateUser_FullMethodName              = "/auth_service.UserService/V2UpdateUser"
+	UserService_V2DeleteUser_FullMethodName              = "/auth_service.UserService/V2DeleteUser"
+	UserService_V2ResetPassword_FullMethodName           = "/auth_service.UserService/V2ResetPassword"
+	UserService_AddUserToProject_FullMethodName          = "/auth_service.UserService/AddUserToProject"
+	UserService_GetProjectsByUserId_FullMethodName       = "/auth_service.UserService/GetProjectsByUserId"
+	UserService_V2GetUserByLoginTypes_FullMethodName     = "/auth_service.UserService/V2GetUserByLoginTypes"
+	UserService_RegisterUserViaEmail_FullMethodName      = "/auth_service.UserService/RegisterUserViaEmail"
+	UserService_RegisterWithGoogle_FullMethodName        = "/auth_service.UserService/RegisterWithGoogle"
+	UserService_GetListSetting_FullMethodName            = "/auth_service.UserService/GetListSetting"
+	UserService_GetUserByUsername_FullMethodName         = "/auth_service.UserService/GetUserByUsername"
+	UserService_GetUserProjects_FullMethodName           = "/auth_service.UserService/GetUserProjects"
+	UserService_GetUserProjectClientTypes_FullMethodName = "/auth_service.UserService/GetUserProjectClientTypes"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -78,6 +79,7 @@ type UserServiceClient interface {
 	GetListSetting(ctx context.Context, in *GetListSettingReq, opts ...grpc.CallOption) (*Setting, error)
 	GetUserByUsername(ctx context.Context, in *GetUserByUsernameRequest, opts ...grpc.CallOption) (*User, error)
 	GetUserProjects(ctx context.Context, in *UserPrimaryKey, opts ...grpc.CallOption) (*GetUserProjectsRes, error)
+	GetUserProjectClientTypes(ctx context.Context, in *UserInfoPrimaryKey, opts ...grpc.CallOption) (*GetUserProjectClientTypesResponse, error)
 }
 
 type userServiceClient struct {
@@ -348,6 +350,16 @@ func (c *userServiceClient) GetUserProjects(ctx context.Context, in *UserPrimary
 	return out, nil
 }
 
+func (c *userServiceClient) GetUserProjectClientTypes(ctx context.Context, in *UserInfoPrimaryKey, opts ...grpc.CallOption) (*GetUserProjectClientTypesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetUserProjectClientTypesResponse)
+	err := c.cc.Invoke(ctx, UserService_GetUserProjectClientTypes_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
@@ -378,6 +390,7 @@ type UserServiceServer interface {
 	GetListSetting(context.Context, *GetListSettingReq) (*Setting, error)
 	GetUserByUsername(context.Context, *GetUserByUsernameRequest) (*User, error)
 	GetUserProjects(context.Context, *UserPrimaryKey) (*GetUserProjectsRes, error)
+	GetUserProjectClientTypes(context.Context, *UserInfoPrimaryKey) (*GetUserProjectClientTypesResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -465,6 +478,9 @@ func (UnimplementedUserServiceServer) GetUserByUsername(context.Context, *GetUse
 }
 func (UnimplementedUserServiceServer) GetUserProjects(context.Context, *UserPrimaryKey) (*GetUserProjectsRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserProjects not implemented")
+}
+func (UnimplementedUserServiceServer) GetUserProjectClientTypes(context.Context, *UserInfoPrimaryKey) (*GetUserProjectClientTypesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserProjectClientTypes not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -955,6 +971,24 @@ func _UserService_GetUserProjects_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_GetUserProjectClientTypes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserInfoPrimaryKey)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetUserProjectClientTypes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetUserProjectClientTypes_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetUserProjectClientTypes(ctx, req.(*UserInfoPrimaryKey))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1065,6 +1099,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUserProjects",
 			Handler:    _UserService_GetUserProjects_Handler,
+		},
+		{
+			MethodName: "GetUserProjectClientTypes",
+			Handler:    _UserService_GetUserProjectClientTypes_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

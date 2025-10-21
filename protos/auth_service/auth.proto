@@ -121,6 +121,7 @@ message User {
     Timezone  timezone = 16;
     string hash_type = 17;
     string status = 18;
+    string tin = 19;
 }
 message Timezone {
     string id = 1;

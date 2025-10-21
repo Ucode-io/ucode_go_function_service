@@ -30,6 +30,7 @@ const (
 	FieldService_GetAllByLabel_FullMethodName       = "/new_object_builder_service.FieldService/GetAllByLabel"
 	FieldService_GetIdsByLabel_FullMethodName       = "/new_object_builder_service.FieldService/GetIdsByLabel"
 	FieldService_FieldsWithRelations_FullMethodName = "/new_object_builder_service.FieldService/FieldsWithRelations"
+	FieldService_ObtainRandomOne_FullMethodName     = "/new_object_builder_service.FieldService/ObtainRandomOne"
 )
 
 // FieldServiceClient is the client API for FieldService service.
@@ -46,6 +47,7 @@ type FieldServiceClient interface {
 	GetAllByLabel(ctx context.Context, in *GetAllByLabelReq, opts ...grpc.CallOption) (*GetAllFieldsResponse, error)
 	GetIdsByLabel(ctx context.Context, in *GetIdsByLabelReq, opts ...grpc.CallOption) (*GetIdsByLabelResponse, error)
 	FieldsWithRelations(ctx context.Context, in *FieldsWithRelationRequest, opts ...grpc.CallOption) (*FieldsWithRelationsResponse, error)
+	ObtainRandomOne(ctx context.Context, in *ObtainRandomRequest, opts ...grpc.CallOption) (*ObtainRandomResponse, error)
 }
 
 type fieldServiceClient struct {
@@ -156,6 +158,16 @@ func (c *fieldServiceClient) FieldsWithRelations(ctx context.Context, in *Fields
 	return out, nil
 }
 
+func (c *fieldServiceClient) ObtainRandomOne(ctx context.Context, in *ObtainRandomRequest, opts ...grpc.CallOption) (*ObtainRandomResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ObtainRandomResponse)
+	err := c.cc.Invoke(ctx, FieldService_ObtainRandomOne_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FieldServiceServer is the server API for FieldService service.
 // All implementations must embed UnimplementedFieldServiceServer
 // for forward compatibility.
@@ -170,6 +182,7 @@ type FieldServiceServer interface {
 	GetAllByLabel(context.Context, *GetAllByLabelReq) (*GetAllFieldsResponse, error)
 	GetIdsByLabel(context.Context, *GetIdsByLabelReq) (*GetIdsByLabelResponse, error)
 	FieldsWithRelations(context.Context, *FieldsWithRelationRequest) (*FieldsWithRelationsResponse, error)
+	ObtainRandomOne(context.Context, *ObtainRandomRequest) (*ObtainRandomResponse, error)
 	mustEmbedUnimplementedFieldServiceServer()
 }
 
@@ -209,6 +222,9 @@ func (UnimplementedFieldServiceServer) GetIdsByLabel(context.Context, *GetIdsByL
 }
 func (UnimplementedFieldServiceServer) FieldsWithRelations(context.Context, *FieldsWithRelationRequest) (*FieldsWithRelationsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FieldsWithRelations not implemented")
+}
+func (UnimplementedFieldServiceServer) ObtainRandomOne(context.Context, *ObtainRandomRequest) (*ObtainRandomResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ObtainRandomOne not implemented")
 }
 func (UnimplementedFieldServiceServer) mustEmbedUnimplementedFieldServiceServer() {}
 func (UnimplementedFieldServiceServer) testEmbeddedByValue()                      {}
@@ -411,6 +427,24 @@ func _FieldService_FieldsWithRelations_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FieldService_ObtainRandomOne_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ObtainRandomRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FieldServiceServer).ObtainRandomOne(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FieldService_ObtainRandomOne_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FieldServiceServer).ObtainRandomOne(ctx, req.(*ObtainRandomRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // FieldService_ServiceDesc is the grpc.ServiceDesc for FieldService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -457,6 +491,10 @@ var FieldService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FieldsWithRelations",
 			Handler:    _FieldService_FieldsWithRelations_Handler,
+		},
+		{
+			MethodName: "ObtainRandomOne",
+			Handler:    _FieldService_ObtainRandomOne_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

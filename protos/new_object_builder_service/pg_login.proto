@@ -171,6 +171,7 @@ message User {
     string updated_at = 13;
     string name = 14;
     string photo_url = 15;
+    string tin = 16;
 }
 
 message V2LoginResponse {

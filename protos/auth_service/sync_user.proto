@@ -28,6 +28,7 @@ message CreateSyncUserRequest {
     bool invite = 10;
     string environment_id = 11;
     repeated string login_strategy = 12;
+    string tin = 13;
 }
 
 message CreateSyncUsersRequest {
@@ -50,6 +51,8 @@ message UpdateSyncUserRequest {
     bool is_changed_login = 13;
     bool is_changed_email = 14;
     bool is_changed_phone = 15;
+    string tin = 16;
+    bool is_changed_tin = 17;
 }
 
 message SyncUserResponse {

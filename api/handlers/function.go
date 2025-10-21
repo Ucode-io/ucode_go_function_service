@@ -13,7 +13,6 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -1179,7 +1178,6 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 
 		h.redis.SetX(c.Request.Context(), redisKey, string(appIdByte), config.REDIS_KEY_TIMEOUT)
 	} else {
-		fmt.Println("GETTING FROM REDIS ANYWAY")
 		if err := json.Unmarshal([]byte(resourceBody), &apiKey); err != nil {
 			h.handleResponse(c, status.InvalidArgument, err.Error())
 			return
@@ -1215,7 +1213,7 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 	h.handleResponse(c, status.Created, resp)
 }
 
-func (h *Handler) InvokeFuncByApiPath(c *gin.Context) {
+func (h *Handler) InvokeFunctionByApiPath(c *gin.Context) {
 	var (
 		invokeFunction models.CommonMessage
 		path                = c.Param("function-path")
@@ -1252,7 +1250,7 @@ func (h *Handler) InvokeFuncByApiPath(c *gin.Context) {
 		permission = access.(bool)
 	}
 
-	redisKey := base64.StdEncoding.EncodeToString(fmt.Appendf(nil, "%s-%s", environmentId.(string), path))
+	redisKey := base64.StdEncoding.EncodeToString(fmt.Appendf(nil, "%s-%s-%s", environmentId.(string), path, apiPath))
 
 	resourceBody, err := h.redis.Get(c.Request.Context(), redisKey)
 	if err != nil {
@@ -1334,7 +1332,7 @@ func (h *Handler) InvokeFuncByApiPath(c *gin.Context) {
 			return
 		}
 
-		h.redis.SetX(c.Request.Context(), redisKey, string(appIdByte), config.REDIS_KEY_TIMEOUT)
+		err = h.redis.SetX(c.Request.Context(), redisKey, string(appIdByte), config.REDIS_KEY_TIMEOUT)
 	} else {
 		if err := json.Unmarshal([]byte(resourceBody), &apiKey); err != nil {
 			h.handleResponse(c, status.InvalidArgument, err.Error())
@@ -1543,72 +1541,4 @@ func (h *Handler) ExecKnative(path string, req models.NewInvokeFunctionRequest) 
 	}
 
 	return resp, nil
-}
-
-func sendFormDataWithFiles(url string, data map[string]any) error {
-	var requestBody bytes.Buffer
-	writer := multipart.NewWriter(&requestBody)
-
-	for key, value := range data {
-		switch v := value.(type) {
-		case string:
-			writer.WriteField(key, v)
-		case int:
-			writer.WriteField(key, strconv.Itoa(v))
-		case int64:
-			writer.WriteField(key, strconv.FormatInt(v, 10))
-		case float64:
-			writer.WriteField(key, strconv.FormatFloat(v, 'f', -1, 64))
-		case bool:
-			writer.WriteField(key, strconv.FormatBool(v))
-		case *os.File:
-			// Reset file pointer to beginning
-			v.Seek(0, 0)
-			part, err := writer.CreateFormFile(key, v.Name())
-			if err != nil {
-				return err
-			}
-			if _, err := io.Copy(part, v); err != nil {
-				return err
-			}
-		case []byte:
-			// Treat byte slice as file content
-			part, err := writer.CreateFormFile(key, key+".bin")
-			if err != nil {
-				return err
-			}
-			part.Write(v)
-		default:
-			// Convert any other type to JSON string
-			jsonBytes, err := json.Marshal(v)
-			if err != nil {
-				writer.WriteField(key, fmt.Sprintf("%v", v))
-			} else {
-				writer.WriteField(key, string(jsonBytes))
-			}
-		}
-	}
-
-	writer.Close()
-
-	req, err := http.NewRequest("POST", url, &requestBody)
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-	req.Header.Set("User-Agent", "Go-HTTP-Client")
-
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	// Read response if needed
-	body, _ := io.ReadAll(resp.Body)
-	fmt.Printf("Response: %s\n", string(body))
-
-	return nil
 }

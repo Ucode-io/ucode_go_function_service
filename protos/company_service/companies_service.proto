@@ -18,6 +18,9 @@ service CompanyService {
     rpc GetCompaniesByOwnerId(GetCompaniesByOwnerIdReq) returns (GetCompaniesByOwnerIdRes) {}
     rpc GetAllMenuTemplate(google.protobuf.Empty) returns (GatAllMenuTemplateResponse) {}
     rpc GetMenuTemplateById(GetMenuTemplateRequest) returns (MenuTemplate) {}
+    rpc CreateMenuTemplate(CreateMenuTemplateRequest) returns (Empty) {}
+    rpc GetProjectMenuTemplates(GetProjectMenuTemplateRequest) returns (GetProjectMenuTemplateResponse) {}
+    rpc CreateMenuTemplateByTemplateId(CreateMenuTemplateByTemplateIdRequest) returns (Empty) {}
 }
 
 message GetMenuTemplateRequest {
@@ -110,4 +113,35 @@ message GetListWithProjectsRequest {
 message GetListWithProjectsResponse {
     int32 count = 1;
     repeated CompanyWithProjects companies = 2;
+}
+
+message CreateMenuTemplateRequest {
+    string name = 1;
+    string menu_id = 2;
+    string project_id = 3;
+    string node_type = 4;
+    string data = 5;
+}
+
+message ProjectMenuTemplate {
+    string id = 1;
+    string name = 2;
+    string data = 3;
+}
+
+message GetProjectMenuTemplateRequest {
+    string project_id = 1;
+    int32 limit = 2;
+    int32 offset = 3;
+    string search = 4;
+}
+
+message GetProjectMenuTemplateResponse {
+    repeated ProjectMenuTemplate project_menu_templates = 1;
+    int32 count = 2;
+}
+
+message CreateMenuTemplateByTemplateIdRequest {
+    string project_id = 1;
+    string template_id = 2;
 }

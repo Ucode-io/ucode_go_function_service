@@ -22,14 +22,12 @@ service TableService {
     rpc InsertVersionsToCommit(InsertVersionsToCommitRequest) returns (TableHistory) {}
 
     rpc GetTablesByLabel(GetTablesByLabelReq) returns (GetAllTablesResponse) {}
-    // rpc GetFieldsByTable(GetFieldsByTableReq) returns (GetFieldsByTableRes) {}
     rpc GetChart(ChartPrimaryKey) returns (GetChartResponse) {}
 
-    rpc CreateConnectionAndSchema(CreateConnectionAndSchemaReq) returns (GetTrackedUntrackedTableResp) {}
+    rpc CreateConnectionAndSchema(CreateConnectionAndSchemaReq) returns (google.protobuf.Empty) {}
     rpc GetTrackedUntrackedTables(GetTrackedUntrackedTablesReq) returns (GetTrackedUntrackedTableResp) {}
     rpc GetTrackedConnections(GetTrackedConnectionsReq) returns (GetTrackedConnectionsResp) {}
-    rpc TrackTables(TrackTablesReq) returns (google.protobuf.Empty) {}
-    rpc TrackedTablesByIds(TrackedTablesByIdsReq) returns (TrackedTablesByIdsResp) {}
+    rpc TrackTables(TrackedTablesByIdsReq) returns (google.protobuf.Empty) {}
     rpc UntrackTableById(UntrackTableByIdReq) returns (google.protobuf.Empty) {}
 }
 
@@ -99,6 +97,7 @@ message CreateTableRequest {
     string view_id = 26;
     string layout_id = 27;
     bool is_login_table = 28;
+    string menu_id = 29;
 }
 
 message IncrementID {
@@ -249,12 +248,19 @@ message FieldForTrackedUntrackedTable {
     string type = 2;
 }
 
+message RelationForTrackedUntrackedTable {
+    string table_from = 1;
+    string table_to = 2;
+    string field_from = 3;
+}
+
 message TrackedUntrackedTable {
     string table_name = 1;
     bool is_tracked = 2;
     string id = 3;
     string connection_id = 4;
     repeated FieldForTrackedUntrackedTable fields = 5;
+    repeated RelationForTrackedUntrackedTable relations = 6;
 }
 
 message TrackedConnection {

@@ -25,7 +25,6 @@ message UpdateViewOrderRequest {
 
 }
 
-
 message CreateViewRequest {
     string table_slug = 1;
     string type = 2;
@@ -60,6 +59,8 @@ message CreateViewRequest {
     string name_en = 31;
     string env_id = 32;
     string id = 33;
+    string menu_id = 34;
+    bool is_relation_view = 35;
 }
 
 message QuickFilter {
@@ -103,9 +104,10 @@ message View {
     string env_id = 33;
     bool creatable = 34;
     repeated string default_values =  35;
-
     repeated string summaries = 36;
     repeated string action_relations = 37;
+    string menu_id = 38;
+    bool is_relation_view = 339;
 }
 
 message Navigate {
@@ -130,6 +132,7 @@ message GetAllViewsRequest {
     string app_id = 2;
     string project_id = 3;
     string role_id = 4;
+    string menu_id = 5;
 }
 
 message ViewPrimaryKey {

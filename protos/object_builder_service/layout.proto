@@ -72,6 +72,7 @@ message TabRequest {
     int32 order = 7;
     string icon = 8;
     google.protobuf.Struct attributes = 9;
+    string view_type = 10;
 }
 
 message TabResponse {
@@ -85,6 +86,7 @@ message TabResponse {
     string icon = 8;
     RelationForSection relation = 9;
     google.protobuf.Struct attributes = 10;
+    string view_type = 11;
 }
 
 message IncrementID2 {

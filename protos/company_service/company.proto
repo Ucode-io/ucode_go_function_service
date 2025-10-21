@@ -30,6 +30,9 @@ enum ResourceType {
     GIT = 9;
     BITBUCKET = 10;
     SUPERSET = 11;
+    METABASE = 12;
+    TRANSCODER = 13;
+    MAILCHIMP = 14;
 }
 
 enum SettingType {
@@ -54,6 +57,7 @@ message Resource {
     string vault_path = 6;
     string project_id = 7;
     string node_type = 8;
+    repeated Environment environments = 9;
 }
 
 message Environment {
@@ -64,6 +68,10 @@ message Environment {
     string description = 5;
     google.protobuf.Struct data = 6;
     string access_type = 7;
+    string resource_environment_id = 8;
+    bool is_configured = 9;
+    bool default = 10;
+    string node_type = 11;
 }
 
 message EnvironmentWithResources {
@@ -80,6 +88,10 @@ message EnvironmentWithResources {
     Resources resources = 6;
     google.protobuf.Struct data = 7;
     string access_type = 8;
+    string node_type = 9;
+    google.protobuf.Struct client_types = 10;
+    int32 resource_type = 11;
+    string resource_environment_id = 12;
 }
 
 message NewResource {
@@ -131,4 +143,34 @@ message Timezone {
     string id = 1;
     string name = 2;
     string text = 3;
+}
+
+message ClickhouseCredentials {
+    string host = 1;
+    string port = 2;
+    string username = 3;
+    string password = 4;
+    string database = 5;
+    int32 max_connections = 6;
+    int32 max_conn_idle_time_in_min = 7;
+}
+
+message MongodbCredentials {
+    string host = 1;
+    string port = 2;
+    string username = 3;
+    string password = 4;
+    string database = 5;
+    int32 max_connections = 6;
+    int32 max_conn_idle_time_in_min = 7;
+}
+
+message PostgresSqlCredentials {
+    string host = 1;
+    string port = 2;
+    string username = 3;
+    string password = 4;
+    string database = 5;
+    int32 max_connections = 6;
+    int32 max_conn_idle_time_in_min = 7;
 }

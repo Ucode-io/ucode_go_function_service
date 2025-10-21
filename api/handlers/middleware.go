@@ -277,7 +277,7 @@ func (h *Handler) AuthFunctionMiddleware(cfg config.Config) gin.HandlerFunc {
 
 		switch strArr[0] {
 		case "Bearer":
-			res, ok = h.hasAccess(c)
+			res, ok = h.hasAccessCache(c)
 			if !ok {
 				h.log.Error("---ERR->AuthMiddleware->hasNotAccess-->")
 				c.Abort()
@@ -484,6 +484,62 @@ func (h *Handler) hasAccess(c *gin.Context) (*as.V2HasAccessUserRes, bool) {
 
 	defer conn.Close()
 	resp, err := service.V2HasAccessUser(
+		c.Request.Context(),
+		&as.V2HasAccessUserReq{
+			AccessToken:   accessToken,
+			Path:          helper.GetURLWithTableSlug(c),
+			Method:        c.Request.Method,
+			ProjectId:     c.Query("project-id"),
+			EnvironmentId: c.GetHeader("Environment-Id"),
+		},
+	)
+	if err != nil {
+		errr := status.Error(codes.PermissionDenied, "Permission denied")
+		if errr.Error() == err.Error() {
+			h.log.Error("---ERR->HasAccess->Permission--->", logger.Error(err))
+			h.handleResponse(c, status_http.BadRequest, err.Error())
+			return nil, false
+		}
+		errr = status.Error(codes.InvalidArgument, "User has been expired")
+		if errr.Error() == err.Error() {
+			h.log.Error("---ERR->HasAccess->User Expired-->")
+			h.handleResponse(c, status_http.Forbidden, err.Error())
+			return nil, false
+		}
+		errr = status.Error(codes.Unavailable, "User not access environment")
+		if errr.Error() == err.Error() {
+			h.log.Error("---ERR->HasAccess->User not access environment-->")
+			h.handleResponse(c, status_http.Unauthorized, err.Error())
+			return nil, false
+		}
+		h.log.Error("---ERR->HasAccess->Session->V2HasAccessUser--->", logger.Error(err))
+		h.handleResponse(c, status_http.Unauthorized, err.Error())
+		return nil, false
+	}
+
+	return resp, true
+}
+
+func (h *Handler) hasAccessCache(c *gin.Context) (*as.V2HasAccessUserRes, bool) {
+	var (
+		bearerToken = c.GetHeader("Authorization")
+		strArr      = strings.Split(bearerToken, " ")
+	)
+
+	if len(strArr) != 2 || strArr[0] != "Bearer" {
+		h.log.Error("---ERR->HasAccess->Unexpected token format")
+		h.handleResponse(c, status_http.Forbidden, "token error: wrong format")
+		return nil, false
+	}
+
+	var accessToken = strArr[1]
+	service, conn, err := h.services.AuthService().Session(c)
+	if err != nil {
+		return nil, false
+	}
+
+	defer conn.Close()
+	resp, err := service.HasAccessUser(
 		c.Request.Context(),
 		&as.V2HasAccessUserReq{
 			AccessToken:   accessToken,

@@ -14,6 +14,7 @@ service MenuService {
     rpc Update(Menu) returns (Menu) {}
     rpc Delete(MenuPrimaryKey) returns (google.protobuf.Empty) {}
     rpc UpdateMenuOrder(UpdateMenuOrderRequest) returns (google.protobuf.Empty) {}
+    rpc GetMenuTree(MenuPrimaryKey) returns (MenuTree) {}
 
     rpc CreateMenuSettings(CreateMenuSettingsRequest) returns (MenuSettings) {}
     rpc GetAllMenuSettings(GetAllMenuSettingsRequest) returns (GetAllMenuSettingsResponse) {}
@@ -22,6 +23,7 @@ service MenuService {
     rpc DeleteMenuSettings(MenuSettingPrimaryKey) returns (google.protobuf.Empty) {}
 
     rpc CreateMenuTemplate(CreateMenuTemplateRequest) returns (MenuTemplate) {}
+    rpc GetMenuTemplateWithEntities(GetMenuTemplateRequest) returns (MenuTemplateWithEntities) {}
     rpc GetAllMenuTemplate(GetAllMenuSettingsRequest) returns (GatAllMenuTemplateResponse) {}
     rpc GetByIDMenuTemplate(MenuSettingPrimaryKey) returns (MenuTemplate) {}
     rpc UpdateMenuTemplate(UpdateMenuTemplateRequest) returns (google.protobuf.Empty) {}
@@ -38,6 +40,40 @@ message CreateMenuTemplateRequest {
     string active_text = 4;
     string project_id = 5;
     string title = 6;
+}
+
+message GetMenuTemplateRequest {
+    string project_id = 1;
+    string name = 2;
+    string menu_id = 3;
+}
+
+message ProjectMenuTemplate {
+    string id = 1;
+    string label = 2;
+    string parent_id = 3;
+    string table_id = 4;
+}
+
+message FieldTemplate {
+    string id = 1;
+    string table_id = 2;
+    string slug = 3;
+    string label = 4;
+    string type = 5;
+}
+
+message TableTemplate {
+    string id = 1;
+    string label = 2;
+    string slug = 3;
+    string menu_id = 4;
+}
+
+message MenuTemplateWithEntities {
+    repeated ProjectMenuTemplate menus = 1;
+    repeated TableTemplate tables = 2;
+    repeated FieldTemplate fields = 3;
 }
 
 message GatAllMenuTemplateResponse {
@@ -126,6 +162,7 @@ message CreateMenuRequest {
     bool is_visible = 12;
     string env_id = 13;
     string id = 14;
+    bool new_router = 15;
 }
 
 message Menu {
@@ -208,4 +245,27 @@ message GetWikiFolderRequest {
     bool for_template = 8;
     bool is_visible = 9;
     string environment_id = 10;
+}
+
+message MenuTree {
+    string id = 1;
+    string label = 2;
+    string icon = 3;
+    string type = 4;
+    string project_id = 5;
+    string parent_id = 6;
+    string microfrontend_id = 7;
+    string webpage_id = 8;
+    google.protobuf.Struct attributes = 9;
+    string wiki_id = 10;
+    bool is_visible = 11;
+    bool is_static = 12;
+    google.protobuf.Struct data = 13;
+    string env_id = 14;
+    int32 order = 15;
+    string bucket_path = 16;
+    string layout_id = 17;
+    string table_id = 18;
+    string menu_settings_id = 19;
+    repeated MenuTree children = 20;
 }

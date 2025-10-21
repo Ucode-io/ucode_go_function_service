@@ -598,7 +598,7 @@ var file_object_builder_proto_rawDesc = []byte{
 	0x75, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x23, 0x2e, 0x6f, 0x62, 0x6a, 0x65, 0x63,
 	0x74, 0x5f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x5f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63,
 	0x65, 0x2e, 0x4d, 0x65, 0x6e, 0x75, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x05, 0x6d,
-	0x65, 0x6e, 0x75, 0x73, 0x32, 0xb5, 0x16, 0x0a, 0x14, 0x4f, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x42,
+	0x65, 0x6e, 0x75, 0x73, 0x32, 0xfa, 0x17, 0x0a, 0x14, 0x4f, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x42,
 	0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x58, 0x0a,
 	0x06, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x12, 0x25, 0x2e, 0x6f, 0x62, 0x6a, 0x65, 0x63, 0x74,
 	0x5f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x5f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
@@ -777,10 +777,22 @@ var file_object_builder_proto_rawDesc = []byte{
 	0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x4d, 0x65, 0x73, 0x73,
 	0x61, 0x67, 0x65, 0x1a, 0x25, 0x2e, 0x6f, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x5f, 0x62, 0x75, 0x69,
 	0x6c, 0x64, 0x65, 0x72, 0x5f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x43, 0x6f, 0x6d,
-	0x6d, 0x6f, 0x6e, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x00, 0x42, 0x21, 0x5a, 0x1f,
-	0x67, 0x65, 0x6e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x6f, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x5f,
-	0x62, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x5f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6d, 0x6f, 0x6e, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x00, 0x12, 0x63, 0x0a, 0x11,
+	0x47, 0x65, 0x74, 0x42, 0x6f, 0x61, 0x72, 0x64, 0x53, 0x74, 0x72, 0x75, 0x63, 0x74, 0x75, 0x72,
+	0x65, 0x12, 0x25, 0x2e, 0x6f, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x5f, 0x62, 0x75, 0x69, 0x6c, 0x64,
+	0x65, 0x72, 0x5f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x6f,
+	0x6e, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x1a, 0x25, 0x2e, 0x6f, 0x62, 0x6a, 0x65, 0x63,
+	0x74, 0x5f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x5f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63,
+	0x65, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22,
+	0x00, 0x12, 0x5e, 0x0a, 0x0c, 0x47, 0x65, 0x74, 0x42, 0x6f, 0x61, 0x72, 0x64, 0x44, 0x61, 0x74,
+	0x61, 0x12, 0x25, 0x2e, 0x6f, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x5f, 0x62, 0x75, 0x69, 0x6c, 0x64,
+	0x65, 0x72, 0x5f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x6f,
+	0x6e, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x1a, 0x25, 0x2e, 0x6f, 0x62, 0x6a, 0x65, 0x63,
+	0x74, 0x5f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x5f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63,
+	0x65, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22,
+	0x00, 0x42, 0x21, 0x5a, 0x1f, 0x67, 0x65, 0x6e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x6f, 0x62,
+	0x6a, 0x65, 0x63, 0x74, 0x5f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x5f, 0x73, 0x65, 0x72,
+	0x76, 0x69, 0x63, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -839,37 +851,41 @@ var file_object_builder_proto_depIdxs = []int32{
 	0,  // 31: object_builder_service.ObjectBuilderService.UpsertMany:input_type -> object_builder_service.CommonMessage
 	0,  // 32: object_builder_service.ObjectBuilderService.UpdateByUserIdAuth:input_type -> object_builder_service.CommonMessage
 	0,  // 33: object_builder_service.ObjectBuilderService.AgGridTree:input_type -> object_builder_service.CommonMessage
-	0,  // 34: object_builder_service.ObjectBuilderService.Create:output_type -> object_builder_service.CommonMessage
-	0,  // 35: object_builder_service.ObjectBuilderService.GetSingle:output_type -> object_builder_service.CommonMessage
-	0,  // 36: object_builder_service.ObjectBuilderService.GetList:output_type -> object_builder_service.CommonMessage
-	0,  // 37: object_builder_service.ObjectBuilderService.GetList2:output_type -> object_builder_service.CommonMessage
-	0,  // 38: object_builder_service.ObjectBuilderService.GetSingleSlim:output_type -> object_builder_service.CommonMessage
-	0,  // 39: object_builder_service.ObjectBuilderService.GetListSlim:output_type -> object_builder_service.CommonMessage
-	0,  // 40: object_builder_service.ObjectBuilderService.GetListSlimV2:output_type -> object_builder_service.CommonMessage
-	0,  // 41: object_builder_service.ObjectBuilderService.GetRecursiveList:output_type -> object_builder_service.CommonMessage
-	0,  // 42: object_builder_service.ObjectBuilderService.Update:output_type -> object_builder_service.CommonMessage
-	0,  // 43: object_builder_service.ObjectBuilderService.Delete:output_type -> object_builder_service.CommonMessage
-	0,  // 44: object_builder_service.ObjectBuilderService.ManyToManyAppend:output_type -> object_builder_service.CommonMessage
-	0,  // 45: object_builder_service.ObjectBuilderService.ManyToManyDelete:output_type -> object_builder_service.CommonMessage
-	0,  // 46: object_builder_service.ObjectBuilderService.GetTableDetails:output_type -> object_builder_service.CommonMessage
-	0,  // 47: object_builder_service.ObjectBuilderService.GetListInExcel:output_type -> object_builder_service.CommonMessage
-	0,  // 48: object_builder_service.ObjectBuilderService.Batch:output_type -> object_builder_service.CommonMessage
-	0,  // 49: object_builder_service.ObjectBuilderService.MultipleUpdate:output_type -> object_builder_service.CommonMessage
-	0,  // 50: object_builder_service.ObjectBuilderService.MultipleInsert:output_type -> object_builder_service.CommonMessage
-	0,  // 51: object_builder_service.ObjectBuilderService.GetFinancialAnalytics:output_type -> object_builder_service.CommonMessage
-	0,  // 52: object_builder_service.ObjectBuilderService.GetGroupReportTables:output_type -> object_builder_service.CommonMessage
-	0,  // 53: object_builder_service.ObjectBuilderService.GetGroupByField:output_type -> object_builder_service.CommonMessage
-	0,  // 54: object_builder_service.ObjectBuilderService.DeleteMany:output_type -> object_builder_service.CommonMessage
-	0,  // 55: object_builder_service.ObjectBuilderService.GroupByColumns:output_type -> object_builder_service.CommonMessage
-	0,  // 56: object_builder_service.ObjectBuilderService.CopyFromProject:output_type -> object_builder_service.CommonMessage
-	0,  // 57: object_builder_service.ObjectBuilderService.GetListWithOutRelations:output_type -> object_builder_service.CommonMessage
-	0,  // 58: object_builder_service.ObjectBuilderService.GetListAggregation:output_type -> object_builder_service.CommonMessage
-	0,  // 59: object_builder_service.ObjectBuilderService.GetListRelationTabInExcel:output_type -> object_builder_service.CommonMessage
-	0,  // 60: object_builder_service.ObjectBuilderService.UpsertMany:output_type -> object_builder_service.CommonMessage
-	0,  // 61: object_builder_service.ObjectBuilderService.UpdateByUserIdAuth:output_type -> object_builder_service.CommonMessage
-	0,  // 62: object_builder_service.ObjectBuilderService.AgGridTree:output_type -> object_builder_service.CommonMessage
-	34, // [34:63] is the sub-list for method output_type
-	5,  // [5:34] is the sub-list for method input_type
+	0,  // 34: object_builder_service.ObjectBuilderService.GetBoardStructure:input_type -> object_builder_service.CommonMessage
+	0,  // 35: object_builder_service.ObjectBuilderService.GetBoardData:input_type -> object_builder_service.CommonMessage
+	0,  // 36: object_builder_service.ObjectBuilderService.Create:output_type -> object_builder_service.CommonMessage
+	0,  // 37: object_builder_service.ObjectBuilderService.GetSingle:output_type -> object_builder_service.CommonMessage
+	0,  // 38: object_builder_service.ObjectBuilderService.GetList:output_type -> object_builder_service.CommonMessage
+	0,  // 39: object_builder_service.ObjectBuilderService.GetList2:output_type -> object_builder_service.CommonMessage
+	0,  // 40: object_builder_service.ObjectBuilderService.GetSingleSlim:output_type -> object_builder_service.CommonMessage
+	0,  // 41: object_builder_service.ObjectBuilderService.GetListSlim:output_type -> object_builder_service.CommonMessage
+	0,  // 42: object_builder_service.ObjectBuilderService.GetListSlimV2:output_type -> object_builder_service.CommonMessage
+	0,  // 43: object_builder_service.ObjectBuilderService.GetRecursiveList:output_type -> object_builder_service.CommonMessage
+	0,  // 44: object_builder_service.ObjectBuilderService.Update:output_type -> object_builder_service.CommonMessage
+	0,  // 45: object_builder_service.ObjectBuilderService.Delete:output_type -> object_builder_service.CommonMessage
+	0,  // 46: object_builder_service.ObjectBuilderService.ManyToManyAppend:output_type -> object_builder_service.CommonMessage
+	0,  // 47: object_builder_service.ObjectBuilderService.ManyToManyDelete:output_type -> object_builder_service.CommonMessage
+	0,  // 48: object_builder_service.ObjectBuilderService.GetTableDetails:output_type -> object_builder_service.CommonMessage
+	0,  // 49: object_builder_service.ObjectBuilderService.GetListInExcel:output_type -> object_builder_service.CommonMessage
+	0,  // 50: object_builder_service.ObjectBuilderService.Batch:output_type -> object_builder_service.CommonMessage
+	0,  // 51: object_builder_service.ObjectBuilderService.MultipleUpdate:output_type -> object_builder_service.CommonMessage
+	0,  // 52: object_builder_service.ObjectBuilderService.MultipleInsert:output_type -> object_builder_service.CommonMessage
+	0,  // 53: object_builder_service.ObjectBuilderService.GetFinancialAnalytics:output_type -> object_builder_service.CommonMessage
+	0,  // 54: object_builder_service.ObjectBuilderService.GetGroupReportTables:output_type -> object_builder_service.CommonMessage
+	0,  // 55: object_builder_service.ObjectBuilderService.GetGroupByField:output_type -> object_builder_service.CommonMessage
+	0,  // 56: object_builder_service.ObjectBuilderService.DeleteMany:output_type -> object_builder_service.CommonMessage
+	0,  // 57: object_builder_service.ObjectBuilderService.GroupByColumns:output_type -> object_builder_service.CommonMessage
+	0,  // 58: object_builder_service.ObjectBuilderService.CopyFromProject:output_type -> object_builder_service.CommonMessage
+	0,  // 59: object_builder_service.ObjectBuilderService.GetListWithOutRelations:output_type -> object_builder_service.CommonMessage
+	0,  // 60: object_builder_service.ObjectBuilderService.GetListAggregation:output_type -> object_builder_service.CommonMessage
+	0,  // 61: object_builder_service.ObjectBuilderService.GetListRelationTabInExcel:output_type -> object_builder_service.CommonMessage
+	0,  // 62: object_builder_service.ObjectBuilderService.UpsertMany:output_type -> object_builder_service.CommonMessage
+	0,  // 63: object_builder_service.ObjectBuilderService.UpdateByUserIdAuth:output_type -> object_builder_service.CommonMessage
+	0,  // 64: object_builder_service.ObjectBuilderService.AgGridTree:output_type -> object_builder_service.CommonMessage
+	0,  // 65: object_builder_service.ObjectBuilderService.GetBoardStructure:output_type -> object_builder_service.CommonMessage
+	0,  // 66: object_builder_service.ObjectBuilderService.GetBoardData:output_type -> object_builder_service.CommonMessage
+	36, // [36:67] is the sub-list for method output_type
+	5,  // [5:36] is the sub-list for method input_type
 	5,  // [5:5] is the sub-list for extension type_name
 	5,  // [5:5] is the sub-list for extension extendee
 	0,  // [0:5] is the sub-list for field type_name

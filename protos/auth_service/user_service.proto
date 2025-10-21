@@ -38,6 +38,7 @@ service UserService {
     rpc GetListSetting(GetListSettingReq) returns (Setting) {}
     rpc GetUserByUsername(GetUserByUsernameRequest) returns (User) {}
     rpc GetUserProjects(UserPrimaryKey) returns (GetUserProjectsRes) {}
+    rpc GetUserProjectClientTypes(UserInfoPrimaryKey) returns (GetUserProjectClientTypesResponse) {}
 }
 
 
@@ -165,6 +166,8 @@ message CreateUserRequest {
     bool invite = 18;
     string environment_id = 19;
     string node_type = 20;
+    string tin = 21;
+    google.protobuf.Struct additional_data = 22;
 }
 
 message UserPrimaryKey {
@@ -239,6 +242,7 @@ message UserRelationPrimaryKey {
 
 message UserInfoPrimaryKey {
     string user_id = 1;
+    string project_id = 2;
 }
 
 message ResetPasswordRequest {
@@ -249,6 +253,7 @@ message ResetPasswordRequest {
     string login = 5;
     string email = 6;
     string phone = 7;
+    string tin = 8;
 }
 
 message SendMessageToEmailRequest {
@@ -266,4 +271,8 @@ message V2UserResetPasswordRequest {
     string environment_id = 5;
     string project_id = 6;
     string node_type = 7;
+}
+
+message GetUserProjectClientTypesResponse {
+    repeated string client_type_ids = 1;
 }

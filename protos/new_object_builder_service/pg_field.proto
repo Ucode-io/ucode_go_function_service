@@ -19,6 +19,17 @@ service FieldService {
     rpc GetAllByLabel(GetAllByLabelReq) returns (GetAllFieldsResponse) {}
     rpc GetIdsByLabel(GetIdsByLabelReq) returns (GetIdsByLabelResponse) {}
     rpc FieldsWithRelations(FieldsWithRelationRequest) returns (FieldsWithRelationsResponse) {}
+    rpc ObtainRandomOne(ObtainRandomRequest) returns (ObtainRandomResponse) {}
+}
+
+message ObtainRandomRequest {
+    string table_slug = 1;
+    string project_id = 2;
+    string env_id = 3;
+}
+
+message ObtainRandomResponse {
+    string id = 1;
 }
 
 message CreateFieldRequest {
@@ -129,6 +140,7 @@ message FieldPrimaryKey {
     string id = 1;
     string project_id = 2;
     string env_id = 3;
+    string table_slug = 4;
 }
 
 message GetAllFieldsForItemsRequest {
