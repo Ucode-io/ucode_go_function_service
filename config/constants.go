@@ -41,8 +41,6 @@ const (
 	FARE_MICROFRONTEND string = "microfrontend"
 
 	ENTER_PRICE_TYPE string = "ENTER_PRICE"
-)
 
-const (
 	AccessDeniedError = "you don't have permission to access this function"
 )
