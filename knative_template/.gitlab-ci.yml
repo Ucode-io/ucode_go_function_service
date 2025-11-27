@@ -1,0 +1,26 @@
+include:
+  - .gitlab/ci/*.gitlab-ci.yml
+
+stages:
+  - vault
+  - deploy
+
+vault-integration:
+  stage: vault
+  extends: .vault_template
+  variables:
+    SECRET_PATHS: "secret/k8s/ucode-prod/redis"
+    VAULT_AUTH_PATH: $VAULT_AUTH_PATH
+    VAULT_AUTH_ROLE: $VAULT_AUTH_ROLE
+  only:
+    - master
+
+deploy-staging:
+  stage: deploy
+  extends: .deploy_template
+  dependencies:
+    - vault-integration
+  variables:
+    K8SCONFIGJSON: $UCODE_KUBECONFIG
+  only:
+    - master

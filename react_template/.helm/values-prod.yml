@@ -1,0 +1,105 @@
+# Default values for microservice.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+global:
+  replicaCount: 1
+  environment:
+    {}
+
+replicaCount: 1
+
+image:
+  registry: gitlab.udevs.io:5050
+  repository: /ucode_v2/ucode_v2_react_admin
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: "gitlab-registry"
+nameOverride: ""
+fullnameOverride: ""
+labels:
+  app: react_admin
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: "default"
+
+podLabels:
+  app: react_admin
+
+podSecurityContext:
+  {}
+
+securityContext:
+  {}
+vault:
+  enabled: false
+  secretName: vault-secrets
+  variables:
+    VAULT_TOKEN: vault_token
+    SECRETS_PATH: vault_admin_api_gateway_path
+
+environment: {}
+volumes:
+  enabled: false
+  pvc:
+    enabled: false
+    existing_claim:
+    name: pvc
+    mountPath: /pv
+    size: 1G
+    class:
+    accessModes:
+      - ReadWriteOnce
+
+service:
+  type: ClusterIP
+  annotations: {}
+  specs:
+    - port: 80
+      targetPort: 80
+      name: https
+
+ingress:
+  enabled: true
+  rules:
+    - annotations:
+        nginx.ingress.kubernetes.io/enable-cors: "true"
+        nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+        nginx.ingress.kubernetes.io/cors-allow-methods: "PUT, GET, POST, OPTIONS, DELETE"
+        kubernetes.io/ingress.class: nginx
+        acme.cert-manager.io/http01-edit-in-place: "true"
+        cert-manager.io/cluster-issuer: letsencrypt-prod
+      type: web
+      hosts:
+        - host: "test.admin.u-code.io"
+          path: /
+          servicePort: 80
+      tls:
+        - secretName: ucode-star
+          hosts:
+            - "test.admin.u-code.io"
+
+resources:
+  {}
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: workload
+              operator: In
+              values:
+                - "microfrontend"

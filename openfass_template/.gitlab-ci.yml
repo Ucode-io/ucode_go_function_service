@@ -1,0 +1,51 @@
+before_script:
+  - docker login $CI_REGISTRY --username $CI_REGISTRY_USER --password $CI_REGISTRY_PASSWORD
+
+stages:
+  - test
+  - benchmark
+  - build
+
+variables:
+  GO111MODULE: "on"
+
+unit_test:
+  stage: test
+  image: golang:latest
+  before_script: []
+  script:
+    - cd $CI_PROJECT_NAME && go test
+
+benchmark_test:
+  stage: benchmark
+  image: golang:latest
+  before_script: []
+  script:
+    - cd $CI_PROJECT_NAME && go test -run ^$ -bench . -count=1 -benchtime=5x
+
+docker-build-prod:
+  stage: build
+  image: gitlab.udevs.io:5050/docker/openfaas:dind
+  script:
+    - FUNCTION=$(echo $CI_PROJECT_NAME | sed s/prod-//g)
+    - export OPENFAAS_URL=$UCODE_OPENFAAS_URL
+    - faas-cli build -f ${FUNCTION}.yml --tag=branch
+    - faas-cli push -f ${FUNCTION}.yml --tag=branch
+    - /usr/local/bin/faas-cli login --username ${UCODE_OPENFAAS_USER} --password ${UCODE_OPENFAAS_PASSWORD}
+    - faas-cli deploy -f ${FUNCTION}.yml --secret gitlab-registry --tag=branch
+  only:
+    - /^prod-.*/
+
+docker-build-staging:
+  stage: build
+  image: gitlab.udevs.io:5050/docker/openfaas:dind
+  script:
+    - FUNCTION=$(echo $CI_PROJECT_NAME | sed s/staging-//g)
+    - echo $FUNCTION
+    - export OPENFAAS_URL=$UCODE_OPENFAAS_URL
+    - faas-cli build -f ${FUNCTION}.yml --tag=branch
+    - faas-cli push -f ${FUNCTION}.yml --tag=branch
+    - /usr/local/bin/faas-cli login --username ${UCODE_OPENFAAS_USER} --password ${UCODE_OPENFAAS_PASSWORD}
+    - faas-cli deploy -f ${FUNCTION}.yml --secret gitlab-registry --tag=branch
+  only:
+    - master
