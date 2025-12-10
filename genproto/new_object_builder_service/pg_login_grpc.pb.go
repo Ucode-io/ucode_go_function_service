@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	LoginService_LoginData_FullMethodName           = "/new_object_builder_service.LoginService/LoginData"
 	LoginService_GetConnetionOptions_FullMethodName = "/new_object_builder_service.LoginService/GetConnetionOptions"
+	LoginService_UpdateUserPassword_FullMethodName  = "/new_object_builder_service.LoginService/UpdateUserPassword"
 )
 
 // LoginServiceClient is the client API for LoginService service.
@@ -34,6 +35,7 @@ type LoginServiceClient interface {
 	// rpc GetUserUpdatedPermission (GetUserUpdatedPermissionRequest) returns(V2LoginResponse) {}
 	// rpc LoginDataByUserId (LoginDataReq) returns (LoginDataRes) {}
 	GetConnetionOptions(ctx context.Context, in *GetConnetionOptionsRequest, opts ...grpc.CallOption) (*GetConnectionOptionsResponse, error)
+	UpdateUserPassword(ctx context.Context, in *UpdateUserPasswordRequest, opts ...grpc.CallOption) (*LoginDataRes, error)
 }
 
 type loginServiceClient struct {
@@ -64,6 +66,16 @@ func (c *loginServiceClient) GetConnetionOptions(ctx context.Context, in *GetCon
 	return out, nil
 }
 
+func (c *loginServiceClient) UpdateUserPassword(ctx context.Context, in *UpdateUserPasswordRequest, opts ...grpc.CallOption) (*LoginDataRes, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LoginDataRes)
+	err := c.cc.Invoke(ctx, LoginService_UpdateUserPassword_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LoginServiceServer is the server API for LoginService service.
 // All implementations must embed UnimplementedLoginServiceServer
 // for forward compatibility.
@@ -75,6 +87,7 @@ type LoginServiceServer interface {
 	// rpc GetUserUpdatedPermission (GetUserUpdatedPermissionRequest) returns(V2LoginResponse) {}
 	// rpc LoginDataByUserId (LoginDataReq) returns (LoginDataRes) {}
 	GetConnetionOptions(context.Context, *GetConnetionOptionsRequest) (*GetConnectionOptionsResponse, error)
+	UpdateUserPassword(context.Context, *UpdateUserPasswordRequest) (*LoginDataRes, error)
 	mustEmbedUnimplementedLoginServiceServer()
 }
 
@@ -90,6 +103,9 @@ func (UnimplementedLoginServiceServer) LoginData(context.Context, *LoginDataReq)
 }
 func (UnimplementedLoginServiceServer) GetConnetionOptions(context.Context, *GetConnetionOptionsRequest) (*GetConnectionOptionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetConnetionOptions not implemented")
+}
+func (UnimplementedLoginServiceServer) UpdateUserPassword(context.Context, *UpdateUserPasswordRequest) (*LoginDataRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateUserPassword not implemented")
 }
 func (UnimplementedLoginServiceServer) mustEmbedUnimplementedLoginServiceServer() {}
 func (UnimplementedLoginServiceServer) testEmbeddedByValue()                      {}
@@ -148,6 +164,24 @@ func _LoginService_GetConnetionOptions_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LoginService_UpdateUserPassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateUserPasswordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LoginServiceServer).UpdateUserPassword(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LoginService_UpdateUserPassword_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LoginServiceServer).UpdateUserPassword(ctx, req.(*UpdateUserPasswordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // LoginService_ServiceDesc is the grpc.ServiceDesc for LoginService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -162,6 +196,10 @@ var LoginService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetConnetionOptions",
 			Handler:    _LoginService_GetConnetionOptions_Handler,
+		},
+		{
+			MethodName: "UpdateUserPassword",
+			Handler:    _LoginService_UpdateUserPassword_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
