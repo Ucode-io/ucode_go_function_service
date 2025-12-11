@@ -48,7 +48,22 @@ service BillingService {
 
     //Discount
     rpc ListDiscounts(ListRequest) returns (ListDiscountsResponse);
+
+    // Update subscription end date
+    rpc UpdateSubscriptionEndDate(UpdateSubscriptionEndDateReq) returns (UpdateSubscriptionEndDateResp);
 }
+
+message UpdateSubscriptionEndDateReq {
+  string project_id = 1;
+  string end_date = 2;
+}
+
+message UpdateSubscriptionEndDateResp {
+  string project_id = 1;
+  string end_date = 2;
+  string status = 3;
+}
+
 
 message CompareFunctionRequest {
     string fare_id = 1;

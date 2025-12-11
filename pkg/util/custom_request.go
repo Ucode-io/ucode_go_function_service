@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"time"
 	"ucode/ucode_go_function_service/api/models"
@@ -35,10 +36,17 @@ func DoRequest(url string, method string, body any) (responseModel models.Invoke
 		return
 	}
 
+	size, err := io.Copy(io.Discard, resp.Body)
+	if err != nil {
+		log.Println("ERROR IN COUNTING RESPONSE:", err.Error())
+	}
+
 	err = json.Unmarshal(respByte, &responseModel)
 	if err != nil {
 		return
 	}
+
+	responseModel.Size = size
 
 	return
 }

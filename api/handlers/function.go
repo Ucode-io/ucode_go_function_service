@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -1067,8 +1068,13 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 		invokeFunction models.CommonMessage
 		path                = c.Param("function-path")
 		permission     bool = true
-		apiKey         models.ApiKey
-		isPublic       bool
+
+		apiKey models.ApiKey
+
+		functionId            string
+		resourceEnvironmentId string
+		isPublic              bool
+		resourceType          pb.ResourceType
 	)
 
 	if err := c.ShouldBindJSON(&invokeFunction); err != nil {
@@ -1111,6 +1117,9 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 			return
 		}
 
+		resourceEnvironmentId = resource.GetResourceEnvironmentId()
+		resourceType = resource.GetResourceType()
+
 		switch resource.ResourceType {
 		case pb.ResourceType_MONGODB:
 			function, err := h.services.GetBuilderServiceByType(resource.NodeType).Function().GetSingle(
@@ -1125,6 +1134,7 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 			}
 
 			isPublic = function.GetIsPublic()
+			functionId = function.Id
 
 			if !permission && !isPublic {
 				h.handleResponse(c, status_http.Unauthorized, config.AccessDeniedError)
@@ -1143,6 +1153,7 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 			}
 
 			isPublic = function.GetIsPublic()
+			functionId = function.Id
 
 			if !permission && !isPublic {
 				h.handleResponse(c, status_http.Unauthorized, config.AccessDeniedError)
@@ -1166,8 +1177,10 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 		}
 
 		apiKey = models.ApiKey{
-			AppId:    apiKeys.GetData()[0].GetAppId(),
-			IsPublic: isPublic,
+			AppId:         apiKeys.GetData()[0].GetAppId(),
+			IsPublic:      isPublic,
+			FunctionId:    functionId,
+			ResourceEnvId: resourceEnvironmentId,
 		}
 
 		appIdByte, err := json.Marshal(apiKey)
@@ -1195,13 +1208,47 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 	invokeFunction.Data["project_id"] = authInfo.GetProjectId()
 	invokeFunction.Data["environment_id"] = authInfo.GetEnvId()
 	invokeFunction.Data["app_id"] = apiKey.AppId
-	request := models.NewInvokeFunctionRequest{Data: invokeFunction.Data}
 
-	resp, err := h.ExecKnative(path, request)
+	var (
+		request = models.NewInvokeFunctionRequest{Data: invokeFunction.Data}
+
+		sendAt    = time.Now()
+		logStatus = "success"
+
+		resp models.InvokeFunctionResponse
+	)
+
+	if resourceType == pb.ResourceType_POSTGRESQL {
+		defer func() {
+			go func() {
+				completeTime := time.Now()
+				duration := time.Since(sendAt).Milliseconds()
+
+				_, err = h.services.GoObjectBuilderService().VersionHistory().CreateFunctionLog(c, &nb.FunctionLogReq{
+					ProjectId:     apiKey.ResourceEnvId,
+					FunctionId:    apiKey.FunctionId,
+					RequestMethod: "INVOKE",
+					SendAt:        sendAt.Format(time.DateTime),
+					CompletedAt:   completeTime.Format(time.DateTime),
+					Duration:      duration,
+					ReturnSize:    resp.Size,
+					Status:        logStatus,
+				})
+				if err != nil {
+					log.Println("ERROR IN CREATING FUNCTION LOG:", err)
+					return
+				}
+			}()
+		}()
+	}
+
+	resp, err = h.ExecKnative(path, request)
 	if err != nil {
+		logStatus = "error"
 		h.handleResponse(c, status.InvalidArgument, err.Error())
 		return
 	} else if resp.Status == "error" {
+		logStatus = "error"
 		var errStr = resp.Status
 		if resp.Data != nil && resp.Data["message"] != nil {
 			errStr = resp.Data["message"].(string)

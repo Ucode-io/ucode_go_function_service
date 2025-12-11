@@ -199,6 +199,7 @@ message GlobalPermission {
     bool gitbook_button = 16;
     bool chatwoot_button = 17;
     bool gpt_button = 18;
+    bool billing = 19;
 }
 
 message GetListWithRoleAppTablePermissionsResponse {

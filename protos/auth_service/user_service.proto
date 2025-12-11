@@ -271,6 +271,8 @@ message V2UserResetPasswordRequest {
     string environment_id = 5;
     string project_id = 6;
     string node_type = 7;
+    string resource_environment_id = 8;
+    int32 resource_type = 9;
 }
 
 message GetUserProjectClientTypesResponse {
