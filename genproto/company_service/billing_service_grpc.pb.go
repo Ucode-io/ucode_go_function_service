@@ -20,34 +20,35 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	BillingService_CreateFare_FullMethodName           = "/company_service.BillingService/CreateFare"
-	BillingService_GetFare_FullMethodName              = "/company_service.BillingService/GetFare"
-	BillingService_ListFares_FullMethodName            = "/company_service.BillingService/ListFares"
-	BillingService_UpdateFare_FullMethodName           = "/company_service.BillingService/UpdateFare"
-	BillingService_DeleteFare_FullMethodName           = "/company_service.BillingService/DeleteFare"
-	BillingService_CalculatePrice_FullMethodName       = "/company_service.BillingService/CalculatePrice"
-	BillingService_CreateFareItem_FullMethodName       = "/company_service.BillingService/CreateFareItem"
-	BillingService_GetFareItem_FullMethodName          = "/company_service.BillingService/GetFareItem"
-	BillingService_ListFareItems_FullMethodName        = "/company_service.BillingService/ListFareItems"
-	BillingService_UpdateFareItem_FullMethodName       = "/company_service.BillingService/UpdateFareItem"
-	BillingService_DeleteFareItem_FullMethodName       = "/company_service.BillingService/DeleteFareItem"
-	BillingService_CreateTransaction_FullMethodName    = "/company_service.BillingService/CreateTransaction"
-	BillingService_GetTransaction_FullMethodName       = "/company_service.BillingService/GetTransaction"
-	BillingService_ListTransactions_FullMethodName     = "/company_service.BillingService/ListTransactions"
-	BillingService_UpdateTransaction_FullMethodName    = "/company_service.BillingService/UpdateTransaction"
-	BillingService_CompareFunction_FullMethodName      = "/company_service.BillingService/CompareFunction"
-	BillingService_UpsertMonthlyRequest_FullMethodName = "/company_service.BillingService/UpsertMonthlyRequest"
-	BillingService_CreateCard_FullMethodName           = "/company_service.BillingService/CreateCard"
-	BillingService_GetProjectCard_FullMethodName       = "/company_service.BillingService/GetProjectCard"
-	BillingService_GetVerifyCode_FullMethodName        = "/company_service.BillingService/GetVerifyCode"
-	BillingService_Verify_FullMethodName               = "/company_service.BillingService/Verify"
-	BillingService_UpdateProjectCard_FullMethodName    = "/company_service.BillingService/UpdateProjectCard"
-	BillingService_ListProjectCards_FullMethodName     = "/company_service.BillingService/ListProjectCards"
-	BillingService_ReceiptPay_FullMethodName           = "/company_service.BillingService/ReceiptPay"
-	BillingService_DeleteProjectCard_FullMethodName    = "/company_service.BillingService/DeleteProjectCard"
-	BillingService_GetSubscription_FullMethodName      = "/company_service.BillingService/GetSubscription"
-	BillingService_UpdateSubscription_FullMethodName   = "/company_service.BillingService/UpdateSubscription"
-	BillingService_ListDiscounts_FullMethodName        = "/company_service.BillingService/ListDiscounts"
+	BillingService_CreateFare_FullMethodName                = "/company_service.BillingService/CreateFare"
+	BillingService_GetFare_FullMethodName                   = "/company_service.BillingService/GetFare"
+	BillingService_ListFares_FullMethodName                 = "/company_service.BillingService/ListFares"
+	BillingService_UpdateFare_FullMethodName                = "/company_service.BillingService/UpdateFare"
+	BillingService_DeleteFare_FullMethodName                = "/company_service.BillingService/DeleteFare"
+	BillingService_CalculatePrice_FullMethodName            = "/company_service.BillingService/CalculatePrice"
+	BillingService_CreateFareItem_FullMethodName            = "/company_service.BillingService/CreateFareItem"
+	BillingService_GetFareItem_FullMethodName               = "/company_service.BillingService/GetFareItem"
+	BillingService_ListFareItems_FullMethodName             = "/company_service.BillingService/ListFareItems"
+	BillingService_UpdateFareItem_FullMethodName            = "/company_service.BillingService/UpdateFareItem"
+	BillingService_DeleteFareItem_FullMethodName            = "/company_service.BillingService/DeleteFareItem"
+	BillingService_CreateTransaction_FullMethodName         = "/company_service.BillingService/CreateTransaction"
+	BillingService_GetTransaction_FullMethodName            = "/company_service.BillingService/GetTransaction"
+	BillingService_ListTransactions_FullMethodName          = "/company_service.BillingService/ListTransactions"
+	BillingService_UpdateTransaction_FullMethodName         = "/company_service.BillingService/UpdateTransaction"
+	BillingService_CompareFunction_FullMethodName           = "/company_service.BillingService/CompareFunction"
+	BillingService_UpsertMonthlyRequest_FullMethodName      = "/company_service.BillingService/UpsertMonthlyRequest"
+	BillingService_CreateCard_FullMethodName                = "/company_service.BillingService/CreateCard"
+	BillingService_GetProjectCard_FullMethodName            = "/company_service.BillingService/GetProjectCard"
+	BillingService_GetVerifyCode_FullMethodName             = "/company_service.BillingService/GetVerifyCode"
+	BillingService_Verify_FullMethodName                    = "/company_service.BillingService/Verify"
+	BillingService_UpdateProjectCard_FullMethodName         = "/company_service.BillingService/UpdateProjectCard"
+	BillingService_ListProjectCards_FullMethodName          = "/company_service.BillingService/ListProjectCards"
+	BillingService_ReceiptPay_FullMethodName                = "/company_service.BillingService/ReceiptPay"
+	BillingService_DeleteProjectCard_FullMethodName         = "/company_service.BillingService/DeleteProjectCard"
+	BillingService_GetSubscription_FullMethodName           = "/company_service.BillingService/GetSubscription"
+	BillingService_UpdateSubscription_FullMethodName        = "/company_service.BillingService/UpdateSubscription"
+	BillingService_ListDiscounts_FullMethodName             = "/company_service.BillingService/ListDiscounts"
+	BillingService_UpdateSubscriptionEndDate_FullMethodName = "/company_service.BillingService/UpdateSubscriptionEndDate"
 )
 
 // BillingServiceClient is the client API for BillingService service.
@@ -89,6 +90,8 @@ type BillingServiceClient interface {
 	UpdateSubscription(ctx context.Context, in *Subscription, opts ...grpc.CallOption) (*Subscription, error)
 	// Discount
 	ListDiscounts(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListDiscountsResponse, error)
+	// Update subscription end date
+	UpdateSubscriptionEndDate(ctx context.Context, in *UpdateSubscriptionEndDateReq, opts ...grpc.CallOption) (*UpdateSubscriptionEndDateResp, error)
 }
 
 type billingServiceClient struct {
@@ -379,6 +382,16 @@ func (c *billingServiceClient) ListDiscounts(ctx context.Context, in *ListReques
 	return out, nil
 }
 
+func (c *billingServiceClient) UpdateSubscriptionEndDate(ctx context.Context, in *UpdateSubscriptionEndDateReq, opts ...grpc.CallOption) (*UpdateSubscriptionEndDateResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateSubscriptionEndDateResp)
+	err := c.cc.Invoke(ctx, BillingService_UpdateSubscriptionEndDate_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BillingServiceServer is the server API for BillingService service.
 // All implementations must embed UnimplementedBillingServiceServer
 // for forward compatibility.
@@ -418,6 +431,8 @@ type BillingServiceServer interface {
 	UpdateSubscription(context.Context, *Subscription) (*Subscription, error)
 	// Discount
 	ListDiscounts(context.Context, *ListRequest) (*ListDiscountsResponse, error)
+	// Update subscription end date
+	UpdateSubscriptionEndDate(context.Context, *UpdateSubscriptionEndDateReq) (*UpdateSubscriptionEndDateResp, error)
 	mustEmbedUnimplementedBillingServiceServer()
 }
 
@@ -511,6 +526,9 @@ func (UnimplementedBillingServiceServer) UpdateSubscription(context.Context, *Su
 }
 func (UnimplementedBillingServiceServer) ListDiscounts(context.Context, *ListRequest) (*ListDiscountsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListDiscounts not implemented")
+}
+func (UnimplementedBillingServiceServer) UpdateSubscriptionEndDate(context.Context, *UpdateSubscriptionEndDateReq) (*UpdateSubscriptionEndDateResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateSubscriptionEndDate not implemented")
 }
 func (UnimplementedBillingServiceServer) mustEmbedUnimplementedBillingServiceServer() {}
 func (UnimplementedBillingServiceServer) testEmbeddedByValue()                        {}
@@ -1037,6 +1055,24 @@ func _BillingService_ListDiscounts_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _BillingService_UpdateSubscriptionEndDate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateSubscriptionEndDateReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BillingServiceServer).UpdateSubscriptionEndDate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BillingService_UpdateSubscriptionEndDate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BillingServiceServer).UpdateSubscriptionEndDate(ctx, req.(*UpdateSubscriptionEndDateReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // BillingService_ServiceDesc is the grpc.ServiceDesc for BillingService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1155,6 +1191,10 @@ var BillingService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListDiscounts",
 			Handler:    _BillingService_ListDiscounts_Handler,
+		},
+		{
+			MethodName: "UpdateSubscriptionEndDate",
+			Handler:    _BillingService_UpdateSubscriptionEndDate_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

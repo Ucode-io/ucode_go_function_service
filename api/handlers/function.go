@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -50,6 +51,7 @@ import (
 // @Response 400 {object} status.Response{data=string} "Bad Request"
 // @Failure 500 {object} status.Response{data=string} "Server Error"
 func (h *Handler) CreateFunction(c *gin.Context) {
+	log.Println("CreateFunction.......")
 	var function models.CreateFunctionRequest
 
 	ctx, cancel := context.WithCancel(c.Request.Context())
