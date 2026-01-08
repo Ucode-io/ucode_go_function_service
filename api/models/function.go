@@ -30,6 +30,7 @@ type InvokeFunctionResponse struct {
 	Data        map[string]any `json:"data"`
 	Attributes  map[string]any `json:"attributes"`
 	ServerError string         `json:"server_error"`
+	Size        int64          `json:"-"`
 }
 
 type NewInvokeFunctionRequest struct {

@@ -16,7 +16,7 @@ service LoginService {
     // rpc GetUserUpdatedPermission (GetUserUpdatedPermissionRequest) returns(V2LoginResponse) {}
     // rpc LoginDataByUserId (LoginDataReq) returns (LoginDataRes) {}
     rpc GetConnetionOptions (GetConnetionOptionsRequest) returns (GetConnectionOptionsResponse) {}
-    // rpc UpdateUserPassword (UpdateUserPasswordRequest) returns (google.protobuf.Empty) {}
+    rpc UpdateUserPassword (UpdateUserPasswordRequest) returns (LoginDataRes) {}
 }
 
 message GetConnetionOptionsRequest {
