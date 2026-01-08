@@ -156,6 +156,8 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 		gitlabToken  string
 	)
 
+	log.Println("COME TO CREATE FUNCTIONS.....")
+
 	switch function.Type {
 	case config.FUNCTION:
 		resp, err = gitlab.CreateProjectFork(functionPath, gitlab.IntegrationData{
@@ -170,6 +172,7 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 		}
 		gitlabToken = h.cfg.GitlabOpenFassToken
 	case config.KNATIVE:
+		log.Println("KNATIVE:", functionPath)
 		resp, err = gitlab.CreateProjectFork(functionPath, gitlab.IntegrationData{
 			GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
 			GitlabIntegrationToken: h.cfg.GitlabKnativeToken,
