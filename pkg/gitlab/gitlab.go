@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -37,6 +38,9 @@ func CreateProjectFork(projectName string, data IntegrationData) (response ForkR
 	if err != nil {
 		return
 	}
+
+	log.Println("RESPONSE BYTE:", string(respByte))
+	log.Println("GitlabIntegrationToken:", data.GitlabIntegrationToken)
 
 	if err = json.Unmarshal(respByte, &resp); err != nil {
 		return
