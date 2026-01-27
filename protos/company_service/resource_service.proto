@@ -88,7 +88,7 @@ message ProjectResource {
     string id = 5;
     repeated VariableResource variables = 6;
     Settings settings = 7;
-    int32 resource_type = 8; 
+    int32 resource_type = 8;
 }
 
 message ListProjectResource {
@@ -234,6 +234,9 @@ message GetListResourceEnvironmentReq {
     string project_id = 2;
     string resource_id = 3;
     string environment_id = 4;
+    int32 limit = 5;
+    int32 offset = 6;
+    ResourceType resource_type = 7;
 }
 
 message GetListResourceEnvironmentRes {
@@ -406,6 +409,6 @@ message Gitlab {
     string token = 2;
     string refresh_token = 3;
     int64 created_at = 4;
-    int32 expires_in = 5; 
+    int32 expires_in = 5;
     string base_url = 6;
 }

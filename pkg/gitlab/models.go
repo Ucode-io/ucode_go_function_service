@@ -41,9 +41,9 @@ type (
 	}
 
 	GitLabTokenRequest struct {
-		ClinetId      string `json:"client_id"`
-		ClientSecret  string `json:"client_secret"`
-		RefreshToken  string `json:"refresh_token"`
+		ClinetId     string `json:"client_id"`
+		ClientSecret string `json:"client_secret"`
+		RefreshToken string `json:"refresh_token"`
 	}
 
 	GitLabTokenResponse struct {
@@ -99,4 +99,17 @@ type ImportResponse struct {
 	FullPath string `json:"full_path"`
 	FullName string `json:"full_name"`
 	RefsURL  string `json:"refs_url"`
+}
+
+type CommitAction struct {
+	Action   string `json:"action"`
+	FilePath string `json:"file_path"`
+	Content  string `json:"content,omitempty"`
+	Encoding string `json:"encoding,omitempty"`
+}
+
+type CommitRequest struct {
+	Branch        string         `json:"branch"`
+	CommitMessage string         `json:"commit_message"`
+	Actions       []CommitAction `json:"actions"`
 }

@@ -99,6 +99,11 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 		v2Webhook.POST("/create", h.CreateWebhook)
 	}
 
+	mcpProject := v1.Group("/mcp_project")
+	{
+		mcpProject.POST("/publish-frontend/:mcp_project_id", h.PublishMcpProjectFront)
+	}
+
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 }

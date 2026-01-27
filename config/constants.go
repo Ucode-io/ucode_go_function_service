@@ -43,4 +43,6 @@ const (
 	ENTER_PRICE_TYPE string = "ENTER_PRICE"
 
 	AccessDeniedError = "you don't have permission to access this function"
+
+	DefaultBranch = "master"
 )
