@@ -227,7 +227,7 @@ func (h *Handler) PublishMcpProjectFront(c *gin.Context) {
 		}
 	}
 
-	resp, err := gitlab.CommitFiles(
+	_, err = gitlab.CommitFiles(
 		gitlab.IntegrationData{
 			GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
 			GitlabIntegrationToken: h.cfg.GitlabTokenMicroFront,
