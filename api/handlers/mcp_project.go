@@ -242,5 +242,5 @@ func (h *Handler) PublishMcpProjectFront(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, resp)
+	h.handleResponse(c, status.OK, map[string]any{"message": "success"})
 }
