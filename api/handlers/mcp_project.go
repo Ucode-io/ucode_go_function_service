@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 	"ucode/ucode_go_function_service/api/models"
 	status "ucode/ucode_go_function_service/api/status_http"
@@ -106,6 +107,7 @@ func (h *Handler) PublishMcpProjectFront(c *gin.Context) {
 		)
 		if err != nil {
 			h.handleResponse(c, status.InvalidArgument, err.Error())
+			log.Println("error creating project fork")
 			return
 		}
 
@@ -121,6 +123,7 @@ func (h *Handler) PublishMcpProjectFront(c *gin.Context) {
 			},
 		)
 		if err != nil {
+			log.Println("error updating project")
 			h.handleResponse(c, status.InvalidArgument, err.Error())
 			return
 		}
@@ -146,6 +149,7 @@ func (h *Handler) PublishMcpProjectFront(c *gin.Context) {
 			host,
 		)
 		if err != nil {
+			log.Println("error creating project variable")
 			h.handleResponse(c, status.InvalidArgument, err.Error())
 			return
 		}
@@ -162,6 +166,7 @@ func (h *Handler) PublishMcpProjectFront(c *gin.Context) {
 			},
 		)
 		if err != nil {
+			log.Println("error creating pipeline")
 			h.handleResponse(c, status.InvalidArgument, err.Error())
 			return
 		}
@@ -194,6 +199,7 @@ func (h *Handler) PublishMcpProjectFront(c *gin.Context) {
 		var newCreateFunc = &nb.CreateFunctionRequest{}
 
 		if err = helper.MarshalToStruct(createFunction, &newCreateFunc); err != nil {
+			log.Println("error marshalling create function request")
 			h.handleResponse(c, status.BadRequest, err.Error())
 			return
 		}
@@ -212,6 +218,7 @@ func (h *Handler) PublishMcpProjectFront(c *gin.Context) {
 		mcpProject.FunctionId = funcCreateRsp.Id
 		_, err = h.services.GoObjectBuilderService().McpProject().UpdateMcpProject(ctx, mcpProject)
 		if err != nil {
+			log.Println("error updating mcp_project")
 			h.handleResponse(c, status.GRPCError, fmt.Errorf("error updating mcp_project: %w", err))
 			return
 		}
@@ -238,6 +245,7 @@ func (h *Handler) PublishMcpProjectFront(c *gin.Context) {
 	)
 
 	if err != nil {
+		log.Println("error committing files")
 		h.handleResponse(c, status.GRPCError, err.Error())
 		return
 	}
