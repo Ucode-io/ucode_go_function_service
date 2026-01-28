@@ -123,7 +123,7 @@ func CreateProjectFork(projectName string, data IntegrationData) (response ForkR
 		return
 	}
 
-	if len(resp.Message.Name) != 0 {
+	if len(resp.Message) > 0 {
 		return ForkResponse{}, errors.New(resp.Message.Name[0])
 	}
 
