@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 	"ucode/ucode_go_function_service/api/models"
 	status "ucode/ucode_go_function_service/api/status_http"
 	"ucode/ucode_go_function_service/config"
@@ -30,7 +31,8 @@ func (h *Handler) PublishMcpProjectFront(c *gin.Context) {
 
 		repoId int
 
-		ok bool
+		ok           bool
+		isNewProject bool
 	)
 
 	ctx, cancel := context.WithCancel(c.Request.Context())
@@ -224,6 +226,7 @@ func (h *Handler) PublishMcpProjectFront(c *gin.Context) {
 		}
 
 		repoId = respCreateFork.ID
+		isNewProject = true
 	}
 
 	if repoId == 0 {
@@ -248,6 +251,26 @@ func (h *Handler) PublishMcpProjectFront(c *gin.Context) {
 		log.Println("error committing files")
 		h.handleResponse(c, status.GRPCError, err.Error())
 		return
+	}
+
+	// Recommit
+	if isNewProject {
+		go func() {
+			time.Sleep(3 * time.Minute)
+			_, err = gitlab.CommitFiles(
+				gitlab.IntegrationData{
+					GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
+					GitlabIntegrationToken: h.cfg.GitlabTokenMicroFront,
+					GitlabProjectId:        repoId,
+					GitlabGroupId:          h.cfg.GitlabGroupIdMicroFront,
+				},
+				mcpProject.ProjectFiles,
+			)
+
+			if err != nil {
+				log.Println("error committing files")
+			}
+		}()
 	}
 
 	h.handleResponse(c, status.OK, map[string]any{"message": "success"})

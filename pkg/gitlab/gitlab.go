@@ -124,7 +124,8 @@ func CreateProjectFork(projectName string, data IntegrationData) (response ForkR
 	}
 
 	if len(resp.Message) > 0 {
-		return ForkResponse{}, errors.New(resp.Message.Name[0])
+		message, _ := resp.Message.MarshalJSON()
+		return ForkResponse{}, errors.New(string(message))
 	}
 
 	return resp, err
