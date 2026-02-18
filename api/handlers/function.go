@@ -14,6 +14,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -50,8 +51,9 @@ import (
 // @Success 204
 // @Response 400 {object} status.Response{data=string} "Bad Request"
 // @Failure 500 {object} status.Response{data=string} "Server Error"
+// Не забудьте добавить "regexp" в блок импортов в начале файла, если его там нет!
+// import "regexp"
 func (h *Handler) CreateFunction(c *gin.Context) {
-	fmt.Println("CreateFunction.......")
 	var function models.CreateFunctionRequest
 
 	ctx, cancel := context.WithCancel(c.Request.Context())
@@ -150,14 +152,21 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 	projectName = strings.ToLower(projectName)
 
 	var (
-		functionPath = projectName + "-" + function.Path
+		reg             = regexp.MustCompile(`[^a-z0-9_\-\.]`)
+		rawFunctionPath = projectName + "-" + function.Path
+
+		cleanFunctionPath = reg.ReplaceAllString(rawFunctionPath, "")
+	)
+
+	cleanFunctionPath = strings.TrimLeft(cleanFunctionPath, "-")
+
+	var (
+		functionPath = cleanFunctionPath
 		uuid         = uuid.New()
 		url          = "https://" + uuid.String() + ".u-code.io"
 		resp         gitlab.ForkResponse
 		gitlabToken  string
 	)
-
-	log.Println("COME TO CREATE FUNCTIONS.....")
 
 	switch function.Type {
 	case config.FUNCTION:
