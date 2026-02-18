@@ -1,6 +1,9 @@
 package gitlab
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 type (
 	IntegrationData struct {
@@ -25,25 +28,21 @@ type (
 	}
 
 	ForkResponse struct {
-		Code              int       `json:"code"`
-		ID                int       `json:"id"`
-		Name              string    `json:"name"`
-		NameWithNamespace string    `json:"name_with_namespace"`
-		Path              string    `json:"path"`
-		PathWithNamespace string    `json:"path_with_namespace"`
-		CreatedAt         time.Time `json:"created_at"`
-		DefaultBranch     string    `json:"default_branch"`
-		Message           struct {
-			ProjectNamespaceName []string `json:"project_namespace.name"`
-			Name                 []string `json:"name"`
-			Path                 []string `json:"path"`
-		} `json:"message"`
+		Code              int             `json:"code"`
+		ID                int             `json:"id"`
+		Name              string          `json:"name"`
+		NameWithNamespace string          `json:"name_with_namespace"`
+		Path              string          `json:"path"`
+		PathWithNamespace string          `json:"path_with_namespace"`
+		CreatedAt         time.Time       `json:"created_at"`
+		DefaultBranch     string          `json:"default_branch"`
+		Message           json.RawMessage `json:"message"`
 	}
 
 	GitLabTokenRequest struct {
-		ClinetId      string `json:"client_id"`
-		ClientSecret  string `json:"client_secret"`
-		RefreshToken  string `json:"refresh_token"`
+		ClinetId     string `json:"client_id"`
+		ClientSecret string `json:"client_secret"`
+		RefreshToken string `json:"refresh_token"`
 	}
 
 	GitLabTokenResponse struct {
@@ -99,4 +98,17 @@ type ImportResponse struct {
 	FullPath string `json:"full_path"`
 	FullName string `json:"full_name"`
 	RefsURL  string `json:"refs_url"`
+}
+
+type CommitAction struct {
+	Action   string `json:"action"`
+	FilePath string `json:"file_path"`
+	Content  string `json:"content,omitempty"`
+	Encoding string `json:"encoding,omitempty"`
+}
+
+type CommitRequest struct {
+	Branch        string         `json:"branch"`
+	CommitMessage string         `json:"commit_message"`
+	Actions       []CommitAction `json:"actions"`
 }

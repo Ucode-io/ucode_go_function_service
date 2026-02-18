@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+package new_object_builder_service;
+option go_package = "genproto/new_object_builder_service";
+
+import "google/protobuf/struct.proto";
+
+service McpProjectService {
+  rpc CreateMcpProject(CreateMcpProjectReqeust) returns (McpProject) {}
+  rpc UpdateMcpProject(McpProject) returns (McpProject) {}
+  rpc GetAllMcpProject(GetMcpProjectListReq) returns (McpProjectList) {}
+  rpc GetMcpProjectFiles(McpProjectId) returns (McpProject) {}
+  rpc DeleteMcpProject(McpProjectId) returns (McpProject) {}
+}
+
+message CreateMcpProjectReqeust {
+  string resource_env_id = 4;
+  string title = 1;
+  string description = 2;
+  repeated McpProjectFiles project_files = 3;
+  google.protobuf.Struct project_env = 5;
+}
+
+message McpProject {
+  string resource_env_id = 1;
+  string id = 2;
+  string title = 3;
+  string description = 4;
+  repeated McpProjectFiles project_files = 5;
+  google.protobuf.Struct project_env = 6;
+  string function_id = 7;
+  FunctionData function_data = 8;
+  string created_at = 9;
+  string updated_at = 10;
+}
+
+message McpProjectList {
+  string resource_env_id = 2;
+  repeated McpProject projects = 1;
+}
+
+message GetMcpProjectListReq {
+  string resource_env_id = 4;
+  uint32 limit = 1;
+  uint32 offset = 2;
+  string title = 3;
+}
+
+message McpProjectId {
+  string resource_env_id = 1;
+  string id = 2;
+  bool without_files = 3;
+}
+
+message McpProjectFiles {
+  string resource_env_id = 8;
+  string id = 1;
+  string project_id = 2;
+  string path = 3;
+  string content = 4;
+  google.protobuf.Struct file_graph = 5;
+  string created_at = 6;
+  string updated_at = 7;
+}
+
+message FunctionData {
+  string id = 1;
+  string name = 2;
+  string path = 3;
+  string type = 4;
+  string url = 5;
+  string branch = 6;
+  string repo_id = 7;
+  string created_at = 8;
+  string updated_at = 9;
+}

@@ -5,6 +5,14 @@ import (
 	obs "ucode/ucode_go_function_service/genproto/object_builder_service"
 )
 
+type PublishMcpProjectFront struct {
+	Path        string `json:"path"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	ResourceId  string `json:"resource_id"`
+	Type        string `json:"type"`
+}
+
 type CreateFunctionRequest struct {
 	Path             string `json:"path"`
 	Name             string `json:"name"`
