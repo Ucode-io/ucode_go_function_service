@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 	"ucode/ucode_go_function_service/config"
 	"ucode/ucode_go_function_service/storage"
@@ -23,6 +24,13 @@ func NewRedis(cfg config.Config) storage.RedisStorageI {
 		DB:       cfg.GetRequestRedisDatabase,
 		Password: cfg.GetRequestRedisPassword,
 	})
+
+	resp := redisPool.Ping(context.Background())
+	if resp.Err() != nil {
+		log.Println("Error creating redis pool:", resp.Err().Error())
+	}
+
+	log.Println("Successfully connected to redis:", resp.Val())
 
 	conf := config.Load()
 
