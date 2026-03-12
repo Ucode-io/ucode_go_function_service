@@ -1312,13 +1312,8 @@ func (h *Handler) InvokeFunctionByApiPath(c *gin.Context) {
 
 	redisKey := base64.StdEncoding.EncodeToString(fmt.Appendf(nil, "%s-%s-%s", environmentId.(string), path, apiPath))
 
-	log.Println("Getting API key")
-
 	resourceBody, err := h.redis.Get(c.Request.Context(), redisKey)
 	if err != nil {
-		log.Println("ERROR GETING API key from chach:", err)
-		log.Println("Gettign api from database")
-
 		resource, err := h.services.CompanyService().ServiceResource().GetSingle(
 			c.Request.Context(),
 			&pb.GetSingleServiceResourceReq{
@@ -1371,8 +1366,6 @@ func (h *Handler) InvokeFunctionByApiPath(c *gin.Context) {
 			}
 		}
 
-		log.Println("Getting API from postgres")
-
 		apiKeys, err := h.services.AuthService().ApiKey().GetList(c.Request.Context(), &as.GetListReq{
 			EnvironmentId: environmentId.(string),
 			ProjectId:     resource.ProjectId,
@@ -1411,8 +1404,6 @@ func (h *Handler) InvokeFunctionByApiPath(c *gin.Context) {
 			return
 		}
 	}
-
-	log.Println("API key.......:", apiKey)
 
 	authInfo, err := h.GetAuthInfo(c)
 	if err != nil {
@@ -1474,8 +1465,6 @@ func (h *Handler) InvokeFunctionByApiPath(c *gin.Context) {
 
 		url := fmt.Sprintf("http://%s.%s%s", path, h.cfg.KnativeBaseUrl, apiPath)
 
-		log.Println("KNATIVE URL:", url)
-
 		req, err := http.NewRequest(http.MethodPost, url, &bodyBuffer)
 		if err != nil {
 			h.handleResponse(c, status.BadRequest, err.Error())
@@ -1495,18 +1484,10 @@ func (h *Handler) InvokeFunctionByApiPath(c *gin.Context) {
 		client := &http.Client{Timeout: 60 * time.Second}
 		res, err := client.Do(req)
 		if err != nil {
-			log.Println("ERROR calling KNATIVE API:", err)
 			h.handleResponse(c, status.BadRequest, err.Error())
 			return
 		}
 		defer res.Body.Close()
-
-		body, err := io.ReadAll(res.Body)
-		if err != nil {
-			log.Println("ERROR reading KNATIVE API:", err)
-		}
-
-		log.Println("KNATIVE RESPONSE:", string(body))
 
 		respHeader := res.Header.Get("Content-Encoding")
 		var respBody []byte
@@ -1531,11 +1512,8 @@ func (h *Handler) InvokeFunctionByApiPath(c *gin.Context) {
 			return
 		}
 
-		log.Println("function response:", string(respBody))
-
 		var jsonResp map[string]any
 		if err := json.Unmarshal(respBody, &jsonResp); err != nil {
-			log.Println("ERROR unmarshalling to jsonResp:", err)
 			// Not JSON; return as text
 			c.Data(res.StatusCode, "text/plain; charset=utf-8", respBody)
 			return
