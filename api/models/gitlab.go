@@ -31,10 +31,14 @@ type (
 		Name     string `json:"name"`
 	}
 
+	GitlabFileChange struct {
+		FilePath string `json:"file_path"`
+		Content  string `json:"content"`
+	}
+
 	GitlabUpdateFileRequest struct {
-		FilePath      string `json:"file_path"`
-		Content       string `json:"content"`
-		Branch        string `json:"branch"`
-		CommitMessage string `json:"commit_message"`
+		Files         []GitlabFileChange `json:"files"`
+		Branch        string             `json:"branch"`
+		CommitMessage string             `json:"commit_message"`
 	}
 )

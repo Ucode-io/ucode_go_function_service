@@ -405,7 +405,8 @@ func (h *Handler) GitlabGetFile(c *gin.Context) {
 // @Security ApiKeyAuth
 // @ID gitlab_update_file
 // @Router /gitlab/file [PUT]
-// @Summary Gitlab Update File Content
+// @Summary Gitlab Update Files
+// @Description Commit one or more file changes to a GitLab repository in a single commit
 // @Tags Gitlab
 // @Accept json
 // @Produce json
@@ -426,8 +427,8 @@ func (h *Handler) GitlabUpdateFile(c *gin.Context) {
 		return
 	}
 
-	if req.FilePath == "" || req.Content == "" {
-		h.handleResponse(c, status_http.InvalidArgument, "file_path and content are required")
+	if len(req.Files) == 0 {
+		h.handleResponse(c, status_http.InvalidArgument, "files are required")
 		return
 	}
 
@@ -438,17 +439,47 @@ func (h *Handler) GitlabUpdateFile(c *gin.Context) {
 		req.CommitMessage = "Update code via ucode admin panel"
 	}
 
-	encodedPath := url.PathEscape(req.FilePath)
-	apiURL := fmt.Sprintf("%s/api/v4/projects/%s/repository/files/%s",
-		h.cfg.GitlabIntegrationURL, projectID, encodedPath)
-
-	payload := map[string]string{
-		"branch":         req.Branch,
-		"content":        req.Content,
-		"commit_message": req.CommitMessage,
+	projectIdInt, err := strconv.Atoi(projectID)
+	if err != nil {
+		h.handleResponse(c, status_http.InvalidArgument, "project_id must be a number")
+		return
 	}
 
-	resultByte, err := gitlab.DoRequestV1(apiURL, h.cfg.GitlabKnativeToken, http.MethodPut, payload)
+	cfg := gitlab.IntegrationData{
+		GitlabProjectId:        projectIdInt,
+		GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
+		GitlabIntegrationToken: h.cfg.GitlabKnativeToken,
+	}
+
+	existingFiles, err := gitlab.GetRepoFilesMap(cfg)
+	if err != nil {
+		h.handleResponse(c, status_http.InternalServerError, err.Error())
+		return
+	}
+
+	var actions []gitlab.CommitAction
+	for _, f := range req.Files {
+		action := "update"
+		if !existingFiles[f.FilePath] {
+			action = "create"
+		}
+		actions = append(actions, gitlab.CommitAction{
+			Action:   action,
+			FilePath: f.FilePath,
+			Content:  f.Content,
+			Encoding: "text",
+		})
+	}
+
+	commitReq := gitlab.CommitRequest{
+		Branch:        req.Branch,
+		CommitMessage: req.CommitMessage,
+		Actions:       actions,
+	}
+
+	apiURL := fmt.Sprintf("%s/api/v4/projects/%s/repository/commits", h.cfg.GitlabIntegrationURL, projectID)
+
+	resultByte, err := gitlab.DoRequestV1(apiURL, h.cfg.GitlabKnativeToken, http.MethodPost, commitReq)
 	if err != nil {
 		h.handleResponse(c, status_http.InternalServerError, err.Error())
 		return
