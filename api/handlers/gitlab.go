@@ -505,3 +505,50 @@ func (h *Handler) GitlabUpdateFile(c *gin.Context) {
 
 	h.handleResponse(c, status_http.OK, result)
 }
+
+// GitlabGetPipelineStatus godoc
+// @Security ApiKeyAuth
+// @ID gitlab_get_pipeline_status
+// @Router /gitlab/pipeline [GET]
+// @Summary Gitlab Get Pipeline Status
+// @Description Get the latest pipeline status for a GitLab repository
+// @Tags Gitlab
+// @Accept json
+// @Produce json
+// @Param project_id query string true "gitlab numeric project id"
+// @Param branch query string false "branch name (default: master)"
+// @Success 200 {object} status_http.Response{data=map[string]any} "Data"
+// @Failure 500 {object} status_http.Response{data=string} "Server Error"
+func (h *Handler) GitlabGetPipelineStatus(c *gin.Context) {
+	projectID := c.Query("project_id")
+	branch := c.DefaultQuery("branch", "master")
+
+	if projectID == "" {
+		h.handleResponse(c, status_http.InvalidArgument, "project_id is required")
+		return
+	}
+
+	apiURL := fmt.Sprintf("%s/api/v4/projects/%s/pipelines/latest?ref=%s",
+		h.cfg.GitlabIntegrationURL, projectID, branch)
+
+	resp, err := gitlab.MakeGitLabRequest(http.MethodGet, apiURL, nil, h.cfg.GitlabKnativeToken)
+	if err != nil {
+		h.handleResponse(c, status_http.InternalServerError, err.Error())
+		return
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		h.handleResponse(c, status_http.InternalServerError, err.Error())
+		return
+	}
+
+	var result map[string]any
+	if err := json.Unmarshal(body, &result); err != nil {
+		h.handleResponse(c, status_http.InternalServerError, err.Error())
+		return
+	}
+
+	h.handleResponse(c, status_http.OK, result)
+}
