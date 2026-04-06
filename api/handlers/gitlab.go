@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"ucode/ucode_go_function_service/api/models"
 	"ucode/ucode_go_function_service/api/status_http"
 	status "ucode/ucode_go_function_service/api/status_http"
@@ -442,9 +443,13 @@ func (h *Handler) GitlabUpdateFile(c *gin.Context) {
 	if req.Branch == "" {
 		req.Branch = "master"
 	}
-	if req.CommitMessage == "" {
-		req.CommitMessage = "Update code via ucode admin panel"
+
+	fileNames := make([]string, 0, len(req.Files))
+	for _, f := range req.Files {
+		parts := strings.Split(f.FilePath, "/")
+		fileNames = append(fileNames, parts[len(parts)-1])
 	}
+	commitMessage := fmt.Sprintf("Update %s", strings.Join(fileNames, ", "))
 
 	projectIdInt, err := strconv.Atoi(projectID)
 	if err != nil {
@@ -480,7 +485,7 @@ func (h *Handler) GitlabUpdateFile(c *gin.Context) {
 
 	commitReq := gitlab.CommitRequest{
 		Branch:        req.Branch,
-		CommitMessage: req.CommitMessage,
+		CommitMessage: commitMessage,
 		Actions:       actions,
 	}
 

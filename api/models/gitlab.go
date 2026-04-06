@@ -37,8 +37,7 @@ type (
 	}
 
 	GitlabUpdateFileRequest struct {
-		Files         []GitlabFileChange `json:"files"`
-		Branch        string             `json:"branch"`
-		CommitMessage string             `json:"commit_message"`
+		Files  []GitlabFileChange `json:"files"`
+		Branch string             `json:"branch"`
 	}
 )
