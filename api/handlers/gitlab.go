@@ -386,7 +386,14 @@ func (h *Handler) GitlabGetFile(c *gin.Context) {
 	apiURL := fmt.Sprintf("%s/api/v4/projects/%s/repository/files/%s?ref=%s",
 		h.cfg.GitlabIntegrationURL, projectID, encodedPath, branch)
 
-	resultByte, err := gitlab.DoRequestV1(apiURL, h.cfg.GitlabKnativeToken, http.MethodGet, nil)
+	resp, err := gitlab.MakeGitLabRequest(http.MethodGet, apiURL, nil, h.cfg.GitlabKnativeToken)
+	if err != nil {
+		h.handleResponse(c, status_http.InternalServerError, err.Error())
+		return
+	}
+	defer resp.Body.Close()
+
+	resultByte, err := io.ReadAll(resp.Body)
 	if err != nil {
 		h.handleResponse(c, status_http.InternalServerError, err.Error())
 		return
