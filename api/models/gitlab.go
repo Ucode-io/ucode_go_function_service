@@ -30,4 +30,11 @@ type (
 		Username string `json:"username"`
 		Name     string `json:"name"`
 	}
+
+	GitlabUpdateFileRequest struct {
+		FilePath      string `json:"file_path"`
+		Content       string `json:"content"`
+		Branch        string `json:"branch"`
+		CommitMessage string `json:"commit_message"`
+	}
 )
