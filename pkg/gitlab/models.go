@@ -112,3 +112,8 @@ type CommitRequest struct {
 	CommitMessage string         `json:"commit_message"`
 	Actions       []CommitAction `json:"actions"`
 }
+
+type RepoFile struct {
+	Path    string `json:"path"`
+	Content string `json:"content"`
+}

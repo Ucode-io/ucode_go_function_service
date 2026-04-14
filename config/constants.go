@@ -45,4 +45,5 @@ const (
 	AccessDeniedError = "you don't have permission to access this function"
 
 	DefaultBranch = "master"
+	UGenBranch    = "u-gen"
 )

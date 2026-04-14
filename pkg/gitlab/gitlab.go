@@ -605,6 +605,89 @@ func ImportGitLabProject(token, url, namespace, path, filePath string) (github.I
 	return importResponse, nil
 }
 
+// GetRepoCodebase returns all files from a GitLab repository recursively.
+// Always reads from the UGenBranch ("u-gen"). If the branch does not exist,
+// it is created from "master" first.
+func GetRepoCodebase(gitlabURL, token string, projectID int) ([]RepoFile, error) {
+	client, err := gitlab.NewClient(token, gitlab.WithBaseURL(gitlabURL+"/api/v4"))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create gitlab client: %w", err)
+	}
+
+	if err = ensureUGenBranch(client, projectID); err != nil {
+		return nil, err
+	}
+
+	filePaths, err := listRepoFiles(client, projectID, config.UGenBranch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list files on branch %q: %w", config.UGenBranch, err)
+	}
+
+	var files []RepoFile
+	for _, path := range filePaths {
+		raw, _, err := client.RepositoryFiles.GetRawFile(projectID, path, &gitlab.GetRawFileOptions{
+			Ref: gitlab.Ptr(config.UGenBranch),
+		})
+		if err != nil {
+			continue
+		}
+		files = append(files, RepoFile{
+			Path:    path,
+			Content: string(raw),
+		})
+	}
+
+	return files, nil
+}
+
+// ensureUGenBranch checks if the UGenBranch exists on the project.
+// If it does not exist, it creates it from DefaultBranch ("master").
+func ensureUGenBranch(client *gitlab.Client, projectID int) error {
+	_, _, err := client.Branches.GetBranch(projectID, config.UGenBranch)
+	if err == nil {
+		return nil // branch already exists
+	}
+
+	_, _, err = client.Branches.CreateBranch(projectID, &gitlab.CreateBranchOptions{
+		Branch: gitlab.Ptr(config.UGenBranch),
+		Ref:    gitlab.Ptr(config.DefaultBranch),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create branch %q from %q: %w", config.UGenBranch, config.DefaultBranch, err)
+	}
+
+	return nil
+}
+
+func listRepoFiles(client *gitlab.Client, projectID int, branch string) ([]string, error) {
+	opt := &gitlab.ListTreeOptions{
+		Ref:       gitlab.Ptr(branch),
+		Recursive: gitlab.Ptr(true),
+		ListOptions: gitlab.ListOptions{
+			PerPage: 100,
+			Page:    1,
+		},
+	}
+
+	var paths []string
+	for {
+		nodes, resp, err := client.Repositories.ListTree(projectID, opt)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			if node.Type == "blob" {
+				paths = append(paths, node.Path)
+			}
+		}
+		if resp.NextPage == 0 {
+			break
+		}
+		opt.Page = resp.NextPage
+	}
+	return paths, nil
+}
+
 func checkExportStatusWithTimeout(baseURL, projectID, exportToken string) error {
 	url := fmt.Sprintf("%s/%s/export", baseURL, projectID)
 	startTime := time.Now()

@@ -71,6 +71,7 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 		// Function (OpenFass, Knative)
 		functions.POST("", h.CreateFunction)
 		functions.GET("/:function_id", h.GetFunctionByID)
+		functions.GET("/:function_id/codebase", h.GetFunctionCodebase)
 		functions.GET("", h.GetAllFunctions)
 		functions.PUT("", h.UpdateFunction)
 		functions.DELETE(":function_id", h.DeleteFunction)
