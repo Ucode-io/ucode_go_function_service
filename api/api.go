@@ -54,6 +54,10 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 		gitlab.GET("/user", h.GitlabGetUser)
 		gitlab.GET("/repos", h.GitlabGetRepos)
 		gitlab.GET("/branches", h.GitlabGetBranches)
+		gitlab.GET("/tree", h.GitlabGetTree)
+		gitlab.GET("/file", h.GitlabGetFile)
+		gitlab.PUT("/file", h.GitlabUpdateFile)
+		gitlab.GET("/pipeline", h.GitlabGetPipelineStatus)
 	}
 
 	v2 := r.Group("/v2")

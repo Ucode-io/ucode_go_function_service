@@ -30,4 +30,14 @@ type (
 		Username string `json:"username"`
 		Name     string `json:"name"`
 	}
+
+	GitlabFileChange struct {
+		FilePath string `json:"file_path"`
+		Content  string `json:"content"`
+	}
+
+	GitlabUpdateFileRequest struct {
+		Files  []GitlabFileChange `json:"files"`
+		Branch string             `json:"branch"`
+	}
 )
