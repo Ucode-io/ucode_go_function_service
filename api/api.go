@@ -90,6 +90,14 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 		microFe.GET("/micro-frontend", h.GetAllMicroFrontEnd)
 		microFe.PUT("/micro-frontend", h.UpdateMicroFrontEnd)
 		microFe.DELETE("/micro-frontend/:micro-frontend-id", h.DeleteMicroFrontEnd)
+		// AI-generated project: creates microfrontend + pushes all files to u-gen branch
+		microFe.POST("/micro-frontend/publish-ai", h.PublishAiGeneratedMicroFrontend)
+		// AI edit: get files from u-gen branch of an existing microfrontend
+		microFe.GET("/micro-frontend/files", h.GetMicrofrontendFiles)
+		// AI edit: push changed files back to u-gen branch of an existing microfrontend
+		microFe.PUT("/micro-frontend/push-changes", h.PushMicrofrontendChanges)
+		// Promote u-gen → master (triggers CI/CD pipeline)
+		microFe.POST("/micro-frontend/promote", h.PromoteMicrofrontendToMaster)
 	}
 
 	knativeFunc := r.Group("/v2/invoke_function")

@@ -463,7 +463,7 @@ func (h *Handler) GitlabUpdateFile(c *gin.Context) {
 		GitlabIntegrationToken: h.cfg.GitlabKnativeToken,
 	}
 
-	existingFiles, err := gitlab.GetRepoFilesMap(cfg)
+	existingFiles, err := gitlab.GetRepoFilesMap(cfg, req.Branch)
 	if err != nil {
 		h.handleResponse(c, status_http.InternalServerError, err.Error())
 		return
