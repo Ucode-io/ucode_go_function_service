@@ -845,31 +845,42 @@ func (h *Handler) PromoteMicrofrontendToMaster(c *gin.Context) {
 
 	log.Printf("[PROMOTE] repo_id=%d successfully promoted to %s", req.RepoID, config.DefaultBranch)
 
-	if req.GithubRepoName != "" {
-		projectID, environmentID, hasCtx := getProjectAndEnv(c)
-		if hasCtx {
-			githubToken, githubUsername, integErr := h.getGithubIntegration(c.Request.Context(), projectID, environmentID)
-			if integErr != nil {
-				log.Printf("[PROMOTE→GITHUB] no GitHub integration, skipping: %v", integErr)
-			} else {
-				repoID := req.RepoID
-				repoName := req.GithubRepoName
-				gitlabURL := h.cfg.GitlabIntegrationURL
-				gitlabToken := h.cfg.GitlabTokenMicroFront
-				go func() {
-					ctx := context.Background()
-					files, fetchErr := gitlab.GetRepoCodebase(gitlabURL, gitlabToken, repoID)
-					if fetchErr != nil {
-						log.Printf("[PROMOTE→GITHUB] could not fetch files from GitLab: %v", fetchErr)
+	projectID, environmentID, hasCtx := getProjectAndEnv(c)
+	if hasCtx {
+		githubToken, githubUsername, integErr := h.getGithubIntegration(c.Request.Context(), projectID, environmentID)
+		if integErr != nil {
+			log.Printf("[PROMOTE→GITHUB] no GitHub integration, skipping: %v", integErr)
+		} else {
+			repoID := req.RepoID
+			repoName := req.GithubRepoName // may be empty — resolved inside goroutine
+			gitlabURL := h.cfg.GitlabIntegrationURL
+			gitlabToken := h.cfg.GitlabTokenMicroFront
+			go func() {
+				ctx := context.Background()
+
+				// Derive repo name from GitLab project path if not explicitly provided.
+				if repoName == "" {
+					var nameErr error
+					repoName, nameErr = gitlab.GetProjectPath(gitlabURL, gitlabToken, repoID)
+					if nameErr != nil {
+						log.Printf("[PROMOTE→GITHUB] could not resolve repo name for GitLab project %d: %v", repoID, nameErr)
 						return
 					}
-					if pushErr := h.pushMicrofrontendToGithub(ctx, githubToken, githubUsername, repoName, files); pushErr != nil {
-						log.Printf("[PROMOTE→GITHUB] push to github repo %s/%s failed: %v", githubUsername, repoName, pushErr)
-						return
-					}
-					log.Printf("[PROMOTE→GITHUB] pushed %d file(s) to github repo %s/%s", len(files), githubUsername, repoName)
-				}()
-			}
+					log.Printf("[PROMOTE→GITHUB] using GitLab project path as GitHub repo name: %q", repoName)
+				}
+
+				files, fetchErr := gitlab.GetRepoCodebase(gitlabURL, gitlabToken, repoID)
+				if fetchErr != nil {
+					log.Printf("[PROMOTE→GITHUB] could not fetch files from GitLab repo %d: %v", repoID, fetchErr)
+					return
+				}
+
+				if pushErr := h.pushMicrofrontendToGithub(ctx, githubToken, githubUsername, repoName, files); pushErr != nil {
+					log.Printf("[PROMOTE→GITHUB] push to github repo %s/%s failed: %v", githubUsername, repoName, pushErr)
+					return
+				}
+				log.Printf("[PROMOTE→GITHUB] pushed %d file(s) to github repo %s/%s", len(files), githubUsername, repoName)
+			}()
 		}
 	}
 

@@ -196,6 +196,38 @@ func getFileContent(cfg IntegrationData, filePath, ref string) (string, error) {
 	return string(body), nil
 }
 
+func GetProjectPath(gitlabURL, token string, projectID int) (string, error) {
+	apiURL := fmt.Sprintf("%s/api/v4/projects/%d", gitlabURL, projectID)
+	req, err := http.NewRequest(http.MethodGet, apiURL, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("PRIVATE-TOKEN", token)
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("gitlab get project returned %d: %s", resp.StatusCode, string(b))
+	}
+
+	var project struct {
+		Path string `json:"path"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&project); err != nil {
+		return "", err
+	}
+	if project.Path == "" {
+		return "", fmt.Errorf("gitlab project has empty path")
+	}
+	return project.Path, nil
+}
+
 // CreateBranch creates a new branch on the repo from the given ref (branch/tag/commit).
 func CreateBranch(cfg IntegrationData, branchName, ref string) error {
 	apiURL := fmt.Sprintf("%s/api/v4/projects/%d/repository/branches",
@@ -879,25 +911,25 @@ func fetchArchiveFiles(gitlabURL, token string, projectID int, branch string) ([
 // CI/CD configs, OS metadata, binary assets, and Go dependency lock files.
 var (
 	skipFileNames = map[string]bool{
-		".DS_Store":         true,
-		".gitlab-ci.yml":    true,
-		"func.yaml":         true,
-		"go.sum":            true,
-		".gitignore":        true,
-		".gitkeep":          true,
-		"package.json":      true,
-		"package-lock.json": true,
-		"yarn.lock":         true,
-		"pnpm-lock.yaml":    true,
-		"Dockerfile":        true,
-		"Makefile":          true,
-		".env":              true,
-		".env.production":   true,
-		".env.example":      true,
-		"vite.config.js":    true,
-		"vite.config.ts":    true,
-		"tsconfig.json":     true,
-		"tsconfig.app.json": true,
+		".DS_Store":          true,
+		".gitlab-ci.yml":     true,
+		"func.yaml":          true,
+		"go.sum":             true,
+		".gitignore":         true,
+		".gitkeep":           true,
+		"package.json":       true,
+		"package-lock.json":  true,
+		"yarn.lock":          true,
+		"pnpm-lock.yaml":     true,
+		"Dockerfile":         true,
+		"Makefile":           true,
+		".env":               true,
+		".env.production":    true,
+		".env.example":       true,
+		"vite.config.js":     true,
+		"vite.config.ts":     true,
+		"tsconfig.json":      true,
+		"tsconfig.app.json":  true,
 		"tsconfig.node.json": true,
 	}
 
