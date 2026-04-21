@@ -12,6 +12,7 @@ import (
 	"ucode/ucode_go_function_service/api/models"
 	"ucode/ucode_go_function_service/api/status_http"
 	pb "ucode/ucode_go_function_service/genproto/company_service"
+	"ucode/ucode_go_function_service/pkg/gitlab"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -511,6 +512,259 @@ func (h *Handler) createGithubRepo(ctx context.Context, token string, req models
 		return nil, fmt.Errorf("github create repo response decode failed: %w", err)
 	}
 	return &repo, nil
+}
+
+func (h *Handler) getGithubIntegration(ctx context.Context, projectID, environmentID string) (token, username string, err error) {
+	list, err := h.services.CompanyService().IntegrationResource().GetIntegrationResourceList(ctx, &pb.GetListIntegrationResourceRequest{
+		ProjectId:     projectID,
+		EnvironmentId: environmentID,
+		Type:          pb.ResourceType_GITHUB,
+	})
+	if err != nil {
+		return "", "", fmt.Errorf("get integration list: %w", err)
+	}
+	items := list.GetIntegrationResources()
+	if len(items) == 0 {
+		return "", "", fmt.Errorf("no GitHub integration found for project %s / environment %s", projectID, environmentID)
+	}
+	return items[0].GetToken(), items[0].GetUsername(), nil
+}
+
+func (h *Handler) githubRepoExists(ctx context.Context, token, owner, repoName string) (bool, error) {
+	apiURL := fmt.Sprintf("https://api.github.com/repos/%s/%s", owner, repoName)
+	req, err := githubAPIRequest(ctx, http.MethodGet, apiURL, nil, token)
+	if err != nil {
+		return false, err
+	}
+	resp, err := githubHTTPClient.Do(req)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusOK {
+		return true, nil
+	}
+	if resp.StatusCode == http.StatusNotFound {
+		return false, nil
+	}
+	b, _ := io.ReadAll(resp.Body)
+	return false, fmt.Errorf("github check repo returned %d: %s", resp.StatusCode, string(b))
+}
+
+func (h *Handler) pushMicrofrontendToGithub(ctx context.Context, token, username, repoName string, files []gitlab.RepoFile) error {
+	if len(files) == 0 {
+		return fmt.Errorf("no files to push")
+	}
+
+	exists, err := h.githubRepoExists(ctx, token, username, repoName)
+	if err != nil {
+		return fmt.Errorf("check repo existence: %w", err)
+	}
+
+	if !exists {
+		_, err = h.createGithubRepo(ctx, token, models.GithubCreateRepoRequest{
+			Name:     repoName,
+			Private:  false,
+			AutoInit: true, // creates initial commit so we have a branch to push to
+		})
+		if err != nil {
+			return fmt.Errorf("create github repo: %w", err)
+		}
+		// GitHub needs a moment to finish initializing the repo
+		time.Sleep(3 * time.Second)
+	}
+
+	return h.pushFilesViaTreesAPI(ctx, token, username, repoName, files)
+}
+
+func (h *Handler) pushFilesViaTreesAPI(ctx context.Context, token, owner, repo string, files []gitlab.RepoFile) error {
+	repoBaseURL := fmt.Sprintf("https://api.github.com/repos/%s/%s", owner, repo)
+
+	branch, latestCommitSHA, err := h.getDefaultBranchRef(ctx, token, repoBaseURL)
+	if err != nil {
+		return fmt.Errorf("get default branch ref: %w", err)
+	}
+
+	baseTreeSHA, err := h.getCommitTreeSHA(ctx, token, repoBaseURL, latestCommitSHA)
+	if err != nil {
+		return fmt.Errorf("get commit tree SHA: %w", err)
+	}
+
+	treeItems := make([]map[string]any, 0, len(files))
+	for _, f := range files {
+		treeItems = append(treeItems, map[string]any{
+			"path":    f.Path,
+			"mode":    "100644",
+			"type":    "blob",
+			"content": f.Content,
+		})
+	}
+
+	newTreeSHA, err := h.createGithubTree(ctx, token, repoBaseURL, baseTreeSHA, treeItems)
+	if err != nil {
+		return fmt.Errorf("create git tree: %w", err)
+	}
+
+	newCommitSHA, err := h.createGithubCommit(ctx, token, repoBaseURL, "Update from ucode platform", newTreeSHA, latestCommitSHA)
+	if err != nil {
+		return fmt.Errorf("create git commit: %w", err)
+	}
+
+	return h.updateGithubBranchRef(ctx, token, repoBaseURL, branch, newCommitSHA)
+}
+
+func (h *Handler) getDefaultBranchRef(ctx context.Context, token, repoBaseURL string) (branch, commitSHA string, err error) {
+	for _, b := range []string{"main", "master"} {
+		reqURL := repoBaseURL + "/git/refs/heads/" + b
+		req, reqErr := githubAPIRequest(ctx, http.MethodGet, reqURL, nil, token)
+		if reqErr != nil {
+			return "", "", reqErr
+		}
+		resp, doErr := githubHTTPClient.Do(req)
+		if doErr != nil {
+			return "", "", doErr
+		}
+		if resp.StatusCode == http.StatusOK {
+			var ref map[string]any
+			if jsonErr := json.NewDecoder(resp.Body).Decode(&ref); jsonErr == nil {
+				if obj, ok := ref["object"].(map[string]any); ok {
+					if sha, ok := obj["sha"].(string); ok && sha != "" {
+						resp.Body.Close()
+						return b, sha, nil
+					}
+				}
+			}
+		}
+		resp.Body.Close()
+	}
+	return "", "", fmt.Errorf("could not find main or master branch in the repository")
+}
+
+func (h *Handler) getCommitTreeSHA(ctx context.Context, token, repoBaseURL, commitSHA string) (string, error) {
+	req, err := githubAPIRequest(ctx, http.MethodGet, repoBaseURL+"/git/commits/"+commitSHA, nil, token)
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := githubHTTPClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("get commit returned %d: %s", resp.StatusCode, string(b))
+	}
+
+	var commit map[string]any
+
+	if err := json.NewDecoder(resp.Body).Decode(&commit); err != nil {
+		return "", err
+	}
+
+	tree, _ := commit["tree"].(map[string]any)
+	sha, _ := tree["sha"].(string)
+	if sha == "" {
+		return "", fmt.Errorf("commit response contains no tree SHA")
+	}
+	return sha, nil
+}
+
+// createGithubTree creates a new Git tree object on GitHub.
+func (h *Handler) createGithubTree(ctx context.Context, token, repoBaseURL, baseTreeSHA string, items []map[string]any) (string, error) {
+	payload := map[string]any{
+		"base_tree": baseTreeSHA,
+		"tree":      items,
+	}
+	bodyBytes, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+	req, err := githubAPIRequest(ctx, http.MethodPost, repoBaseURL+"/git/trees", bytes.NewBuffer(bodyBytes), token)
+	if err != nil {
+		return "", err
+	}
+	resp, err := githubHTTPClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusCreated {
+		b, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("create tree returned %d: %s", resp.StatusCode, string(b))
+	}
+	var result map[string]any
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return "", err
+	}
+	sha, _ := result["sha"].(string)
+	if sha == "" {
+		return "", fmt.Errorf("create tree response contains no SHA")
+	}
+	return sha, nil
+}
+
+// createGithubCommit creates a new Git commit object on GitHub.
+func (h *Handler) createGithubCommit(ctx context.Context, token, repoBaseURL, message, treeSHA, parentSHA string) (string, error) {
+	payload := map[string]any{
+		"message": message,
+		"tree":    treeSHA,
+		"parents": []string{parentSHA},
+	}
+	bodyBytes, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+	req, err := githubAPIRequest(ctx, http.MethodPost, repoBaseURL+"/git/commits", bytes.NewBuffer(bodyBytes), token)
+	if err != nil {
+		return "", err
+	}
+	resp, err := githubHTTPClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusCreated {
+		b, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("create commit returned %d: %s", resp.StatusCode, string(b))
+	}
+	var result map[string]any
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return "", err
+	}
+	sha, _ := result["sha"].(string)
+	if sha == "" {
+		return "", fmt.Errorf("create commit response contains no SHA")
+	}
+	return sha, nil
+}
+
+// updateGithubBranchRef advances a branch ref to point to the given commit SHA.
+func (h *Handler) updateGithubBranchRef(ctx context.Context, token, repoBaseURL, branch, commitSHA string) error {
+	payload := map[string]any{
+		"sha":   commitSHA,
+		"force": false,
+	}
+	bodyBytes, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	req, err := githubAPIRequest(ctx, http.MethodPatch, repoBaseURL+"/git/refs/heads/"+branch, bytes.NewBuffer(bodyBytes), token)
+	if err != nil {
+		return err
+	}
+	resp, err := githubHTTPClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("update branch ref returned %d: %s", resp.StatusCode, string(b))
+	}
+	return nil
 }
 
 // listGithubRepos returns all repositories for the authenticated GitHub user.
