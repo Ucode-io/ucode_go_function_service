@@ -7,55 +7,56 @@ import "google/protobuf/empty.proto";
 import "company.proto";
 
 service IntegrationResourceService {
-    rpc CreateIntegrationResource(CreateIntegrationResourceRequest) returns (IntegrationResource) {}
-    rpc GetById(IntegrationResourcePrimaryKey) returns (IntegrationResource) {}
-    rpc GetByUsername(GetByUsernameRequest) returns (GetByUsernameResponse) {}
-    rpc GetIntegrationResourceList(GetListIntegrationResourceRequest) returns (GetListIntegrationResourceResponse) {}
-    rpc UpdateIntegrationResource(UpdateIntegrationResourceRequest) returns (google.protobuf.Empty) {}
-    rpc DeleteIntegrationResource(IntegrationResourcePrimaryKey) returns (google.protobuf.Empty) {}
+  rpc CreateIntegrationResource(CreateIntegrationResourceRequest) returns (IntegrationResource) {}
+  rpc GetById(IntegrationResourcePrimaryKey) returns (IntegrationResource) {}
+  rpc GetByUsername(GetByUsernameRequest) returns (GetByUsernameResponse) {}
+  rpc GetIntegrationResourceList(GetListIntegrationResourceRequest) returns (GetListIntegrationResourceResponse) {}
+  rpc UpdateIntegrationResource(UpdateIntegrationResourceRequest) returns (google.protobuf.Empty) {}
+  rpc DeleteIntegrationResource(IntegrationResourcePrimaryKey) returns (google.protobuf.Empty) {}
 }
 
 message IntegrationResource {
-    string id = 1;
-    string token = 2;
-    string project_id = 3;
-    string environment_id = 4;
-    string username = 5;
-    string name = 6;
-    string type = 7;
+  string id = 1;
+  string token = 2;
+  string project_id = 3;
+  string environment_id = 4;
+  string username = 5;
+  string name = 6;
+  string type = 7;
 }
 
 message CreateIntegrationResourceRequest {
-    string token = 1;
-    string project_id = 2;
-    string environment_id = 3;
-    string username = 4;   
-    string name = 5;
+  string token = 1;
+  string project_id = 2;
+  string environment_id = 3;
+  string username = 4;
+  string name = 5;
+  ResourceType type = 6;
 }
 
 message UpdateIntegrationResourceRequest {
-    string id = 1;
-    string name = 2;
+  string id = 1;
+  string name = 2;
 }
 
 message GetByUsernameRequest {
-    string username = 1;
+  string username = 1;
 }
 
 message IntegrationResourcePrimaryKey {
-    string id = 1;
+  string id = 1;
 }
 
 message GetByUsernameResponse {
-    repeated IntegrationResource integration_resources = 1;
+  repeated IntegrationResource integration_resources = 1;
 }
 
 message GetListIntegrationResourceRequest {
-    string project_id = 1;
-    string environment_id = 2;
-    ResourceType type = 3;
+  string project_id = 1;
+  string environment_id = 2;
+  ResourceType type = 3;
 }
 
 message GetListIntegrationResourceResponse {
-    repeated IntegrationResource integration_resources = 1;
+  repeated IntegrationResource integration_resources = 1;
 }

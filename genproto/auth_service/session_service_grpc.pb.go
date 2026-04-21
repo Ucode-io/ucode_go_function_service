@@ -20,31 +20,37 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	SessionService_Login_FullMethodName                    = "/auth_service.SessionService/Login"
-	SessionService_Logout_FullMethodName                   = "/auth_service.SessionService/Logout"
-	SessionService_RefreshToken_FullMethodName             = "/auth_service.SessionService/RefreshToken"
-	SessionService_HasAccess_FullMethodName                = "/auth_service.SessionService/HasAccess"
-	SessionService_HasAccessSuperAdmin_FullMethodName      = "/auth_service.SessionService/HasAccessSuperAdmin"
-	SessionService_V2Login_FullMethodName                  = "/auth_service.SessionService/V2Login"
-	SessionService_V2LoginSuperAdmin_FullMethodName        = "/auth_service.SessionService/V2LoginSuperAdmin"
-	SessionService_V2HasAccess_FullMethodName              = "/auth_service.SessionService/V2HasAccess"
-	SessionService_V2HasAccessUser_FullMethodName          = "/auth_service.SessionService/V2HasAccessUser"
-	SessionService_HasAccessUser_FullMethodName            = "/auth_service.SessionService/HasAccessUser"
-	SessionService_V2RefreshToken_FullMethodName           = "/auth_service.SessionService/V2RefreshToken"
-	SessionService_V2RefreshTokenSuperAdmin_FullMethodName = "/auth_service.SessionService/V2RefreshTokenSuperAdmin"
-	SessionService_SessionAndTokenGenerator_FullMethodName = "/auth_service.SessionService/SessionAndTokenGenerator"
-	SessionService_UpdateSessionsByRoleId_FullMethodName   = "/auth_service.SessionService/UpdateSessionsByRoleId"
-	SessionService_MultiCompanyLogin_FullMethodName        = "/auth_service.SessionService/MultiCompanyLogin"
-	SessionService_V2MultiCompanyLogin_FullMethodName      = "/auth_service.SessionService/V2MultiCompanyLogin"
-	SessionService_V2MultiCompanyOneLogin_FullMethodName   = "/auth_service.SessionService/V2MultiCompanyOneLogin"
-	SessionService_V2LoginWithOption_FullMethodName        = "/auth_service.SessionService/V2LoginWithOption"
-	SessionService_ForgotPassword_FullMethodName           = "/auth_service.SessionService/ForgotPassword"
-	SessionService_V2ResetPassword_FullMethodName          = "/auth_service.SessionService/V2ResetPassword"
-	SessionService_V2RefreshTokenForEnv_FullMethodName     = "/auth_service.SessionService/V2RefreshTokenForEnv"
-	SessionService_ExpireSessions_FullMethodName           = "/auth_service.SessionService/ExpireSessions"
-	SessionService_GetList_FullMethodName                  = "/auth_service.SessionService/GetList"
-	SessionService_Delete_FullMethodName                   = "/auth_service.SessionService/Delete"
-	SessionService_DeleteByParams_FullMethodName           = "/auth_service.SessionService/DeleteByParams"
+	SessionService_Login_FullMethodName                       = "/auth_service.SessionService/Login"
+	SessionService_Logout_FullMethodName                      = "/auth_service.SessionService/Logout"
+	SessionService_RefreshToken_FullMethodName                = "/auth_service.SessionService/RefreshToken"
+	SessionService_HasAccess_FullMethodName                   = "/auth_service.SessionService/HasAccess"
+	SessionService_HasAccessSuperAdmin_FullMethodName         = "/auth_service.SessionService/HasAccessSuperAdmin"
+	SessionService_V2Login_FullMethodName                     = "/auth_service.SessionService/V2Login"
+	SessionService_V2LoginSuperAdmin_FullMethodName           = "/auth_service.SessionService/V2LoginSuperAdmin"
+	SessionService_V2HasAccess_FullMethodName                 = "/auth_service.SessionService/V2HasAccess"
+	SessionService_V2HasAccessUser_FullMethodName             = "/auth_service.SessionService/V2HasAccessUser"
+	SessionService_HasAccessUser_FullMethodName               = "/auth_service.SessionService/HasAccessUser"
+	SessionService_V2RefreshToken_FullMethodName              = "/auth_service.SessionService/V2RefreshToken"
+	SessionService_V2RefreshTokenSuperAdmin_FullMethodName    = "/auth_service.SessionService/V2RefreshTokenSuperAdmin"
+	SessionService_SessionAndTokenGenerator_FullMethodName    = "/auth_service.SessionService/SessionAndTokenGenerator"
+	SessionService_UpdateSessionsByRoleId_FullMethodName      = "/auth_service.SessionService/UpdateSessionsByRoleId"
+	SessionService_MultiCompanyLogin_FullMethodName           = "/auth_service.SessionService/MultiCompanyLogin"
+	SessionService_V2MultiCompanyLogin_FullMethodName         = "/auth_service.SessionService/V2MultiCompanyLogin"
+	SessionService_V2MultiCompanyOneLogin_FullMethodName      = "/auth_service.SessionService/V2MultiCompanyOneLogin"
+	SessionService_V2LoginWithOption_FullMethodName           = "/auth_service.SessionService/V2LoginWithOption"
+	SessionService_ForgotPassword_FullMethodName              = "/auth_service.SessionService/ForgotPassword"
+	SessionService_V2ResetPassword_FullMethodName             = "/auth_service.SessionService/V2ResetPassword"
+	SessionService_V2RefreshTokenForEnv_FullMethodName        = "/auth_service.SessionService/V2RefreshTokenForEnv"
+	SessionService_ExpireSessions_FullMethodName              = "/auth_service.SessionService/ExpireSessions"
+	SessionService_GetList_FullMethodName                     = "/auth_service.SessionService/GetList"
+	SessionService_Delete_FullMethodName                      = "/auth_service.SessionService/Delete"
+	SessionService_DeleteByParams_FullMethodName              = "/auth_service.SessionService/DeleteByParams"
+	SessionService_GetSessionDevices_FullMethodName           = "/auth_service.SessionService/GetSessionDevices"
+	SessionService_DeleteSessionsByDevice_FullMethodName      = "/auth_service.SessionService/DeleteSessionsByDevice"
+	SessionService_DeleteSessionsExceptCurrent_FullMethodName = "/auth_service.SessionService/DeleteSessionsExceptCurrent"
+	SessionService_UserDefaultProject_FullMethodName          = "/auth_service.SessionService/UserDefaultProject"
+	SessionService_UgenLogin_FullMethodName                   = "/auth_service.SessionService/UgenLogin"
+	SessionService_GetUserInfoByToken_FullMethodName          = "/auth_service.SessionService/GetUserInfoByToken"
 )
 
 // SessionServiceClient is the client API for SessionService service.
@@ -76,6 +82,12 @@ type SessionServiceClient interface {
 	GetList(ctx context.Context, in *GetSessionListRequest, opts ...grpc.CallOption) (*GetSessionListResponse, error)
 	Delete(ctx context.Context, in *SessionPrimaryKey, opts ...grpc.CallOption) (*empty.Empty, error)
 	DeleteByParams(ctx context.Context, in *DeleteByParamsRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	GetSessionDevices(ctx context.Context, in *GetSessionDevicesRequest, opts ...grpc.CallOption) (*GetSessionDevicesResponse, error)
+	DeleteSessionsByDevice(ctx context.Context, in *DeleteSessionsByDeviceRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	DeleteSessionsExceptCurrent(ctx context.Context, in *DeleteSessionsExceptCurrentRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	UserDefaultProject(ctx context.Context, in *UserDefaultProjectReq, opts ...grpc.CallOption) (*UserDefaultProjectResp, error)
+	UgenLogin(ctx context.Context, in *UgenLoginReq, opts ...grpc.CallOption) (*UgenLoginResp, error)
+	GetUserInfoByToken(ctx context.Context, in *GetUserInfoByTokenReq, opts ...grpc.CallOption) (*GetUserInfoByTokenResp, error)
 }
 
 type sessionServiceClient struct {
@@ -336,6 +348,66 @@ func (c *sessionServiceClient) DeleteByParams(ctx context.Context, in *DeleteByP
 	return out, nil
 }
 
+func (c *sessionServiceClient) GetSessionDevices(ctx context.Context, in *GetSessionDevicesRequest, opts ...grpc.CallOption) (*GetSessionDevicesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSessionDevicesResponse)
+	err := c.cc.Invoke(ctx, SessionService_GetSessionDevices_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sessionServiceClient) DeleteSessionsByDevice(ctx context.Context, in *DeleteSessionsByDeviceRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, SessionService_DeleteSessionsByDevice_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sessionServiceClient) DeleteSessionsExceptCurrent(ctx context.Context, in *DeleteSessionsExceptCurrentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, SessionService_DeleteSessionsExceptCurrent_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sessionServiceClient) UserDefaultProject(ctx context.Context, in *UserDefaultProjectReq, opts ...grpc.CallOption) (*UserDefaultProjectResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UserDefaultProjectResp)
+	err := c.cc.Invoke(ctx, SessionService_UserDefaultProject_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sessionServiceClient) UgenLogin(ctx context.Context, in *UgenLoginReq, opts ...grpc.CallOption) (*UgenLoginResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UgenLoginResp)
+	err := c.cc.Invoke(ctx, SessionService_UgenLogin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sessionServiceClient) GetUserInfoByToken(ctx context.Context, in *GetUserInfoByTokenReq, opts ...grpc.CallOption) (*GetUserInfoByTokenResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetUserInfoByTokenResp)
+	err := c.cc.Invoke(ctx, SessionService_GetUserInfoByToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SessionServiceServer is the server API for SessionService service.
 // All implementations must embed UnimplementedSessionServiceServer
 // for forward compatibility.
@@ -365,6 +437,12 @@ type SessionServiceServer interface {
 	GetList(context.Context, *GetSessionListRequest) (*GetSessionListResponse, error)
 	Delete(context.Context, *SessionPrimaryKey) (*empty.Empty, error)
 	DeleteByParams(context.Context, *DeleteByParamsRequest) (*empty.Empty, error)
+	GetSessionDevices(context.Context, *GetSessionDevicesRequest) (*GetSessionDevicesResponse, error)
+	DeleteSessionsByDevice(context.Context, *DeleteSessionsByDeviceRequest) (*empty.Empty, error)
+	DeleteSessionsExceptCurrent(context.Context, *DeleteSessionsExceptCurrentRequest) (*empty.Empty, error)
+	UserDefaultProject(context.Context, *UserDefaultProjectReq) (*UserDefaultProjectResp, error)
+	UgenLogin(context.Context, *UgenLoginReq) (*UgenLoginResp, error)
+	GetUserInfoByToken(context.Context, *GetUserInfoByTokenReq) (*GetUserInfoByTokenResp, error)
 	mustEmbedUnimplementedSessionServiceServer()
 }
 
@@ -449,6 +527,24 @@ func (UnimplementedSessionServiceServer) Delete(context.Context, *SessionPrimary
 }
 func (UnimplementedSessionServiceServer) DeleteByParams(context.Context, *DeleteByParamsRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteByParams not implemented")
+}
+func (UnimplementedSessionServiceServer) GetSessionDevices(context.Context, *GetSessionDevicesRequest) (*GetSessionDevicesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSessionDevices not implemented")
+}
+func (UnimplementedSessionServiceServer) DeleteSessionsByDevice(context.Context, *DeleteSessionsByDeviceRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteSessionsByDevice not implemented")
+}
+func (UnimplementedSessionServiceServer) DeleteSessionsExceptCurrent(context.Context, *DeleteSessionsExceptCurrentRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteSessionsExceptCurrent not implemented")
+}
+func (UnimplementedSessionServiceServer) UserDefaultProject(context.Context, *UserDefaultProjectReq) (*UserDefaultProjectResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserDefaultProject not implemented")
+}
+func (UnimplementedSessionServiceServer) UgenLogin(context.Context, *UgenLoginReq) (*UgenLoginResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UgenLogin not implemented")
+}
+func (UnimplementedSessionServiceServer) GetUserInfoByToken(context.Context, *GetUserInfoByTokenReq) (*GetUserInfoByTokenResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserInfoByToken not implemented")
 }
 func (UnimplementedSessionServiceServer) mustEmbedUnimplementedSessionServiceServer() {}
 func (UnimplementedSessionServiceServer) testEmbeddedByValue()                        {}
@@ -921,6 +1017,114 @@ func _SessionService_DeleteByParams_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SessionService_GetSessionDevices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSessionDevicesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SessionServiceServer).GetSessionDevices(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SessionService_GetSessionDevices_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SessionServiceServer).GetSessionDevices(ctx, req.(*GetSessionDevicesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SessionService_DeleteSessionsByDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteSessionsByDeviceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SessionServiceServer).DeleteSessionsByDevice(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SessionService_DeleteSessionsByDevice_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SessionServiceServer).DeleteSessionsByDevice(ctx, req.(*DeleteSessionsByDeviceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SessionService_DeleteSessionsExceptCurrent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteSessionsExceptCurrentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SessionServiceServer).DeleteSessionsExceptCurrent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SessionService_DeleteSessionsExceptCurrent_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SessionServiceServer).DeleteSessionsExceptCurrent(ctx, req.(*DeleteSessionsExceptCurrentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SessionService_UserDefaultProject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserDefaultProjectReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SessionServiceServer).UserDefaultProject(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SessionService_UserDefaultProject_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SessionServiceServer).UserDefaultProject(ctx, req.(*UserDefaultProjectReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SessionService_UgenLogin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UgenLoginReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SessionServiceServer).UgenLogin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SessionService_UgenLogin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SessionServiceServer).UgenLogin(ctx, req.(*UgenLoginReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SessionService_GetUserInfoByToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserInfoByTokenReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SessionServiceServer).GetUserInfoByToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SessionService_GetUserInfoByToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SessionServiceServer).GetUserInfoByToken(ctx, req.(*GetUserInfoByTokenReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SessionService_ServiceDesc is the grpc.ServiceDesc for SessionService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1027,6 +1231,30 @@ var SessionService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteByParams",
 			Handler:    _SessionService_DeleteByParams_Handler,
+		},
+		{
+			MethodName: "GetSessionDevices",
+			Handler:    _SessionService_GetSessionDevices_Handler,
+		},
+		{
+			MethodName: "DeleteSessionsByDevice",
+			Handler:    _SessionService_DeleteSessionsByDevice_Handler,
+		},
+		{
+			MethodName: "DeleteSessionsExceptCurrent",
+			Handler:    _SessionService_DeleteSessionsExceptCurrent_Handler,
+		},
+		{
+			MethodName: "UserDefaultProject",
+			Handler:    _SessionService_UserDefaultProject_Handler,
+		},
+		{
+			MethodName: "UgenLogin",
+			Handler:    _SessionService_UgenLogin_Handler,
+		},
+		{
+			MethodName: "GetUserInfoByToken",
+			Handler:    _SessionService_GetUserInfoByToken_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

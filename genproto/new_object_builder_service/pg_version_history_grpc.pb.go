@@ -20,12 +20,13 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	VersionHistoryService_GatAll_FullMethodName            = "/new_object_builder_service.VersionHistoryService/GatAll"
-	VersionHistoryService_GetByID_FullMethodName           = "/new_object_builder_service.VersionHistoryService/GetByID"
-	VersionHistoryService_Update_FullMethodName            = "/new_object_builder_service.VersionHistoryService/Update"
-	VersionHistoryService_Create_FullMethodName            = "/new_object_builder_service.VersionHistoryService/Create"
-	VersionHistoryService_CreateFunctionLog_FullMethodName = "/new_object_builder_service.VersionHistoryService/CreateFunctionLog"
-	VersionHistoryService_GetFunctionLogs_FullMethodName   = "/new_object_builder_service.VersionHistoryService/GetFunctionLogs"
+	VersionHistoryService_GatAll_FullMethodName                = "/new_object_builder_service.VersionHistoryService/GatAll"
+	VersionHistoryService_GetByID_FullMethodName               = "/new_object_builder_service.VersionHistoryService/GetByID"
+	VersionHistoryService_Update_FullMethodName                = "/new_object_builder_service.VersionHistoryService/Update"
+	VersionHistoryService_Create_FullMethodName                = "/new_object_builder_service.VersionHistoryService/Create"
+	VersionHistoryService_CreateFunctionLog_FullMethodName     = "/new_object_builder_service.VersionHistoryService/CreateFunctionLog"
+	VersionHistoryService_GetFunctionLogs_FullMethodName       = "/new_object_builder_service.VersionHistoryService/GetFunctionLogs"
+	VersionHistoryService_GetPerformanceMetrics_FullMethodName = "/new_object_builder_service.VersionHistoryService/GetPerformanceMetrics"
 )
 
 // VersionHistoryServiceClient is the client API for VersionHistoryService service.
@@ -38,6 +39,7 @@ type VersionHistoryServiceClient interface {
 	Create(ctx context.Context, in *CreateVersionHistoryRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	CreateFunctionLog(ctx context.Context, in *FunctionLogReq, opts ...grpc.CallOption) (*empty.Empty, error)
 	GetFunctionLogs(ctx context.Context, in *GetFunctionLogsReq, opts ...grpc.CallOption) (*GetFunctionLogsResp, error)
+	GetPerformanceMetrics(ctx context.Context, in *GetPerformanceMetricsRequest, opts ...grpc.CallOption) (*GetPerformanceMetricsResponse, error)
 }
 
 type versionHistoryServiceClient struct {
@@ -108,6 +110,16 @@ func (c *versionHistoryServiceClient) GetFunctionLogs(ctx context.Context, in *G
 	return out, nil
 }
 
+func (c *versionHistoryServiceClient) GetPerformanceMetrics(ctx context.Context, in *GetPerformanceMetricsRequest, opts ...grpc.CallOption) (*GetPerformanceMetricsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetPerformanceMetricsResponse)
+	err := c.cc.Invoke(ctx, VersionHistoryService_GetPerformanceMetrics_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // VersionHistoryServiceServer is the server API for VersionHistoryService service.
 // All implementations must embed UnimplementedVersionHistoryServiceServer
 // for forward compatibility.
@@ -118,6 +130,7 @@ type VersionHistoryServiceServer interface {
 	Create(context.Context, *CreateVersionHistoryRequest) (*empty.Empty, error)
 	CreateFunctionLog(context.Context, *FunctionLogReq) (*empty.Empty, error)
 	GetFunctionLogs(context.Context, *GetFunctionLogsReq) (*GetFunctionLogsResp, error)
+	GetPerformanceMetrics(context.Context, *GetPerformanceMetricsRequest) (*GetPerformanceMetricsResponse, error)
 	mustEmbedUnimplementedVersionHistoryServiceServer()
 }
 
@@ -145,6 +158,9 @@ func (UnimplementedVersionHistoryServiceServer) CreateFunctionLog(context.Contex
 }
 func (UnimplementedVersionHistoryServiceServer) GetFunctionLogs(context.Context, *GetFunctionLogsReq) (*GetFunctionLogsResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFunctionLogs not implemented")
+}
+func (UnimplementedVersionHistoryServiceServer) GetPerformanceMetrics(context.Context, *GetPerformanceMetricsRequest) (*GetPerformanceMetricsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPerformanceMetrics not implemented")
 }
 func (UnimplementedVersionHistoryServiceServer) mustEmbedUnimplementedVersionHistoryServiceServer() {}
 func (UnimplementedVersionHistoryServiceServer) testEmbeddedByValue()                               {}
@@ -275,6 +291,24 @@ func _VersionHistoryService_GetFunctionLogs_Handler(srv interface{}, ctx context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _VersionHistoryService_GetPerformanceMetrics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPerformanceMetricsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VersionHistoryServiceServer).GetPerformanceMetrics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VersionHistoryService_GetPerformanceMetrics_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VersionHistoryServiceServer).GetPerformanceMetrics(ctx, req.(*GetPerformanceMetricsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // VersionHistoryService_ServiceDesc is the grpc.ServiceDesc for VersionHistoryService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -305,6 +339,10 @@ var VersionHistoryService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetFunctionLogs",
 			Handler:    _VersionHistoryService_GetFunctionLogs_Handler,
+		},
+		{
+			MethodName: "GetPerformanceMetrics",
+			Handler:    _VersionHistoryService_GetPerformanceMetrics_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

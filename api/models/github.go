@@ -7,6 +7,14 @@ type (
 		TokenType   string `json:"token_type"`
 	}
 
+	GithubTokenExchangeResponse struct {
+		AccessToken      string `json:"access_token"`
+		Scope            string `json:"scope"`
+		TokenType        string `json:"token_type"`
+		Error            string `json:"error"`
+		ErrorDescription string `json:"error_description"`
+	}
+
 	GithubUser struct {
 		Status            string `json:"status"`
 		Login             string `json:"login"`
@@ -37,12 +45,28 @@ type (
 		Bio               any    `json:"bio"`
 	}
 
-	GithubRepo []struct {
+	// GithubRepo represents a single GitHub repository.
+	GithubRepo struct {
 		ID       int    `json:"id"`
 		NodeID   string `json:"node_id"`
 		Name     string `json:"name"`
 		FullName string `json:"full_name"`
 		Private  bool   `json:"private"`
+	}
+
+	GithubIntegration struct {
+		ID            string `json:"id"`
+		Username      string `json:"username"`
+		Name          string `json:"name"`
+		ProjectID     string `json:"project_id"`
+		EnvironmentID string `json:"environment_id"`
+	}
+
+	GithubCreateRepoRequest struct {
+		Name        string `json:"name" binding:"required"`
+		Description string `json:"description"`
+		Private     bool   `json:"private"`
+		AutoInit    bool   `json:"auto_init"`
 	}
 
 	GithubBranch []struct {

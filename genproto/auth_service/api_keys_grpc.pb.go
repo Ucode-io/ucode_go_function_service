@@ -19,15 +19,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ApiKeys_Create_FullMethodName           = "/auth_service.ApiKeys/Create"
-	ApiKeys_Update_FullMethodName           = "/auth_service.ApiKeys/Update"
-	ApiKeys_Get_FullMethodName              = "/auth_service.ApiKeys/Get"
-	ApiKeys_GetList_FullMethodName          = "/auth_service.ApiKeys/GetList"
-	ApiKeys_Delete_FullMethodName           = "/auth_service.ApiKeys/Delete"
-	ApiKeys_GenerateApiToken_FullMethodName = "/auth_service.ApiKeys/GenerateApiToken"
-	ApiKeys_RefreshApiToken_FullMethodName  = "/auth_service.ApiKeys/RefreshApiToken"
-	ApiKeys_GetEnvID_FullMethodName         = "/auth_service.ApiKeys/GetEnvID"
-	ApiKeys_ListClientToken_FullMethodName  = "/auth_service.ApiKeys/ListClientToken"
+	ApiKeys_Create_FullMethodName                 = "/auth_service.ApiKeys/Create"
+	ApiKeys_Update_FullMethodName                 = "/auth_service.ApiKeys/Update"
+	ApiKeys_Get_FullMethodName                    = "/auth_service.ApiKeys/Get"
+	ApiKeys_GetList_FullMethodName                = "/auth_service.ApiKeys/GetList"
+	ApiKeys_Delete_FullMethodName                 = "/auth_service.ApiKeys/Delete"
+	ApiKeys_GenerateApiToken_FullMethodName       = "/auth_service.ApiKeys/GenerateApiToken"
+	ApiKeys_RefreshApiToken_FullMethodName        = "/auth_service.ApiKeys/RefreshApiToken"
+	ApiKeys_GetEnvID_FullMethodName               = "/auth_service.ApiKeys/GetEnvID"
+	ApiKeys_ListClientToken_FullMethodName        = "/auth_service.ApiKeys/ListClientToken"
+	ApiKeys_GetProjectApiKeysCount_FullMethodName = "/auth_service.ApiKeys/GetProjectApiKeysCount"
 )
 
 // ApiKeysClient is the client API for ApiKeys service.
@@ -43,6 +44,7 @@ type ApiKeysClient interface {
 	RefreshApiToken(ctx context.Context, in *RefreshApiTokenReq, opts ...grpc.CallOption) (*RefreshApiTokenRes, error)
 	GetEnvID(ctx context.Context, in *GetReq, opts ...grpc.CallOption) (*GetRes, error)
 	ListClientToken(ctx context.Context, in *ListClientTokenRequest, opts ...grpc.CallOption) (*ListClientTokenResponse, error)
+	GetProjectApiKeysCount(ctx context.Context, in *GetProjectApiKeysCountRequest, opts ...grpc.CallOption) (*GetProjectApiKeysCountResponse, error)
 }
 
 type apiKeysClient struct {
@@ -143,6 +145,16 @@ func (c *apiKeysClient) ListClientToken(ctx context.Context, in *ListClientToken
 	return out, nil
 }
 
+func (c *apiKeysClient) GetProjectApiKeysCount(ctx context.Context, in *GetProjectApiKeysCountRequest, opts ...grpc.CallOption) (*GetProjectApiKeysCountResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetProjectApiKeysCountResponse)
+	err := c.cc.Invoke(ctx, ApiKeys_GetProjectApiKeysCount_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ApiKeysServer is the server API for ApiKeys service.
 // All implementations must embed UnimplementedApiKeysServer
 // for forward compatibility.
@@ -156,6 +168,7 @@ type ApiKeysServer interface {
 	RefreshApiToken(context.Context, *RefreshApiTokenReq) (*RefreshApiTokenRes, error)
 	GetEnvID(context.Context, *GetReq) (*GetRes, error)
 	ListClientToken(context.Context, *ListClientTokenRequest) (*ListClientTokenResponse, error)
+	GetProjectApiKeysCount(context.Context, *GetProjectApiKeysCountRequest) (*GetProjectApiKeysCountResponse, error)
 	mustEmbedUnimplementedApiKeysServer()
 }
 
@@ -192,6 +205,9 @@ func (UnimplementedApiKeysServer) GetEnvID(context.Context, *GetReq) (*GetRes, e
 }
 func (UnimplementedApiKeysServer) ListClientToken(context.Context, *ListClientTokenRequest) (*ListClientTokenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListClientToken not implemented")
+}
+func (UnimplementedApiKeysServer) GetProjectApiKeysCount(context.Context, *GetProjectApiKeysCountRequest) (*GetProjectApiKeysCountResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProjectApiKeysCount not implemented")
 }
 func (UnimplementedApiKeysServer) mustEmbedUnimplementedApiKeysServer() {}
 func (UnimplementedApiKeysServer) testEmbeddedByValue()                 {}
@@ -376,6 +392,24 @@ func _ApiKeys_ListClientToken_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ApiKeys_GetProjectApiKeysCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProjectApiKeysCountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApiKeysServer).GetProjectApiKeysCount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ApiKeys_GetProjectApiKeysCount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApiKeysServer).GetProjectApiKeysCount(ctx, req.(*GetProjectApiKeysCountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ApiKeys_ServiceDesc is the grpc.ServiceDesc for ApiKeys service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -418,6 +452,10 @@ var ApiKeys_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListClientToken",
 			Handler:    _ApiKeys_ListClientToken_Handler,
+		},
+		{
+			MethodName: "GetProjectApiKeysCount",
+			Handler:    _ApiKeys_GetProjectApiKeysCount_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

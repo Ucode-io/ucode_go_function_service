@@ -47,6 +47,7 @@ const (
 	UserService_GetUserByUsername_FullMethodName         = "/auth_service.UserService/GetUserByUsername"
 	UserService_GetUserProjects_FullMethodName           = "/auth_service.UserService/GetUserProjects"
 	UserService_GetUserProjectClientTypes_FullMethodName = "/auth_service.UserService/GetUserProjectClientTypes"
+	UserService_GetProjectUsersCount_FullMethodName      = "/auth_service.UserService/GetProjectUsersCount"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -80,6 +81,7 @@ type UserServiceClient interface {
 	GetUserByUsername(ctx context.Context, in *GetUserByUsernameRequest, opts ...grpc.CallOption) (*User, error)
 	GetUserProjects(ctx context.Context, in *UserPrimaryKey, opts ...grpc.CallOption) (*GetUserProjectsRes, error)
 	GetUserProjectClientTypes(ctx context.Context, in *UserInfoPrimaryKey, opts ...grpc.CallOption) (*GetUserProjectClientTypesResponse, error)
+	GetProjectUsersCount(ctx context.Context, in *GetProjectUsersCountRequest, opts ...grpc.CallOption) (*GetProjectUsersCountResponse, error)
 }
 
 type userServiceClient struct {
@@ -360,6 +362,16 @@ func (c *userServiceClient) GetUserProjectClientTypes(ctx context.Context, in *U
 	return out, nil
 }
 
+func (c *userServiceClient) GetProjectUsersCount(ctx context.Context, in *GetProjectUsersCountRequest, opts ...grpc.CallOption) (*GetProjectUsersCountResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetProjectUsersCountResponse)
+	err := c.cc.Invoke(ctx, UserService_GetProjectUsersCount_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
@@ -391,6 +403,7 @@ type UserServiceServer interface {
 	GetUserByUsername(context.Context, *GetUserByUsernameRequest) (*User, error)
 	GetUserProjects(context.Context, *UserPrimaryKey) (*GetUserProjectsRes, error)
 	GetUserProjectClientTypes(context.Context, *UserInfoPrimaryKey) (*GetUserProjectClientTypesResponse, error)
+	GetProjectUsersCount(context.Context, *GetProjectUsersCountRequest) (*GetProjectUsersCountResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -481,6 +494,9 @@ func (UnimplementedUserServiceServer) GetUserProjects(context.Context, *UserPrim
 }
 func (UnimplementedUserServiceServer) GetUserProjectClientTypes(context.Context, *UserInfoPrimaryKey) (*GetUserProjectClientTypesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserProjectClientTypes not implemented")
+}
+func (UnimplementedUserServiceServer) GetProjectUsersCount(context.Context, *GetProjectUsersCountRequest) (*GetProjectUsersCountResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProjectUsersCount not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -989,6 +1005,24 @@ func _UserService_GetUserProjectClientTypes_Handler(srv interface{}, ctx context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_GetProjectUsersCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProjectUsersCountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetProjectUsersCount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetProjectUsersCount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetProjectUsersCount(ctx, req.(*GetProjectUsersCountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1103,6 +1137,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUserProjectClientTypes",
 			Handler:    _UserService_GetUserProjectClientTypes_Handler,
+		},
+		{
+			MethodName: "GetProjectUsersCount",
+			Handler:    _UserService_GetProjectUsersCount_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

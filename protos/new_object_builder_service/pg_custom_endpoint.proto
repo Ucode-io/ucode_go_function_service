@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package new_object_builder_service;
+option go_package = "genproto/new_object_builder_service";
+
+service CustomEndpointService {
+  rpc Create(CreateCustomEndpointRequest) returns (CustomEndpoint) {}
+  rpc Update(CustomEndpoint) returns (CustomEndpoint) {}
+  rpc GetAll(GetCustomEndpointListRequest) returns (CustomEndpointList) {}
+  rpc GetById(CustomEndpointId) returns (CustomEndpoint) {}
+  rpc Delete(CustomEndpointId) returns (CustomEndpoint) {}
+  rpc Run(RunCustomEndpointRequest) returns (RunCustomEndpointResponse) {}
+}
+
+message Parameter {
+  string name     = 1;
+  string type     = 2;
+  bool   required = 3;
+}
+
+message CustomEndpoint {
+  string id              = 1;
+  string resource_env_id = 2;
+  string name            = 3;
+  string description     = 4;
+  string sql             = 5;
+  string method          = 6;
+  bool   in_transaction  = 7;
+  string created_at      = 8;
+  string updated_at      = 9;
+  repeated Parameter parameters = 10;
+}
+
+message CreateCustomEndpointRequest {
+  string resource_env_id = 1;
+  string name            = 2;
+  string description     = 3;
+  string sql             = 4;
+  string method          = 5;
+  bool   in_transaction  = 6;
+  repeated Parameter parameters = 7;
+}
+
+message GetCustomEndpointListRequest {
+  string resource_env_id = 1;
+  string search          = 2;
+  uint32 limit           = 3;
+  uint32 offset          = 4;
+  string order_by        = 5;
+  string order_direction = 6;
+}
+
+message CustomEndpointList {
+  repeated CustomEndpoint endpoints = 1;
+  uint32 count                      = 2;
+}
+
+message CustomEndpointId {
+  string resource_env_id = 1;
+  string id              = 2;
+}
+
+message RunCustomEndpointRequest {
+  string resource_env_id = 1;
+  string id              = 2;
+  map<string, string> params = 3;
+}
+
+message RunCustomEndpointResponse {
+  bytes  data  = 1;
+  string error = 2;
+}

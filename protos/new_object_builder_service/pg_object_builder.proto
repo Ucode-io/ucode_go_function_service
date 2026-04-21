@@ -4,6 +4,7 @@ package new_object_builder_service;
 option go_package="genproto/new_object_builder_service";
 
 import "google/protobuf/struct.proto";
+import "google/protobuf/empty.proto";
 
 service ObjectBuilderService {
     rpc GetList(CommonMessage) returns (CommonMessage) {}
@@ -25,6 +26,46 @@ service ObjectBuilderService {
     rpc AgGridTree(CommonMessage) returns (CommonMessage) {}
     rpc GetBoardStructure(CommonMessage) returns (CommonMessage) {}
     rpc GetBoardData(CommonMessage) returns (CommonMessage) {}
+
+    rpc UserActivity(UserActivityReqeust) returns (google.protobuf.Empty) {}
+
+    // for ai chat
+    rpc ExecuteSQL(ExecuteSQLRequest) returns (ExecuteSQLResponse);
+
+    rpc GetResourceUsage(GetResourceUsageRequest) returns (GetResourceUsageResponse);
+    rpc GetTableSchema(CommonMessage) returns (CommonMessage);
+}
+
+message GetResourceUsageRequest {
+    string project_id = 1;
+}
+
+message GetResourceUsageResponse {
+    int64 functions_count = 1;
+    int64 microfrontends_count = 2;
+    int64 asset_size = 3; // in bytes
+    int64 database_size = 4; // in bytes
+    int64 items_count = 5;
+    int64 tables_count = 6;
+}
+
+message ExecuteSQLRequest {
+  string resource_env_id = 1;
+  string sql             = 2;
+  repeated string params = 3;
+  bool in_transaction    = 4;
+}
+message ExecuteSQLResponse {
+  repeated google.protobuf.Struct rows = 1;
+  int64 rows_affected                  = 2;
+  string error                         = 3;
+  map<string, string> types            = 4;
+}
+
+message UserActivityReqeust {
+  string resource_env_id = 1;
+  string user_id = 2;
+  string login_table = 3;
 }
 
 message CommonMessage {

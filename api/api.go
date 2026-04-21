@@ -40,12 +40,17 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 		invokeFunction.POST("/:function-path", h.InvokeFunctionByPath)
 	}
 
-	github := v1.Group("/github")
+	r.GET("/v1/github/callback", h.GithubCallback)
+
+	github := r.Group("/v1/github")
+	github.Use(h.AuthMiddleware(cfg))
 	{
-		github.GET("/login", h.GithubLogin)
-		github.GET("/user", h.GithubGetUser)
-		github.GET("/repos", h.GithubGetRepos)
-		github.GET("/branches", h.GithubGetBranches)
+		github.GET("/connect", h.GithubConnect)
+		github.GET("/integration", h.GithubGetIntegration)
+		github.GET("/integration/validate", h.GithubValidateToken)
+		github.DELETE("/integration/:id", h.GithubDeleteIntegration)
+		github.POST("/repo", h.GithubCreateRepo)
+		github.GET("/repos", h.GithubGetRepoList)
 	}
 
 	gitlab := v1.Group("/gitlab")

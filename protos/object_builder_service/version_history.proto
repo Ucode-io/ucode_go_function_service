@@ -45,6 +45,11 @@ message VersionHistory {
   string table_slug = 13;
   string version_id = 14;
   Version version = 15;
+  string method_api = 16;
+  string time_started = 17;
+  string time_completed = 18;
+  int64 duration = 19;
+  int64 status_code = 20;
 }
 
 message CreateVersionHistoryRequest {
@@ -63,6 +68,11 @@ message CreateVersionHistoryRequest {
   string type = 13;
   string table_slug = 14;
   string version_id = 15;
+  string method_api = 16;
+  string time_started = 17;
+  string time_completed = 18;
+  int64 duration = 19;
+  int64 status_code = 20;
 }
 
 message ListVersionHistory {

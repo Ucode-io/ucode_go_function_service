@@ -1,0 +1,102 @@
+syntax = "proto3";
+
+package new_object_builder_service;
+option go_package = "genproto/new_object_builder_service";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/wrappers.proto";
+
+service CustomPermissionsService {
+  rpc CreateCustomPermission(CreateCustomPermissionRequest) returns (CustomPermission) {}
+  rpc UpdateCustomPermission(UpdateCustomPermissionRequest) returns (CustomPermission) {}
+  rpc DeleteCustomPermission(DeleteCustomPermissionRequest) returns (google.protobuf.Empty) {}
+  rpc GetAllCustomPermissions(GetAllCustomPermissionsRequest) returns (GetAllCustomPermissionsResponse) {}
+
+  rpc GetCustomPermissionAccesses(GetCustomPermissionAccessesRequest) returns (GetCustomPermissionAccessesResponse) {}
+  rpc GetAllCustomPermissionAccesses(GetAllCustomPermissionAccessesRequest) returns (GetCustomPermissionAccessesResponse) {}
+
+  rpc UpdateCustomPermissionAccess(UpdateCustomPermissionAccessRequest) returns (google.protobuf.Empty) {}
+}
+
+// ==================== Definition ====================
+
+message CustomPermission {
+  string id = 1;
+  string parent_id = 2;
+  string title = 3;
+  google.protobuf.Struct attributes = 4;
+  string created_at = 5;
+  string updated_at = 6;
+}
+
+message CreateCustomPermissionRequest {
+  string project_id = 1;
+  string parent_id = 2;
+  string title = 3;
+  google.protobuf.Struct attributes = 4;
+}
+
+message UpdateCustomPermissionRequest {
+  string project_id = 1;
+  string id = 2;
+  string parent_id = 3;
+  string title = 4;
+  google.protobuf.Struct attributes = 5;
+}
+
+message DeleteCustomPermissionRequest {
+  string project_id = 1;
+  string id = 2;
+}
+
+message GetAllCustomPermissionsRequest {
+  string project_id = 1;
+  int32 limit = 2;
+  int32 page = 3;
+}
+
+message GetAllCustomPermissionsResponse {
+  repeated CustomPermission custom_permissions = 1;
+}
+
+// ==================== Access ====================
+
+message CustomPermissionWithAccess {
+  string custom_permission_id = 1;
+  string title = 2;
+  string parent_id = 3;
+  google.protobuf.Struct attributes = 4;
+  string read = 5;
+  string write = 6;
+  string update = 7;
+  string delete = 8;
+}
+
+message GetCustomPermissionAccessesRequest {
+  string project_id = 1;
+  string role_id = 2;
+  string client_type_id = 3;
+  string parent_id = 4;
+}
+
+message GetAllCustomPermissionAccessesRequest {
+  string project_id = 1;
+  string role_id = 2;
+  string client_type_id = 3;
+}
+
+message GetCustomPermissionAccessesResponse {
+  repeated CustomPermissionWithAccess permissions = 1;
+}
+
+message UpdateCustomPermissionAccessRequest {
+  string project_id = 1;
+  string role_id = 2;
+  string client_type_id = 3;
+  string custom_permission_id = 4;
+  string read = 5;
+  string write = 6;
+  string update = 7;
+  string delete = 8;
+}

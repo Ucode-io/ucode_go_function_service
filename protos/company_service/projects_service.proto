@@ -34,6 +34,9 @@ service ProjectService {
     rpc ListRecord(ListRecordRequest) returns(EmptyProto) {};
 
     rpc ListProjectsRPS(GetProjectListRequest) returns (ListProjectsRPSResponse) {};
+    rpc GetProjectUgenStatus(GetProjectUgenStatusRequest) returns (GetProjectUgenStatusResponse) {};
+    rpc UpdateProjectUgenAccess(UpdateProjectUgenAccessRequest) returns (UpdateProjectUgenAccessResponse) {};
+    rpc AutoAssignUgenIfSingle(AutoAssignUgenIfSingleRequest) returns (AutoAssignUgenIfSingleResponse) {};
 }
 
 message GetPorjectConfigByProjectIdRequest {
@@ -247,6 +250,7 @@ message Project {
     bool new_router = 22;
     repeated string icon_categories = 23;
     string customer_id = 24;
+    bool is_ugen = 25;
 }
 
 message CreateProjectRequest {
@@ -255,6 +259,7 @@ message CreateProjectRequest {
     string title = 3;
     repeated Resource resources = 4;
     string fare_id = 5;
+    bool is_ugen = 6;
 }
 
 message CreateProjectResponse {
@@ -443,4 +448,31 @@ message AttachFareRequest {
 message AttachCustomerRequest {
     string project_id = 1;
     string customer_id = 2;
+}
+
+message GetProjectUgenStatusRequest {
+    string project_id = 1;
+    string company_id = 2;
+}
+
+message GetProjectUgenStatusResponse {
+    bool is_ugen = 1;
+    int32 company_projects_count = 2;
+}
+
+message UpdateProjectUgenAccessRequest {
+    string project_id = 1;
+    string company_id = 2;
+}
+
+message UpdateProjectUgenAccessResponse {
+    Project project = 1;
+}
+
+message AutoAssignUgenIfSingleRequest {
+    string company_id = 1;
+}
+
+message AutoAssignUgenIfSingleResponse {
+    bool assigned = 1;
 }
