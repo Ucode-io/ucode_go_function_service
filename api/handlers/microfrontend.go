@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -597,6 +598,13 @@ func (h *Handler) PublishAiGeneratedMicroFrontend(c *gin.Context) {
 	}
 
 	projectName := strings.ToLower(strings.ReplaceAll(strings.TrimSpace(project.Title), " ", "-"))
+	// Strip any character that isn't [a-z0-9-] — handles non-ASCII titles (Cyrillic, Arabic, etc.)
+	projectName = regexp.MustCompile(`[^a-z0-9-]+`).ReplaceAllString(projectName, "")
+	projectName = strings.Trim(projectName, "-")
+	if projectName == "" {
+		projectName = "p"
+	}
+
 	pathPart := strings.ReplaceAll(req.Path, "-", "_")
 	// Cap total functionPath at 20 characters: truncate projectName to leave room for "_<pathPart>"
 	maxProjectLen := 20 - 1 - len(pathPart)
@@ -605,10 +613,17 @@ func (h *Handler) PublishAiGeneratedMicroFrontend(c *gin.Context) {
 	}
 	if len(projectName) > maxProjectLen {
 		projectName = strings.TrimRight(projectName[:maxProjectLen], "-")
+		if projectName == "" {
+			projectName = "p"
+		}
 	}
 	functionPath := projectName + "_" + pathPart
 
+	log.Printf("[PUBLISH-AI] project_id=%s env_id=%s raw_title=%q function_path=%q files=%d",
+		req.ProjectId, req.EnvironmentId, project.Title, functionPath, len(req.Files))
+
 	// Step 1: Fork the GitLab React template (creates repo with master branch)
+	log.Printf("[PUBLISH-AI] step1: forking template → path=%q", functionPath)
 	respCreateFork, err := gitlab.CreateProjectFork(functionPath, gitlab.IntegrationData{
 		GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
 		GitlabIntegrationToken: h.cfg.GitlabTokenMicroFront,
@@ -616,9 +631,11 @@ func (h *Handler) PublishAiGeneratedMicroFrontend(c *gin.Context) {
 		GitlabGroupId:          h.cfg.GitlabGroupIdMicroFront,
 	})
 	if err != nil {
+		log.Printf("[PUBLISH-AI] step1 FAILED (fork): %v", err)
 		h.handleResponse(c, status.InvalidArgument, err.Error())
 		return
 	}
+	log.Printf("[PUBLISH-AI] step1 ok: repo_id=%d default_branch=%s", respCreateFork.ID, respCreateFork.DefaultBranch)
 
 	gitlabCfg := gitlab.IntegrationData{
 		GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
@@ -628,8 +645,10 @@ func (h *Handler) PublishAiGeneratedMicroFrontend(c *gin.Context) {
 	}
 
 	// Step 2: Update CI config path
+	log.Printf("[PUBLISH-AI] step2: updating CI config path for repo_id=%d", respCreateFork.ID)
 	_, err = gitlab.UpdateProject(gitlabCfg, map[string]any{"ci_config_path": ".gitlab-ci.yml"})
 	if err != nil {
+		log.Printf("[PUBLISH-AI] step2 FAILED (update project): %v", err)
 		h.handleResponse(c, status.InvalidArgument, err.Error())
 		return
 	}
@@ -639,19 +658,24 @@ func (h *Handler) PublishAiGeneratedMicroFrontend(c *gin.Context) {
 	repoHost := fmt.Sprintf("%s-%s", id, h.cfg.GitlabHostMicroFront)
 	host := map[string]any{"key": "INGRESS_HOST", "value": repoHost}
 
+	log.Printf("[PUBLISH-AI] step3a: creating INGRESS_HOST variable for repo_id=%d", respCreateFork.ID)
 	_, err = gitlab.CreateProjectVariable(gitlabCfg, host)
 	if err != nil {
+		log.Printf("[PUBLISH-AI] step3a FAILED (create variable): %v", err)
 		h.handleResponse(c, status.InvalidArgument, err.Error())
 		return
 	}
 
+	log.Printf("[PUBLISH-AI] step3b: triggering pipeline for repo_id=%d", respCreateFork.ID)
 	_, err = gitlab.CreatePipeline(gitlabCfg, map[string]any{"variables": []map[string]any{host}})
 	if err != nil {
+		log.Printf("[PUBLISH-AI] step3b FAILED (create pipeline): %v", err)
 		h.handleResponse(c, status.InvalidArgument, err.Error())
 		return
 	}
 
 	// Step 4: Save the function record with master as the default branch
+	log.Printf("[PUBLISH-AI] step4: saving function record name=%q path=%q repo_id=%d", req.Name, functionPath, respCreateFork.ID)
 	createFunction := &obs.CreateFunctionRequest{
 		Path:          functionPath,
 		Name:          req.Name,
@@ -667,19 +691,24 @@ func (h *Handler) PublishAiGeneratedMicroFrontend(c *gin.Context) {
 
 	var newCreateFunc = &nb.CreateFunctionRequest{}
 	if err = helper.MarshalToStruct(createFunction, &newCreateFunc); err != nil {
+		log.Printf("[PUBLISH-AI] step4 FAILED (marshal): %v", err)
 		h.handleResponse(c, status.BadRequest, err.Error())
 		return
 	}
 
 	funcRecord, err := h.services.GoObjectBuilderService().Function().Create(ctx, newCreateFunc)
 	if err != nil {
+		log.Printf("[PUBLISH-AI] step4 FAILED (db create): %v", err)
 		h.handleResponse(c, status.GRPCError, err.Error())
 		return
 	}
+	log.Printf("[PUBLISH-AI] step4 ok: func_id=%s", funcRecord.GetId())
 
 	// Step 5: Create u-gen branch from master.
 	// All AI-generated code goes to u-gen — master is only for pipeline triggers.
+	log.Printf("[PUBLISH-AI] step5: creating %s branch for repo_id=%d", config.UGenBranch, respCreateFork.ID)
 	if err = gitlab.CreateBranch(gitlabCfg, config.UGenBranch, config.DefaultBranch); err != nil {
+		log.Printf("[PUBLISH-AI] step5 FAILED (create branch): %v", err)
 		h.handleResponse(c, status.InternalServerError, fmt.Sprintf("failed to create %s branch: %v", config.UGenBranch, err))
 		return
 	}
@@ -699,11 +728,14 @@ func (h *Handler) PublishAiGeneratedMicroFrontend(c *gin.Context) {
 		})
 	}
 
+	log.Printf("[PUBLISH-AI] step6: committing %d file(s) to branch %s for repo_id=%d", len(nbFiles), config.UGenBranch, respCreateFork.ID)
 	if _, err = gitlab.CommitFiles(gitlabCfg, config.UGenBranch, nbFiles); err != nil {
+		log.Printf("[PUBLISH-AI] step6 FAILED (commit files): %v", err)
 		h.handleResponse(c, status.InternalServerError, fmt.Sprintf("failed to commit files to %s: %v", config.UGenBranch, err))
 		return
 	}
 
+	log.Printf("[PUBLISH-AI] done: func_id=%s repo_id=%d path=%q", funcRecord.GetId(), respCreateFork.ID, functionPath)
 	h.handleResponse(c, status.OK, funcRecord)
 }
 
