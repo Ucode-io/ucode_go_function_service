@@ -285,6 +285,24 @@ func GetRepoFilesMap(cfg IntegrationData, ref string) (map[string]bool, error) {
 	return filesMap, nil
 }
 
+// GetRepoFilesList returns all blob file paths at the given ref (commit SHA or branch name).
+func GetRepoFilesList(cfg IntegrationData, ref string) ([]string, error) {
+	filesMap, err := GetRepoFilesMap(cfg, ref)
+	if err != nil {
+		return nil, err
+	}
+	paths := make([]string, 0, len(filesMap))
+	for path := range filesMap {
+		paths = append(paths, path)
+	}
+	return paths, nil
+}
+
+// GetFileContentAtRef is the public equivalent of getFileContent.
+func GetFileContentAtRef(cfg IntegrationData, filePath, ref string) (string, error) {
+	return getFileContent(cfg, filePath, ref)
+}
+
 // Integration gitlab.udevs.io
 
 func CreateProjectFork(projectName string, data IntegrationData) (response ForkResponse, err error) {
