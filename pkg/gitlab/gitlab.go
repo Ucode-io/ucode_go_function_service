@@ -228,7 +228,6 @@ func GetProjectPath(gitlabURL, token string, projectID int) (string, error) {
 	return project.Path, nil
 }
 
-// CreateBranch creates a new branch on the repo from the given ref (branch/tag/commit).
 func CreateBranch(cfg IntegrationData, branchName, ref string) error {
 	apiURL := fmt.Sprintf("%s/api/v4/projects/%d/repository/branches",
 		cfg.GitlabIntegrationUrl, cfg.GitlabProjectId)
@@ -238,18 +237,9 @@ func CreateBranch(cfg IntegrationData, branchName, ref string) error {
 		"ref":    ref,
 	}
 
-	result, err := DoRequestV1(apiURL, cfg.GitlabIntegrationToken, http.MethodPost, payload)
+	_, err := DoRequestV1(apiURL, cfg.GitlabIntegrationToken, http.MethodPost, payload)
 	if err != nil {
 		return fmt.Errorf("create branch request failed: %w", err)
-	}
-
-	var resp map[string]any
-	if err = json.Unmarshal(result, &resp); err != nil {
-		return fmt.Errorf("failed to parse create branch response: %w", err)
-	}
-
-	if msg, ok := resp["message"]; ok {
-		return fmt.Errorf("gitlab create branch error: %v", msg)
 	}
 
 	return nil
@@ -313,19 +303,20 @@ func CreateProjectFork(projectName string, data IntegrationData) (response ForkR
 		Visibility:           "private",
 	})
 	if err != nil {
-		return
+		return ForkResponse{}, err
 	}
 
 	if err = json.Unmarshal(respByte, &resp); err != nil {
-		return
+		return ForkResponse{}, err
 	}
 
+	// Теперь избыточно (DoRequestV1 уже поймает 4xx/5xx), но оставляем как доп. защита
 	if len(resp.Message) > 0 {
 		message, _ := resp.Message.MarshalJSON()
 		return ForkResponse{}, errors.New(string(message))
 	}
 
-	return resp, err
+	return resp, nil
 }
 
 func DoRequest(url, token string, method string, body any) (responseModel GitlabIntegrationResponse, err error) {
@@ -352,21 +343,25 @@ func DoRequest(url, token string, method string, body any) (responseModel Gitlab
 	}
 	defer resp.Body.Close()
 
+	responseModel.Code = resp.StatusCode
+
 	respByte, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return
 	}
 
-	var emptyMap = make(map[string]any)
+	if len(respByte) == 0 {
+		return responseModel, nil
+	}
 
+	var emptyMap = make(map[string]any)
 	if err = json.Unmarshal(respByte, &emptyMap); err != nil {
-		return GitlabIntegrationResponse{}, err
+		responseModel.Message = map[string]any{"raw": string(respByte)}
+		return responseModel, nil
 	}
 
 	responseModel.Message = emptyMap
-	responseModel.Code = resp.StatusCode
-
-	return
+	return responseModel, nil
 }
 
 func DoRequestV1(url, token string, method string, body any) ([]byte, error) {
@@ -376,7 +371,7 @@ func DoRequestV1(url, token string, method string, body any) ([]byte, error) {
 	}
 
 	client := &http.Client{
-		Timeout: time.Duration(15 * time.Second),
+		Timeout: 15 * time.Second,
 	}
 
 	url += "?access_token=" + token
@@ -392,12 +387,16 @@ func DoRequestV1(url, token string, method string, body any) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	defer resp.Body.Close()
 
 	respByte, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
+	}
+
+	// Проверяем статус код — раньше ошибки GitLab молча игнорировались
+	if resp.StatusCode >= 400 {
+		return nil, fmt.Errorf("gitlab error %d: %s", resp.StatusCode, string(respByte))
 	}
 
 	return respByte, nil
@@ -409,15 +408,26 @@ func UpdateProject(cfg IntegrationData, data map[string]any) (response GitlabInt
 		strProjectId = strconv.Itoa(projectId)
 	)
 
-	resp, err := DoRequest(cfg.GitlabIntegrationUrl+"/api/v4/projects/"+strProjectId, cfg.GitlabIntegrationToken, http.MethodPut, data)
+	resp, err := DoRequest(
+		cfg.GitlabIntegrationUrl+"/api/v4/projects/"+strProjectId,
+		cfg.GitlabIntegrationToken,
+		http.MethodPut,
+		data,
+	)
+	if err != nil {
+		return GitlabIntegrationResponse{}, err
+	}
 
-	if resp.Code >= 400 {
-		return GitlabIntegrationResponse{}, errors.New(status.BadRequest.Description)
-	} else if resp.Code >= 500 {
+	if resp.Code >= 500 {
 		return GitlabIntegrationResponse{}, errors.New(status.InternalServerError.Description)
 	}
 
-	return resp, err
+	if resp.Code >= 400 {
+		msgBytes, _ := json.Marshal(resp.Message)
+		return GitlabIntegrationResponse{}, fmt.Errorf("gitlab error %d: %s", resp.Code, string(msgBytes))
+	}
+
+	return resp, nil
 }
 
 func CreateProjectVariable(cfg IntegrationData, data map[string]any) (response GitlabIntegrationResponse, err error) {
@@ -426,15 +436,26 @@ func CreateProjectVariable(cfg IntegrationData, data map[string]any) (response G
 		strProjectId = strconv.Itoa(projectId)
 	)
 
-	resp, err := DoRequest(cfg.GitlabIntegrationUrl+"/api/v4/projects/"+strProjectId+"/variables", cfg.GitlabIntegrationToken, http.MethodPost, data)
+	resp, err := DoRequest(
+		cfg.GitlabIntegrationUrl+"/api/v4/projects/"+strProjectId+"/variables",
+		cfg.GitlabIntegrationToken,
+		http.MethodPost,
+		data,
+	)
+	if err != nil {
+		return GitlabIntegrationResponse{}, err
+	}
 
-	if resp.Code >= 400 {
-		return GitlabIntegrationResponse{}, errors.New(status.BadRequest.Description)
-	} else if resp.Code >= 500 {
+	if resp.Code >= 500 {
 		return GitlabIntegrationResponse{}, errors.New(status.InternalServerError.Description)
 	}
 
-	return resp, err
+	if resp.Code >= 400 {
+		msgBytes, _ := json.Marshal(resp.Message)
+		return GitlabIntegrationResponse{}, fmt.Errorf("gitlab error %d: %s", resp.Code, string(msgBytes))
+	}
+
+	return resp, nil
 }
 
 func MakeGitLabRequest(method, url string, payload map[string]any, token string) (*http.Response, error) {
@@ -462,12 +483,18 @@ func MakeGitLabRequest(method, url string, payload map[string]any, token string)
 func DeleteForkedProject(repoName string, cfg config.Config) (response GitlabIntegrationResponse, err error) {
 	url := cfg.GitlabIntegrationURL + "/api/v4/projects/ucode%2Fucode_micro_frontend%2F" + repoName
 
-	resp, _ := DoRequest(url, cfg.GitlabTokenMicroFront, http.MethodDelete, nil)
+	resp, err := DoRequest(url, cfg.GitlabTokenMicroFront, http.MethodDelete, nil)
+	if err != nil {
+		return GitlabIntegrationResponse{}, err
+	}
+
+	if resp.Code >= 500 {
+		return GitlabIntegrationResponse{}, errors.New(status.InternalServerError.Description)
+	}
 
 	if resp.Code >= 400 {
-		return GitlabIntegrationResponse{}, errors.New(status.BadRequest.Description)
-	} else if resp.Code >= 500 {
-		return GitlabIntegrationResponse{}, errors.New(status.InternalServerError.Description)
+		msgBytes, _ := json.Marshal(resp.Message)
+		return GitlabIntegrationResponse{}, fmt.Errorf("gitlab error %d: %s", resp.Code, string(msgBytes))
 	}
 
 	return GitlabIntegrationResponse{
@@ -972,7 +999,6 @@ func ShouldSkipFile(path string) bool {
 func checkExportStatusWithTimeout(baseURL, projectID, exportToken string) error {
 	url := fmt.Sprintf("%s/%s/export", baseURL, projectID)
 	startTime := time.Now()
-
 	maxWait := 30 * time.Minute
 
 	for {
@@ -988,17 +1014,15 @@ func checkExportStatusWithTimeout(baseURL, projectID, exportToken string) error 
 		if err != nil {
 			return err
 		}
-		defer resp.Body.Close()
 
 		var result map[string]string
 		json.NewDecoder(resp.Body).Decode(&result)
+		resp.Body.Close() // ← явный Close вместо defer внутри цикла
 
-		status := result["export_status"]
-
-		if status == "finished" {
+		if result["export_status"] == "finished" {
 			return nil
 		}
 
-		time.Sleep(10 * time.Second) // Check every 10s
+		time.Sleep(10 * time.Second)
 	}
 }

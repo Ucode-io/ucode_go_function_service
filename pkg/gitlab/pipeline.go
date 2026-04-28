@@ -1,7 +1,9 @@
 package gitlab
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"strconv"
 	"ucode/ucode_go_function_service/api/status_http"
 )
@@ -12,13 +14,28 @@ func CreatePipeline(cfg IntegrationData, data map[string]any) (response GitlabIn
 		strProjectId = strconv.Itoa(projectId)
 	)
 
-	resp, err := DoRequest(cfg.GitlabIntegrationUrl+"/api/v4/projects/"+strProjectId+"/pipeline", cfg.GitlabIntegrationToken+"&"+"ref=master", "POST", data)
+	if _, ok := data["ref"]; !ok {
+		data["ref"] = "master"
+	}
 
-	if resp.Code >= 400 {
-		return GitlabIntegrationResponse{}, errors.New(status_http.BadRequest.Description)
-	} else if resp.Code >= 500 {
+	resp, err := DoRequest(
+		cfg.GitlabIntegrationUrl+"/api/v4/projects/"+strProjectId+"/pipeline",
+		cfg.GitlabIntegrationToken,
+		"POST",
+		data,
+	)
+	if err != nil {
+		return GitlabIntegrationResponse{}, err
+	}
+
+	if resp.Code >= 500 {
 		return GitlabIntegrationResponse{}, errors.New(status_http.InternalServerError.Description)
 	}
 
-	return resp, err
+	if resp.Code >= 400 {
+		msgBytes, _ := json.Marshal(resp.Message)
+		return GitlabIntegrationResponse{}, fmt.Errorf("gitlab error %d: %s", resp.Code, string(msgBytes))
+	}
+
+	return resp, nil
 }
