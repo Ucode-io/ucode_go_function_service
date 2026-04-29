@@ -6,6 +6,7 @@ import (
 	"log"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/google/uuid"
@@ -598,7 +599,6 @@ func (h *Handler) PublishAiGeneratedMicroFrontend(c *gin.Context) {
 	}
 
 	projectName := strings.ToLower(strings.ReplaceAll(strings.TrimSpace(project.Title), " ", "-"))
-	// Strip any character that isn't [a-z0-9-] — handles non-ASCII titles (Cyrillic, Arabic, etc.)
 	projectName = regexp.MustCompile(`[^a-z0-9-]+`).ReplaceAllString(projectName, "")
 	projectName = strings.Trim(projectName, "-")
 	if projectName == "" {
@@ -606,7 +606,6 @@ func (h *Handler) PublishAiGeneratedMicroFrontend(c *gin.Context) {
 	}
 
 	pathPart := strings.ReplaceAll(req.Path, "-", "_")
-	// Cap total functionPath at 20 characters: truncate projectName to leave room for "_<pathPart>"
 	maxProjectLen := 20 - 1 - len(pathPart)
 	if maxProjectLen < 1 {
 		maxProjectLen = 1
@@ -643,6 +642,16 @@ func (h *Handler) PublishAiGeneratedMicroFrontend(c *gin.Context) {
 		GitlabProjectId:        respCreateFork.ID,
 		GitlabGroupId:          h.cfg.GitlabGroupIdMicroFront,
 	}
+
+	// Wait for GitLab to finish importing the forked project.
+	// Fork/import is async — pipelines and variables fail with 400 if triggered too early.
+	log.Printf("[PUBLISH-AI] waiting for repo_id=%d import to complete...", respCreateFork.ID)
+	if err = gitlab.WaitForImport(gitlabCfg, 60*time.Second); err != nil {
+		log.Printf("[PUBLISH-AI] import wait FAILED: %v", err)
+		h.handleResponse(c, status.InvalidArgument, fmt.Sprintf("gitlab import not ready: %v", err))
+		return
+	}
+	log.Printf("[PUBLISH-AI] repo_id=%d import complete", respCreateFork.ID)
 
 	// Step 2: Update CI config path
 	log.Printf("[PUBLISH-AI] step2: updating CI config path for repo_id=%d", respCreateFork.ID)
@@ -705,7 +714,6 @@ func (h *Handler) PublishAiGeneratedMicroFrontend(c *gin.Context) {
 	log.Printf("[PUBLISH-AI] step4 ok: func_id=%s", funcRecord.GetId())
 
 	// Step 5: Create u-gen branch from master.
-	// All AI-generated code goes to u-gen — master is only for pipeline triggers.
 	log.Printf("[PUBLISH-AI] step5: creating %s branch for repo_id=%d", config.UGenBranch, respCreateFork.ID)
 	if err = gitlab.CreateBranch(gitlabCfg, config.UGenBranch, config.DefaultBranch); err != nil {
 		log.Printf("[PUBLISH-AI] step5 FAILED (create branch): %v", err)
@@ -714,8 +722,6 @@ func (h *Handler) PublishAiGeneratedMicroFrontend(c *gin.Context) {
 	}
 
 	// Step 6: Convert and commit AI-generated files to u-gen branch.
-	// Skip package.json, lock files, and config files — these are owned by the
-	// template and must not be overwritten by AI-generated content.
 	nbFiles := make([]*nb.McpProjectFiles, 0, len(req.Files))
 	for _, f := range req.Files {
 		if gitlab.ShouldSkipFile(f.FilePath) {

@@ -23,6 +23,39 @@ import (
 	"github.com/xanzy/go-gitlab"
 )
 
+func WaitForImport(cfg IntegrationData, maxWait time.Duration) error {
+	deadline := time.Now().Add(maxWait)
+	for time.Now().Before(deadline) {
+		url := fmt.Sprintf("%s/api/v4/projects/%d", cfg.GitlabIntegrationUrl, cfg.GitlabProjectId)
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			return err
+		}
+		req.Header.Set("PRIVATE-TOKEN", cfg.GitlabIntegrationToken)
+
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return err
+		}
+
+		var result struct {
+			ImportStatus string `json:"import_status"`
+		}
+		_ = json.NewDecoder(resp.Body).Decode(&result)
+		resp.Body.Close()
+
+		switch result.ImportStatus {
+		case "finished", "none", "":
+			return nil
+		case "failed":
+			return fmt.Errorf("gitlab project import failed")
+		}
+		// "started" or "scheduled" — keep waiting
+		time.Sleep(2 * time.Second)
+	}
+	return fmt.Errorf("gitlab project import timed out after %s", maxWait)
+}
+
 func CommitFiles(cfg IntegrationData, branch string, files []*nb.McpProjectFiles) ([]byte, error) {
 	if len(files) == 0 {
 		return nil, errors.New("no files provided")
