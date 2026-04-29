@@ -20,13 +20,13 @@ import (
 // @Security ApiKeyAuth
 // @ID get_microfrontend_commits
 // @Router /v2/functions/micro-frontend/commits [GET]
-// @Summary Get commit history of a microfrontend repo
-// @Description Returns commits from the master branch (published versions).
+// @Summary Get published commit history of a microfrontend
+// @Description Returns only pipeline-triggered commits on master (i.e. published versions).
 // @Tags MicroFrontend
 // @Accept json
 // @Produce json
 // @Param repo_id  query string true  "GitLab numeric project ID"
-// @Param limit    query int    false "Number of commits per page (default: 20, max: 100)"
+// @Param limit    query int    false "Number of pipelines per page (default: 20, max: 100)"
 // @Param page     query int    false "Page number (default: 1)"
 // @Success 200 {object} status.Response{data=[]models.GitlabCommit} "Commit list"
 // @Failure 400 {object} status.Response{data=string} "Bad Request"
@@ -62,8 +62,16 @@ func (h *Handler) GetMicrofrontendCommits(c *gin.Context) {
 		return
 	}
 
+	// Get the token owner so we can filter commits by this user only.
+	tokenUser, _, err := client.Users.CurrentUser()
+	if err != nil {
+		h.handleResponse(c, status.InternalServerError, "failed to get token user: "+err.Error())
+		return
+	}
+
+	// Fetch commits from u-gen — this is where all AI changes are pushed.
 	commits, _, err := client.Commits.ListCommits(projectID, &gogitlab.ListCommitsOptions{
-		RefName: gogitlab.Ptr(config.DefaultBranch),
+		RefName: gogitlab.Ptr(config.UGenBranch),
 		ListOptions: gogitlab.ListOptions{
 			PerPage: limit,
 			Page:    page,
@@ -74,8 +82,12 @@ func (h *Handler) GetMicrofrontendCommits(c *gin.Context) {
 		return
 	}
 
+	// Filter by token owner's email to exclude old manual commits by other users.
 	result := make([]models.GitlabCommit, 0, len(commits))
 	for _, cm := range commits {
+		if cm.AuthorEmail != tokenUser.Email {
+			continue
+		}
 		result = append(result, models.GitlabCommit{
 			ID:            cm.ID,
 			ShortID:       cm.ShortID,
@@ -246,7 +258,7 @@ func (h *Handler) RevertMicrofrontendToCommit(c *gin.Context) {
 
 	// 4. Push create/update files to u-gen using the existing CommitFiles helper.
 	log.Printf("[REVERT] pushing %d file(s) to repo_id=%d branch=%s", len(nbFiles), projectID, config.UGenBranch)
-	if _, err = gitlab.CommitFiles(cfg, config.UGenBranch, nbFiles); err != nil {
+	if _, err = gitlab.CommitFiles(cfg, config.UGenBranch, nbFiles, fmt.Sprintf("revert: restore snapshot from commit %s", req.CommitSHA)); err != nil {
 		h.handleResponse(c, status.InternalServerError, "failed to push files to u-gen: "+err.Error())
 		return
 	}

@@ -823,7 +823,7 @@ func (h *Handler) PushMicrofrontendChanges(c *gin.Context) {
 		log.Printf("[PUSH CHANGES]   -> %s (%d bytes)", f.Path, len(f.Content))
 	}
 
-	result, err := gitlab.CommitFiles(gitlabCfg, config.UGenBranch, nbFiles)
+	result, err := gitlab.CommitFiles(gitlabCfg, config.UGenBranch, nbFiles, req.CommitMessage)
 	if err != nil {
 		log.Printf("[PUSH CHANGES] commit failed: %v", err)
 		h.handleResponse(c, status.InternalServerError, fmt.Sprintf("failed to push to %s branch: %v", config.UGenBranch, err))
