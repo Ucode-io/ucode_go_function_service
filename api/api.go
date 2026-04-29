@@ -103,6 +103,9 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 		microFe.PUT("/micro-frontend/push-changes", h.PushMicrofrontendChanges)
 		// Promote u-gen → master (triggers CI/CD pipeline)
 		microFe.POST("/micro-frontend/promote", h.PromoteMicrofrontendToMaster)
+		microFe.GET("/micro-frontend/commits", h.GetMicrofrontendCommits)
+		microFe.GET("/micro-frontend/files-at-commit", h.GetMicrofrontendFilesAtCommit)
+		microFe.POST("/micro-frontend/revert", h.RevertMicrofrontendToCommit)
 	}
 
 	knativeFunc := r.Group("/v2/invoke_function")

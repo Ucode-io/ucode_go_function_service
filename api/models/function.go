@@ -22,6 +22,7 @@ type PushMicrofrontendChangesRequest struct {
 	RepoID         int                `json:"repo_id"`
 	Files          []GitlabFileChange `json:"files"`
 	GithubRepoName string             `json:"github_repo_name"`
+	CommitMessage  string             `json:"commit_message"`
 }
 
 // PublishAiMicroFrontendRequest is sent from the API gateway when the AI generates
