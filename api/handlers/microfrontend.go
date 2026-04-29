@@ -646,7 +646,7 @@ func (h *Handler) PublishAiGeneratedMicroFrontend(c *gin.Context) {
 	// Wait for GitLab to finish importing the forked project.
 	// Fork/import is async — pipelines and variables fail with 400 if triggered too early.
 	log.Printf("[PUBLISH-AI] waiting for repo_id=%d import to complete...", respCreateFork.ID)
-	if err = gitlab.WaitForImport(gitlabCfg, 60*time.Second); err != nil {
+	if err = gitlab.WaitForImport(gitlabCfg, 15*time.Minute); err != nil {
 		log.Printf("[PUBLISH-AI] import wait FAILED: %v", err)
 		h.handleResponse(c, status.InvalidArgument, fmt.Sprintf("gitlab import not ready: %v", err))
 		return
