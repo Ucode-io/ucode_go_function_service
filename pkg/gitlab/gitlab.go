@@ -11,7 +11,6 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -142,12 +141,10 @@ func PromoteUGenToMaster(cfg IntegrationData, gitlabURL, token string, templateP
 
 	// Delete files present on master but absent from u-gen (skip CI/asset files)
 	for path := range masterFiles {
-		if !ugenPaths[path] && !shouldSkipFile(path) {
-			actions = append(actions, CommitAction{
-				Action:   "delete",
-				FilePath: path,
-			})
-		}
+		actions = append(actions, CommitAction{
+			Action:   "delete",
+			FilePath: path,
+		})
 	}
 
 	// Step 4: restore package.json and package-lock.json from the React template.
@@ -920,8 +917,6 @@ func ensureUGenBranch(client *gitlab.Client, projectID int) error {
 	return nil
 }
 
-// fetchArchiveFiles downloads the repo as a tar.gz archive (single HTTP request)
-// and extracts only the relevant source files, skipping CI/CD configs, OS junk, and binaries.
 func fetchArchiveFiles(gitlabURL, token string, projectID int, branch string) ([]RepoFile, error) {
 	url := fmt.Sprintf("%s/api/v4/projects/%d/repository/archive.tar.gz?sha=%s", gitlabURL, projectID, branch)
 
@@ -965,18 +960,17 @@ func fetchArchiveFiles(gitlabURL, token string, projectID int, branch string) ([
 			continue
 		}
 
-		parts := strings.SplitN(header.Name, "/", 2)
-		if len(parts) < 2 || parts[1] == "" {
+		filePath := header.Name
+		if idx := strings.Index(filePath, "/"); idx != -1 {
+			filePath = filePath[idx+1:]
+		}
+		if filePath == "" {
 			continue
 		}
-		filePath := parts[1]
-
-		//if shouldSkipFile(filePath) {
-		//	continue
-		//}
 
 		content, err := io.ReadAll(tr)
 		if err != nil {
+			fmt.Printf("[ARCHIVE] warning: could not read %s: %v\n", filePath, err)
 			continue
 		}
 
@@ -986,61 +980,8 @@ func fetchArchiveFiles(gitlabURL, token string, projectID int, branch string) ([
 		})
 	}
 
+	fmt.Printf("[ARCHIVE] extracted %d files from branch %q\n", len(files), branch)
 	return files, nil
-}
-
-// shouldSkipFile returns true for files that are not useful for frontend preview:
-// CI/CD configs, OS metadata, binary assets, and Go dependency lock files.
-var (
-	skipFileNames = map[string]bool{
-		".DS_Store":      true,
-		".gitlab-ci.yml": true,
-		"func.yaml":      true,
-		"go.sum":         true,
-		".gitignore":     true,
-		".gitkeep":       true,
-		"yarn.lock":      true,
-		"pnpm-lock.yaml": true,
-		"Dockerfile":     true,
-	}
-
-	skipDirPrefixes = []string{
-		"gitlab/",
-		".git/",
-		".gitlab/",
-	}
-
-	skipExtensions = map[string]bool{
-		".png": true, ".jpg": true, ".jpeg": true, ".gif": true,
-		".ico": true, ".webp": true, ".bmp": true,
-		".woff": true, ".woff2": true, ".ttf": true, ".eot": true, ".otf": true,
-		".zip": true, ".tar": true, ".gz": true, ".jar": true,
-		".exe": true, ".bin": true, ".dll": true, ".so": true, ".dylib": true,
-		".pdf": true, ".doc": true, ".docx": true,
-	}
-)
-
-func shouldSkipFile(path string) bool {
-	return ShouldSkipFile(path)
-}
-
-// ShouldSkipFile returns true for files that must not be pushed by AI generation:
-// package.json/lock, config files, CI/CD, OS metadata, binaries.
-// Exported so handlers can filter before calling CommitFiles.
-func ShouldSkipFile(path string) bool {
-	base := filepath.Base(path)
-	if skipFileNames[base] {
-		return true
-	}
-
-	for _, prefix := range skipDirPrefixes {
-		if strings.HasPrefix(path, prefix) {
-			return true
-		}
-	}
-
-	ext := strings.ToLower(filepath.Ext(path))
-	return skipExtensions[ext]
 }
 
 func checkExportStatusWithTimeout(baseURL, projectID, exportToken string) error {
