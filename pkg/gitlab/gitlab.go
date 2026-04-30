@@ -965,16 +965,15 @@ func fetchArchiveFiles(gitlabURL, token string, projectID int, branch string) ([
 			continue
 		}
 
-		// Strip the leading directory added by GitLab (projectname-branch-sha/file.go)
 		parts := strings.SplitN(header.Name, "/", 2)
 		if len(parts) < 2 || parts[1] == "" {
 			continue
 		}
 		filePath := parts[1]
 
-		if shouldSkipFile(filePath) {
-			continue
-		}
+		//if shouldSkipFile(filePath) {
+		//	continue
+		//}
 
 		content, err := io.ReadAll(tr)
 		if err != nil {
