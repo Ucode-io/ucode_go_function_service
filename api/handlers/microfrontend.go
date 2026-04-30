@@ -724,10 +724,6 @@ func (h *Handler) PublishAiGeneratedMicroFrontend(c *gin.Context) {
 	// Step 6: Convert and commit AI-generated files to u-gen branch.
 	nbFiles := make([]*nb.McpProjectFiles, 0, len(req.Files))
 	for _, f := range req.Files {
-		if gitlab.ShouldSkipFile(f.FilePath) {
-			log.Printf("[PUBLISH-AI] skipping protected file: %s", f.FilePath)
-			continue
-		}
 		nbFiles = append(nbFiles, &nb.McpProjectFiles{
 			Path:    f.FilePath,
 			Content: f.Content,
@@ -814,10 +810,6 @@ func (h *Handler) PushMicrofrontendChanges(c *gin.Context) {
 
 	nbFiles := make([]*nb.McpProjectFiles, 0, len(req.Files))
 	for _, f := range req.Files {
-		if gitlab.ShouldSkipFile(f.FilePath) {
-			log.Printf("[PUSH CHANGES] skipping protected file: %s", f.FilePath)
-			continue
-		}
 		nbFiles = append(nbFiles, &nb.McpProjectFiles{
 			Path:    f.FilePath,
 			Content: f.Content,
