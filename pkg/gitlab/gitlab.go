@@ -994,23 +994,15 @@ func fetchArchiveFiles(gitlabURL, token string, projectID int, branch string) ([
 // CI/CD configs, OS metadata, binary assets, and Go dependency lock files.
 var (
 	skipFileNames = map[string]bool{
-		".DS_Store":          true,
-		".gitlab-ci.yml":     true,
-		"func.yaml":          true,
-		"go.sum":             true,
-		".gitignore":         true,
-		".gitkeep":           true,
-		"package.json":       true,
-		"package-lock.json":  true,
-		"yarn.lock":          true,
-		"pnpm-lock.yaml":     true,
-		"Dockerfile":         true,
-		"Makefile":           true,
-		"vite.config.js":     true,
-		"vite.config.ts":     true,
-		"tsconfig.json":      true,
-		"tsconfig.app.json":  true,
-		"tsconfig.node.json": true,
+		".DS_Store":      true,
+		".gitlab-ci.yml": true,
+		"func.yaml":      true,
+		"go.sum":         true,
+		".gitignore":     true,
+		".gitkeep":       true,
+		"yarn.lock":      true,
+		"pnpm-lock.yaml": true,
+		"Dockerfile":     true,
 	}
 
 	skipDirPrefixes = []string{
