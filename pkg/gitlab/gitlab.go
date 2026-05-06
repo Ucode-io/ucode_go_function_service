@@ -152,28 +152,30 @@ func PromoteUGenToMaster(cfg IntegrationData, gitlabURL, token string, templateP
 	// Step 4: restore package.json and package-lock.json from the React template.
 	// This ensures master always has the correct lock file in sync with package.json,
 	// regardless of whether a previous push corrupted them with AI-generated versions.
-	templateCfg := IntegrationData{
-		GitlabIntegrationUrl:   cfg.GitlabIntegrationUrl,
-		GitlabIntegrationToken: token,
-		GitlabProjectId:        templateProjectID,
-	}
-	for _, pkgFile := range []string{"package.json", "package-lock.json"} {
-		content, fetchErr := getFileContent(templateCfg, pkgFile, config.DefaultBranch)
-		if fetchErr != nil {
-			fmt.Printf("[PROMOTE] warning: could not fetch %s from template (id=%d): %v\n", pkgFile, templateProjectID, fetchErr)
-			continue
-		}
-		action := "update"
-		if !masterFiles[pkgFile] {
-			action = "create"
-		}
-		actions = append(actions, CommitAction{
-			Action:   action,
-			FilePath: pkgFile,
-			Content:  content,
-			Encoding: "text",
-		})
-	}
+
+	//templateCfg := IntegrationData{
+	//	GitlabIntegrationUrl:   cfg.GitlabIntegrationUrl,
+	//	GitlabIntegrationToken: token,
+	//	GitlabProjectId:        templateProjectID,
+	//}
+	//
+	//for _, pkgFile := range []string{"package.json", "package-lock.json"} {
+	//	content, fetchErr := getFileContent(templateCfg, pkgFile, config.DefaultBranch)
+	//	if fetchErr != nil {
+	//		fmt.Printf("[PROMOTE] warning: could not fetch %s from template (id=%d): %v\n", pkgFile, templateProjectID, fetchErr)
+	//		continue
+	//	}
+	//	action := "update"
+	//	if !masterFiles[pkgFile] {
+	//		action = "create"
+	//	}
+	//	actions = append(actions, CommitAction{
+	//		Action:   action,
+	//		FilePath: pkgFile,
+	//		Content:  content,
+	//		Encoding: "text",
+	//	})
+	//}
 
 	commitReq := CommitRequest{
 		Branch:        config.DefaultBranch,
