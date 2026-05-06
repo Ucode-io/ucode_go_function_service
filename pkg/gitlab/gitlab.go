@@ -139,12 +139,14 @@ func PromoteUGenToMaster(cfg IntegrationData, gitlabURL, token string, templateP
 		})
 	}
 
-	// Delete files present on master but absent from u-gen (skip CI/asset files)
+	// Delete files present on master but absent from u-gen
 	for path := range masterFiles {
-		actions = append(actions, CommitAction{
-			Action:   "delete",
-			FilePath: path,
-		})
+		if !ugenPaths[path] {
+			actions = append(actions, CommitAction{
+				Action:   "delete",
+				FilePath: path,
+			})
+		}
 	}
 
 	// Step 4: restore package.json and package-lock.json from the React template.
