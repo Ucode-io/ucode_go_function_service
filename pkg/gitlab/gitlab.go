@@ -105,23 +105,33 @@ func CommitFiles(cfg IntegrationData, branch string, files []*nb.McpProjectFiles
 // templateProjectID is the GitLab ID of the React template repo — its package.json
 // and package-lock.json are always restored on master to keep npm ci in sync.
 // This is the API-level equivalent of a force push from u-gen to master.
-func PromoteUGenToMaster(cfg IntegrationData, gitlabURL, token string, templateProjectID int) error {
-	// Step 1: get all files from u-gen with content
+// PromoteUGenToMaster syncs u-gen → master and returns the ID of the pipeline
+// that was triggered by the commit. Returns (0, err) on failure.
+func PromoteUGenToMaster(cfg IntegrationData, gitlabURL, token string, templateProjectID int) (int, error) {
+	// Step 1: get u-gen HEAD SHA — written to master so check-changes can detect
+	// whether u-gen has new commits since the last promote, without comparing file diffs
+	// (file diffs are unreliable because content goes through tar.gz → string → API round-trip).
+	ugenSHA, err := getBranchHeadSHA(gitlabURL, token, cfg.GitlabProjectId, config.UGenBranch)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get %s HEAD SHA: %w", config.UGenBranch, err)
+	}
+
+	// Step 2: get all files from u-gen with content
 	ugenFiles, err := fetchArchiveFiles(gitlabURL, token, cfg.GitlabProjectId, config.UGenBranch)
 	if err != nil {
-		return fmt.Errorf("failed to read %s branch: %w", config.UGenBranch, err)
+		return 0, fmt.Errorf("failed to read %s branch: %w", config.UGenBranch, err)
 	}
 	if len(ugenFiles) == 0 {
-		return fmt.Errorf("%s branch has no files to promote", config.UGenBranch)
+		return 0, fmt.Errorf("%s branch has no files to promote", config.UGenBranch)
 	}
 
-	// Step 2: get file paths currently on master
+	// Step 3: get file paths currently on master
 	masterFiles, err := GetRepoFilesMap(cfg, config.DefaultBranch)
 	if err != nil {
-		return fmt.Errorf("failed to read %s branch file list: %w", config.DefaultBranch, err)
+		return 0, fmt.Errorf("failed to read %s branch file list: %w", config.DefaultBranch, err)
 	}
 
-	// Step 3: build commit actions — create/update u-gen files, delete master-only files
+	// Step 4: build commit actions — create/update u-gen files, delete master-only files
 	ugenPaths := make(map[string]bool, len(ugenFiles))
 	var actions []CommitAction
 
@@ -140,14 +150,27 @@ func PromoteUGenToMaster(cfg IntegrationData, gitlabURL, token string, templateP
 	}
 
 	// Delete files present on master but absent from u-gen
+	// (skip the SHA sentinel file — it lives only on master)
 	for path := range masterFiles {
-		if !ugenPaths[path] {
+		if !ugenPaths[path] && path != config.UGenSHAFile {
 			actions = append(actions, CommitAction{
 				Action:   "delete",
 				FilePath: path,
 			})
 		}
 	}
+
+	// Write u-gen HEAD SHA to master so check-changes can compare it later.
+	shaAction := "create"
+	if masterFiles[config.UGenSHAFile] {
+		shaAction = "update"
+	}
+	actions = append(actions, CommitAction{
+		Action:   shaAction,
+		FilePath: config.UGenSHAFile,
+		Content:  ugenSHA,
+		Encoding: "text",
+	})
 
 	// Step 4: restore package.json and package-lock.json from the React template.
 	// This ensures master always has the correct lock file in sync with package.json,
@@ -186,7 +209,7 @@ func PromoteUGenToMaster(cfg IntegrationData, gitlabURL, token string, templateP
 	apiURL := fmt.Sprintf("%s/api/v4/projects/%d/repository/commits", gitlabURL, cfg.GitlabProjectId)
 	result, err := DoRequestV1(apiURL, token, http.MethodPost, commitReq)
 	if err != nil {
-		return fmt.Errorf("commit request failed: %w", err)
+		return 0, fmt.Errorf("commit request failed: %w", err)
 	}
 
 	// Check for GitLab-level errors in the response body.
@@ -196,12 +219,182 @@ func PromoteUGenToMaster(cfg IntegrationData, gitlabURL, token string, templateP
 	if jsonErr := json.Unmarshal(result, &resp); jsonErr == nil {
 		if _, hasID := resp["id"]; !hasID {
 			if msg, ok := resp["message"]; ok {
-				return fmt.Errorf("gitlab commit error: %v", msg)
+				return 0, fmt.Errorf("gitlab commit error: %v", msg)
 			}
 		}
 	}
 
-	return nil
+	// Fetch the pipeline that was just triggered by the commit to master.
+	pipelineID, pipelineErr := getLatestPipelineID(gitlabURL, token, cfg.GitlabProjectId, config.DefaultBranch)
+	if pipelineErr != nil {
+		// Non-fatal: commit succeeded, we just can't track the pipeline.
+		return 0, nil
+	}
+	return pipelineID, nil
+}
+
+// getLatestPipelineID returns the ID of the most recently created pipeline on the given branch.
+func getLatestPipelineID(gitlabURL, token string, projectID int, branch string) (int, error) {
+	apiURL := fmt.Sprintf("%s/api/v4/projects/%d/pipelines?ref=%s&order_by=id&sort=desc&per_page=1&access_token=%s",
+		gitlabURL, projectID, branch, token)
+
+	req, err := http.NewRequest(http.MethodGet, apiURL, nil)
+	if err != nil {
+		return 0, err
+	}
+
+	client := &http.Client{Timeout: 15 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return 0, err
+	}
+	if resp.StatusCode >= 400 {
+		return 0, fmt.Errorf("gitlab error %d: %s", resp.StatusCode, string(body))
+	}
+
+	var pipelines []struct {
+		ID int `json:"id"`
+	}
+	if err := json.Unmarshal(body, &pipelines); err != nil || len(pipelines) == 0 {
+		return 0, fmt.Errorf("no pipeline found")
+	}
+	return pipelines[0].ID, nil
+}
+
+// GetPipelineStatus returns the status string of a specific pipeline
+// (e.g. "running", "success", "failed", "canceled", "pending").
+func GetPipelineStatus(gitlabURL, token string, projectID, pipelineID int) (string, error) {
+	apiURL := fmt.Sprintf("%s/api/v4/projects/%d/pipelines/%d?access_token=%s",
+		gitlabURL, projectID, pipelineID, token)
+
+	req, err := http.NewRequest(http.MethodGet, apiURL, nil)
+	if err != nil {
+		return "", err
+	}
+
+	client := &http.Client{Timeout: 15 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	if resp.StatusCode >= 400 {
+		return "", fmt.Errorf("gitlab error %d: %s", resp.StatusCode, string(body))
+	}
+
+	var pipeline struct {
+		Status string `json:"status"`
+	}
+	if err := json.Unmarshal(body, &pipeline); err != nil {
+		return "", fmt.Errorf("failed to parse pipeline response: %w", err)
+	}
+	return pipeline.Status, nil
+}
+
+type CompareResult struct {
+	HasChanges bool `json:"hasChanges"`
+}
+
+// CompareUGenToMaster checks whether u-gen has new commits since the last promote.
+// It reads the u-gen HEAD SHA that was written to master during the last promote
+// (config.UGenSHAFile) and compares it with the current u-gen HEAD SHA.
+// This is reliable because file-diff comparison breaks after the tar.gz round-trip.
+func CompareUGenToMaster(gitlabURL, token string, projectID int) (CompareResult, error) {
+	currentSHA, err := getBranchHeadSHA(gitlabURL, token, projectID, config.UGenBranch)
+	if err != nil {
+		return CompareResult{}, fmt.Errorf("failed to get %s HEAD: %w", config.UGenBranch, err)
+	}
+
+	// Read the SHA that was stored during the last promote.
+	// If the file doesn't exist yet (never promoted), treat as hasChanges=true.
+	// If .u-gen-sha doesn't exist yet (never promoted), treat as hasChanges=true.
+	lastPromotedSHA, err := getRawFileContent(gitlabURL, token, projectID, config.UGenSHAFile, config.DefaultBranch)
+	if err != nil {
+		return CompareResult{HasChanges: true}, nil
+	}
+
+	lastPromotedSHA = strings.TrimSpace(lastPromotedSHA)
+	return CompareResult{
+		HasChanges: currentSHA != lastPromotedSHA,
+	}, nil
+}
+
+// getBranchHeadSHA returns the latest commit SHA on the given branch.
+func getBranchHeadSHA(gitlabURL, token string, projectID int, branch string) (string, error) {
+	apiURL := fmt.Sprintf("%s/api/v4/projects/%d/repository/branches/%s?access_token=%s",
+		gitlabURL, projectID, branch, token)
+
+	req, err := http.NewRequest(http.MethodGet, apiURL, nil)
+	if err != nil {
+		return "", err
+	}
+
+	client := &http.Client{Timeout: 15 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	if resp.StatusCode >= 400 {
+		return "", fmt.Errorf("gitlab error %d: %s", resp.StatusCode, string(body))
+	}
+
+	var result struct {
+		Commit struct {
+			ID string `json:"id"`
+		} `json:"commit"`
+	}
+	if err := json.Unmarshal(body, &result); err != nil {
+		return "", fmt.Errorf("failed to parse branch response: %w", err)
+	}
+	if result.Commit.ID == "" {
+		return "", fmt.Errorf("empty commit SHA for branch %s", branch)
+	}
+	return result.Commit.ID, nil
+}
+
+// getRawFileContent fetches the raw text content of a file from a GitLab repo.
+func getRawFileContent(gitlabURL, token string, projectID int, filePath, ref string) (string, error) {
+	encoded := strings.ReplaceAll(filePath, "/", "%2F")
+	apiURL := fmt.Sprintf("%s/api/v4/projects/%d/repository/files/%s/raw?ref=%s&access_token=%s",
+		gitlabURL, projectID, encoded, ref, token)
+
+	req, err := http.NewRequest(http.MethodGet, apiURL, nil)
+	if err != nil {
+		return "", err
+	}
+
+	client := &http.Client{Timeout: 15 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	if resp.StatusCode >= 400 {
+		return "", fmt.Errorf("gitlab error %d: %s", resp.StatusCode, string(body))
+	}
+	return string(body), nil
 }
 
 // getFileContent fetches the raw content of a single file from a GitLab repo via the Files API.
