@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -924,6 +925,40 @@ func (h *Handler) PromoteMicrofrontendToMaster(c *gin.Context) {
 	}
 
 	h.handleResponse(c, status.OK, gin.H{"status": "ok"})
+}
+
+// CheckPromoteChanges godoc
+// @Security ApiKeyAuth
+// @ID check_promote_changes
+// @Router /v2/functions/micro-frontend/promote/check-changes [GET]
+// @Summary Check if u-gen has changes not yet promoted to master
+// @Description Calls the GitLab compare API (master...u-gen) and returns whether there are unpromoted commits.
+// @Tags MicroFrontend
+// @Produce json
+// @Param repo_id query int true "GitLab project ID"
+// @Success 200 {object} status.Response{data=object} "OK — {hasChanges: bool}"
+// @Failure 400 {object} status.Response{data=string} "Bad Request"
+// @Failure 500 {object} status.Response{data=string} "Server Error"
+func (h *Handler) CheckPromoteChanges(c *gin.Context) {
+	repoIDStr := c.Query("repo_id")
+	if repoIDStr == "" {
+		h.handleResponse(c, status.BadRequest, "repo_id query param is required")
+		return
+	}
+
+	repoID, err := strconv.Atoi(repoIDStr)
+	if err != nil || repoID == 0 {
+		h.handleResponse(c, status.BadRequest, "repo_id must be a valid non-zero integer")
+		return
+	}
+
+	hasChanges, err := gitlab.CompareUGenToMaster(h.cfg.GitlabIntegrationURL, h.cfg.GitlabTokenMicroFront, repoID)
+	if err != nil {
+		h.handleResponse(c, status.InternalServerError, err.Error())
+		return
+	}
+
+	h.handleResponse(c, status.OK, gin.H{"hasChanges": hasChanges})
 }
 
 // DeleteMicroFrontEnd godoc
