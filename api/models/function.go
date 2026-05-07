@@ -24,8 +24,6 @@ type PushMicrofrontendChangesRequest struct {
 	GithubRepoName        string             `json:"github_repo_name"`
 	CommitMessage         string             `json:"commit_message"`
 	FunctionID            string             `json:"function_id"`
-	CompanyProjectID      string             `json:"company_project_id"`
-	CompanyEnvironmentID  string             `json:"company_environment_id"`
 	ResourceEnvironmentID string             `json:"resource_environment_id"`
 }
 

@@ -840,9 +840,16 @@ func (h *Handler) PushMicrofrontendChanges(c *gin.Context) {
 
 	log.Printf("[PUSH CHANGES] commit successful, gitlab response: %s", string(result))
 
-	if req.FunctionID != "" && req.CompanyProjectID != "" && req.CompanyEnvironmentID != "" && req.ResourceEnvironmentID != "" {
-		go func(funcID, companyProjID, companyEnvID, resourceEnvID string) {
+	if req.FunctionID != "" && req.ResourceEnvironmentID != "" {
+		go func(funcID, resourceEnvID string) {
 			ctx := context.Background()
+			resEnv, resErr := h.services.CompanyService().Resource().GetResourceById(ctx, &pb.GetResourceEnvironmentReq{
+				Id: resourceEnvID,
+			})
+			if resErr != nil {
+				log.Printf("[PUSH-CHANGES→GITHUB] could not get resource_environment %s: %v", resourceEnvID, resErr)
+				return
+			}
 			funcRecord, funcErr := h.services.GoObjectBuilderService().Function().GetSingle(ctx, &nb.FunctionPrimaryKey{
 				Id:        funcID,
 				ProjectId: resourceEnvID,
@@ -851,10 +858,10 @@ func (h *Handler) PushMicrofrontendChanges(c *gin.Context) {
 				log.Printf("[PUSH-CHANGES→GITHUB] could not get function %s: %v", funcID, funcErr)
 				return
 			}
-			if syncErr := h.syncMicrofrontendToGithub(ctx, funcRecord, "", companyProjID, companyEnvID); syncErr != nil {
+			if syncErr := h.syncMicrofrontendToGithub(ctx, funcRecord, "", resEnv.GetProjectId(), resEnv.GetEnvironmentId()); syncErr != nil {
 				log.Printf("[PUSH-CHANGES→GITHUB] sync failed for func_id=%s: %v", funcID, syncErr)
 			}
-		}(req.FunctionID, req.CompanyProjectID, req.CompanyEnvironmentID, req.ResourceEnvironmentID)
+		}(req.FunctionID, req.ResourceEnvironmentID)
 	}
 
 	h.handleResponse(c, status.OK, gin.H{"status": "ok"})
