@@ -8,8 +8,8 @@ import (
 	"ucode/ucode_go_function_service/api/models"
 	status "ucode/ucode_go_function_service/api/status_http"
 	"ucode/ucode_go_function_service/config"
-	"ucode/ucode_go_function_service/pkg/gitlab"
 	nb "ucode/ucode_go_function_service/genproto/new_object_builder_service"
+	"ucode/ucode_go_function_service/pkg/gitlab"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
@@ -242,9 +242,6 @@ func (h *Handler) RevertMicrofrontendToCommit(c *gin.Context) {
 	// 3. Fetch content and build nb.McpProjectFiles for create/update actions.
 	nbFiles := make([]*nb.McpProjectFiles, 0, len(targetPaths))
 	for _, path := range targetPaths {
-		if gitlab.ShouldSkipFile(path) {
-			continue
-		}
 		content, err := gitlab.GetFileContentAtRef(cfg, path, req.CommitSHA)
 		if err != nil {
 			h.handleResponse(c, status.InternalServerError, fmt.Sprintf("failed to fetch file %s: %v", path, err))
@@ -266,12 +263,10 @@ func (h *Handler) RevertMicrofrontendToCommit(c *gin.Context) {
 	// 5. Delete files that exist on u-gen but not in the target snapshot.
 	var deleteActions []gitlab.CommitAction
 	for _, path := range currentPaths {
-		if _, exists := targetSet[path]; !exists && !gitlab.ShouldSkipFile(path) {
-			deleteActions = append(deleteActions, gitlab.CommitAction{
-				Action:   "delete",
-				FilePath: path,
-			})
-		}
+		deleteActions = append(deleteActions, gitlab.CommitAction{
+			Action:   "delete",
+			FilePath: path,
+		})
 	}
 
 	if len(deleteActions) > 0 {

@@ -11,7 +11,6 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -22,6 +21,39 @@ import (
 
 	"github.com/xanzy/go-gitlab"
 )
+
+func WaitForImport(cfg IntegrationData, maxWait time.Duration) error {
+	deadline := time.Now().Add(maxWait)
+	for time.Now().Before(deadline) {
+		url := fmt.Sprintf("%s/api/v4/projects/%d", cfg.GitlabIntegrationUrl, cfg.GitlabProjectId)
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			return err
+		}
+		req.Header.Set("PRIVATE-TOKEN", cfg.GitlabIntegrationToken)
+
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return err
+		}
+
+		var result struct {
+			ImportStatus string `json:"import_status"`
+		}
+		_ = json.NewDecoder(resp.Body).Decode(&result)
+		resp.Body.Close()
+
+		switch result.ImportStatus {
+		case "finished", "none", "":
+			return nil
+		case "failed":
+			return fmt.Errorf("gitlab project import failed")
+		}
+		// "started" or "scheduled" — keep waiting
+		time.Sleep(2 * time.Second)
+	}
+	return fmt.Errorf("gitlab project import timed out after %s", maxWait)
+}
 
 func CommitFiles(cfg IntegrationData, branch string, files []*nb.McpProjectFiles, commitMessage ...string) ([]byte, error) {
 	if len(files) == 0 {
@@ -107,9 +139,9 @@ func PromoteUGenToMaster(cfg IntegrationData, gitlabURL, token string, templateP
 		})
 	}
 
-	// Delete files present on master but absent from u-gen (skip CI/asset files)
+	// Delete files present on master but absent from u-gen
 	for path := range masterFiles {
-		if !ugenPaths[path] && !shouldSkipFile(path) {
+		if !ugenPaths[path] {
 			actions = append(actions, CommitAction{
 				Action:   "delete",
 				FilePath: path,
@@ -120,28 +152,30 @@ func PromoteUGenToMaster(cfg IntegrationData, gitlabURL, token string, templateP
 	// Step 4: restore package.json and package-lock.json from the React template.
 	// This ensures master always has the correct lock file in sync with package.json,
 	// regardless of whether a previous push corrupted them with AI-generated versions.
-	templateCfg := IntegrationData{
-		GitlabIntegrationUrl:   cfg.GitlabIntegrationUrl,
-		GitlabIntegrationToken: token,
-		GitlabProjectId:        templateProjectID,
-	}
-	for _, pkgFile := range []string{"package.json", "package-lock.json"} {
-		content, fetchErr := getFileContent(templateCfg, pkgFile, config.DefaultBranch)
-		if fetchErr != nil {
-			fmt.Printf("[PROMOTE] warning: could not fetch %s from template (id=%d): %v\n", pkgFile, templateProjectID, fetchErr)
-			continue
-		}
-		action := "update"
-		if !masterFiles[pkgFile] {
-			action = "create"
-		}
-		actions = append(actions, CommitAction{
-			Action:   action,
-			FilePath: pkgFile,
-			Content:  content,
-			Encoding: "text",
-		})
-	}
+
+	//templateCfg := IntegrationData{
+	//	GitlabIntegrationUrl:   cfg.GitlabIntegrationUrl,
+	//	GitlabIntegrationToken: token,
+	//	GitlabProjectId:        templateProjectID,
+	//}
+	//
+	//for _, pkgFile := range []string{"package.json", "package-lock.json"} {
+	//	content, fetchErr := getFileContent(templateCfg, pkgFile, config.DefaultBranch)
+	//	if fetchErr != nil {
+	//		fmt.Printf("[PROMOTE] warning: could not fetch %s from template (id=%d): %v\n", pkgFile, templateProjectID, fetchErr)
+	//		continue
+	//	}
+	//	action := "update"
+	//	if !masterFiles[pkgFile] {
+	//		action = "create"
+	//	}
+	//	actions = append(actions, CommitAction{
+	//		Action:   action,
+	//		FilePath: pkgFile,
+	//		Content:  content,
+	//		Encoding: "text",
+	//	})
+	//}
 
 	commitReq := CommitRequest{
 		Branch:        config.DefaultBranch,
@@ -887,8 +921,6 @@ func ensureUGenBranch(client *gitlab.Client, projectID int) error {
 	return nil
 }
 
-// fetchArchiveFiles downloads the repo as a tar.gz archive (single HTTP request)
-// and extracts only the relevant source files, skipping CI/CD configs, OS junk, and binaries.
 func fetchArchiveFiles(gitlabURL, token string, projectID int, branch string) ([]RepoFile, error) {
 	url := fmt.Sprintf("%s/api/v4/projects/%d/repository/archive.tar.gz?sha=%s", gitlabURL, projectID, branch)
 
@@ -932,19 +964,17 @@ func fetchArchiveFiles(gitlabURL, token string, projectID int, branch string) ([
 			continue
 		}
 
-		// Strip the leading directory added by GitLab (projectname-branch-sha/file.go)
-		parts := strings.SplitN(header.Name, "/", 2)
-		if len(parts) < 2 || parts[1] == "" {
-			continue
+		filePath := header.Name
+		if idx := strings.Index(filePath, "/"); idx != -1 {
+			filePath = filePath[idx+1:]
 		}
-		filePath := parts[1]
-
-		if shouldSkipFile(filePath) {
+		if filePath == "" {
 			continue
 		}
 
 		content, err := io.ReadAll(tr)
 		if err != nil {
+			fmt.Printf("[ARCHIVE] warning: could not read %s: %v\n", filePath, err)
 			continue
 		}
 
@@ -954,69 +984,8 @@ func fetchArchiveFiles(gitlabURL, token string, projectID int, branch string) ([
 		})
 	}
 
+	fmt.Printf("[ARCHIVE] extracted %d files from branch %q\n", len(files), branch)
 	return files, nil
-}
-
-// shouldSkipFile returns true for files that are not useful for frontend preview:
-// CI/CD configs, OS metadata, binary assets, and Go dependency lock files.
-var (
-	skipFileNames = map[string]bool{
-		".DS_Store":          true,
-		".gitlab-ci.yml":     true,
-		"func.yaml":          true,
-		"go.sum":             true,
-		".gitignore":         true,
-		".gitkeep":           true,
-		"package.json":       true,
-		"package-lock.json":  true,
-		"yarn.lock":          true,
-		"pnpm-lock.yaml":     true,
-		"Dockerfile":         true,
-		"Makefile":           true,
-		"vite.config.js":     true,
-		"vite.config.ts":     true,
-		"tsconfig.json":      true,
-		"tsconfig.app.json":  true,
-		"tsconfig.node.json": true,
-	}
-
-	skipDirPrefixes = []string{
-		"gitlab/",
-		".git/",
-		".gitlab/",
-	}
-
-	skipExtensions = map[string]bool{
-		".png": true, ".jpg": true, ".jpeg": true, ".gif": true,
-		".ico": true, ".webp": true, ".bmp": true,
-		".woff": true, ".woff2": true, ".ttf": true, ".eot": true, ".otf": true,
-		".zip": true, ".tar": true, ".gz": true, ".jar": true,
-		".exe": true, ".bin": true, ".dll": true, ".so": true, ".dylib": true,
-		".pdf": true, ".doc": true, ".docx": true,
-	}
-)
-
-func shouldSkipFile(path string) bool {
-	return ShouldSkipFile(path)
-}
-
-// ShouldSkipFile returns true for files that must not be pushed by AI generation:
-// package.json/lock, config files, CI/CD, OS metadata, binaries.
-// Exported so handlers can filter before calling CommitFiles.
-func ShouldSkipFile(path string) bool {
-	base := filepath.Base(path)
-	if skipFileNames[base] {
-		return true
-	}
-
-	for _, prefix := range skipDirPrefixes {
-		if strings.HasPrefix(path, prefix) {
-			return true
-		}
-	}
-
-	ext := strings.ToLower(filepath.Ext(path))
-	return skipExtensions[ext]
 }
 
 func checkExportStatusWithTimeout(baseURL, projectID, exportToken string) error {
