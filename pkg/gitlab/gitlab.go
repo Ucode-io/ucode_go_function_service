@@ -109,7 +109,15 @@ func CommitFiles(cfg IntegrationData, branch string, files []*nb.McpProjectFiles
 // PromoteUGenToMaster syncs u-gen → master and returns the ID of the pipeline
 // that was triggered by the commit. Returns (0, err) on failure.
 func PromoteUGenToMaster(cfg IntegrationData, gitlabURL, token string, templateProjectID int) (int, error) {
-	// Step 1: get all files from u-gen with content
+	// Step 1: get u-gen HEAD SHA — written to master so check-changes can detect
+	// whether u-gen has new commits since the last promote, without comparing file diffs
+	// (file diffs are unreliable because content goes through tar.gz → string → API round-trip).
+	ugenSHA, err := getBranchHeadSHA(gitlabURL, token, cfg.GitlabProjectId, config.UGenBranch)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get %s HEAD SHA: %w", config.UGenBranch, err)
+	}
+
+	// Step 2: get all files from u-gen with content
 	ugenFiles, err := fetchArchiveFiles(gitlabURL, token, cfg.GitlabProjectId, config.UGenBranch)
 	if err != nil {
 		return 0, fmt.Errorf("failed to read %s branch: %w", config.UGenBranch, err)
@@ -118,13 +126,13 @@ func PromoteUGenToMaster(cfg IntegrationData, gitlabURL, token string, templateP
 		return 0, fmt.Errorf("%s branch has no files to promote", config.UGenBranch)
 	}
 
-	// Step 2: get file paths currently on master
+	// Step 3: get file paths currently on master
 	masterFiles, err := GetRepoFilesMap(cfg, config.DefaultBranch)
 	if err != nil {
 		return 0, fmt.Errorf("failed to read %s branch file list: %w", config.DefaultBranch, err)
 	}
 
-	// Step 3: build commit actions — create/update u-gen files, delete master-only files
+	// Step 4: build commit actions — create/update u-gen files, delete master-only files
 	ugenPaths := make(map[string]bool, len(ugenFiles))
 	var actions []CommitAction
 
@@ -143,14 +151,27 @@ func PromoteUGenToMaster(cfg IntegrationData, gitlabURL, token string, templateP
 	}
 
 	// Delete files present on master but absent from u-gen
+	// (skip the SHA sentinel file — it lives only on master)
 	for path := range masterFiles {
-		if !ugenPaths[path] {
+		if !ugenPaths[path] && path != config.UGenSHAFile {
 			actions = append(actions, CommitAction{
 				Action:   "delete",
 				FilePath: path,
 			})
 		}
 	}
+
+	// Write u-gen HEAD SHA to master so check-changes can compare it later.
+	shaAction := "create"
+	if masterFiles[config.UGenSHAFile] {
+		shaAction = "update"
+	}
+	actions = append(actions, CommitAction{
+		Action:   shaAction,
+		FilePath: config.UGenSHAFile,
+		Content:  ugenSHA,
+		Encoding: "text",
+	})
 
 	// Step 4: restore package.json and package-lock.json from the React template.
 	// This ensures master always has the correct lock file in sync with package.json,
@@ -282,57 +303,108 @@ func GetPipelineStatus(gitlabURL, token string, projectID, pipelineID int) (stri
 	return pipeline.Status, nil
 }
 
-// CompareResult holds the parsed GitLab compare response fields used for change detection.
 type CompareResult struct {
-	HasChanges   bool `json:"hasChanges"`
-	DiffsCount   int  `json:"diffsCount"`
-	CommitsCount int  `json:"commitsCount"`
+	HasChanges      bool   `json:"hasChanges"`
+	CurrentSHA      string `json:"currentSHA"`
+	LastPromotedSHA string `json:"lastPromotedSHA"`
 }
 
-// CompareUGenToMaster checks whether u-gen has file changes not yet on master.
-// It uses the diffs field (not commits) so that a promote — which copies file
-// content to master without merging git history — correctly reports hasChanges=false.
+// CompareUGenToMaster checks whether u-gen has new commits since the last promote.
+// It reads the u-gen HEAD SHA that was written to master during the last promote
+// (config.UGenSHAFile) and compares it with the current u-gen HEAD SHA.
+// This is reliable because file-diff comparison breaks after the tar.gz round-trip.
 func CompareUGenToMaster(gitlabURL, token string, projectID int) (CompareResult, error) {
-	apiURL := fmt.Sprintf("%s/api/v4/projects/%d/repository/compare?from=%s&to=%s&access_token=%s",
-		gitlabURL, projectID, config.DefaultBranch, config.UGenBranch, token)
+	currentSHA, err := getBranchHeadSHA(gitlabURL, token, projectID, config.UGenBranch)
+	if err != nil {
+		return CompareResult{}, fmt.Errorf("failed to get %s HEAD: %w", config.UGenBranch, err)
+	}
+
+	// Read the SHA that was stored during the last promote.
+	// If the file doesn't exist yet (never promoted), treat as hasChanges=true.
+	lastPromotedSHA, err := getRawFileContent(gitlabURL, token, projectID, config.UGenSHAFile, config.DefaultBranch)
+	if err != nil {
+		log.Printf("[COMPARE] project=%d %s not found on master, treating as hasChanges=true: %v",
+			projectID, config.UGenSHAFile, err)
+		return CompareResult{HasChanges: true, CurrentSHA: currentSHA}, nil
+	}
+
+	lastPromotedSHA = strings.TrimSpace(lastPromotedSHA)
+	hasChanges := currentSHA != lastPromotedSHA
+	log.Printf("[COMPARE] project=%d currentSHA=%s lastPromotedSHA=%s hasChanges=%v",
+		projectID, currentSHA, lastPromotedSHA, hasChanges)
+
+	return CompareResult{
+		HasChanges:      hasChanges,
+		CurrentSHA:      currentSHA,
+		LastPromotedSHA: lastPromotedSHA,
+	}, nil
+}
+
+// getBranchHeadSHA returns the latest commit SHA on the given branch.
+func getBranchHeadSHA(gitlabURL, token string, projectID int, branch string) (string, error) {
+	apiURL := fmt.Sprintf("%s/api/v4/projects/%d/repository/branches/%s?access_token=%s",
+		gitlabURL, projectID, branch, token)
 
 	req, err := http.NewRequest(http.MethodGet, apiURL, nil)
 	if err != nil {
-		return CompareResult{}, err
+		return "", err
 	}
-	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{Timeout: 15 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		return CompareResult{}, err
+		return "", err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return CompareResult{}, err
+		return "", err
 	}
 	if resp.StatusCode >= 400 {
-		return CompareResult{}, fmt.Errorf("gitlab error %d: %s", resp.StatusCode, string(body))
+		return "", fmt.Errorf("gitlab error %d: %s", resp.StatusCode, string(body))
 	}
 
-	var raw struct {
-		Commits []struct{} `json:"commits"`
-		Diffs   []struct{} `json:"diffs"`
+	var result struct {
+		Commit struct {
+			ID string `json:"id"`
+		} `json:"commit"`
 	}
-	if err := json.Unmarshal(body, &raw); err != nil {
-		return CompareResult{}, fmt.Errorf("failed to parse compare response: %w", err)
+	if err := json.Unmarshal(body, &result); err != nil {
+		return "", fmt.Errorf("failed to parse branch response: %w", err)
+	}
+	if result.Commit.ID == "" {
+		return "", fmt.Errorf("empty commit SHA for branch %s", branch)
+	}
+	return result.Commit.ID, nil
+}
+
+// getRawFileContent fetches the raw text content of a file from a GitLab repo.
+func getRawFileContent(gitlabURL, token string, projectID int, filePath, ref string) (string, error) {
+	encoded := strings.ReplaceAll(filePath, "/", "%2F")
+	apiURL := fmt.Sprintf("%s/api/v4/projects/%d/repository/files/%s/raw?ref=%s&access_token=%s",
+		gitlabURL, projectID, encoded, ref, token)
+
+	req, err := http.NewRequest(http.MethodGet, apiURL, nil)
+	if err != nil {
+		return "", err
 	}
 
-	log.Printf("[COMPARE] project=%d from=%s to=%s commits=%d diffs=%d",
-		projectID, config.DefaultBranch, config.UGenBranch, len(raw.Commits), len(raw.Diffs))
+	client := &http.Client{Timeout: 15 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
 
-	return CompareResult{
-		HasChanges:   len(raw.Diffs) > 0,
-		DiffsCount:   len(raw.Diffs),
-		CommitsCount: len(raw.Commits),
-	}, nil
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	if resp.StatusCode >= 400 {
+		return "", fmt.Errorf("gitlab error %d: %s", resp.StatusCode, string(body))
+	}
+	return string(body), nil
 }
 
 // getFileContent fetches the raw content of a single file from a GitLab repo via the Files API.
