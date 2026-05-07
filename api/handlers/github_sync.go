@@ -6,9 +6,11 @@ import (
 	"log"
 	"strings"
 
-	nb "ucode/ucode_go_function_service/genproto/new_object_builder_service"
 	status "ucode/ucode_go_function_service/api/status_http"
+	pb "ucode/ucode_go_function_service/genproto/company_service"
+	nb "ucode/ucode_go_function_service/genproto/new_object_builder_service"
 	"ucode/ucode_go_function_service/pkg/gitlab"
+	"ucode/ucode_go_function_service/pkg/util"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
@@ -41,27 +43,38 @@ func (h *Handler) GithubSyncMicrofrontend(c *gin.Context) {
 		return
 	}
 
-	projectID, environmentID, ok := getProjectAndEnv(c)
-	if !ok {
-		h.handleResponse(c, status.InvalidArgument, "project_id and environment_id are required")
+	projectId, ok := c.Get("project_id")
+	if !ok || !util.IsValidUUID(projectId.(string)) {
+		h.handleResponse(c, status.InvalidArgument, "project id is an invalid uuid")
+		return
+	}
+
+	environmentId, ok := c.Get("environment_id")
+	if !ok || !util.IsValidUUID(environmentId.(string)) {
+		h.handleResponse(c, status.InvalidArgument, "error getting environment id | not valid")
 		return
 	}
 
 	ctx := c.Request.Context()
 
-	// Fetch the function record so we have the GitLab repo_id and any existing GitHub info.
-	funcRecord, err := h.services.GoObjectBuilderService().Function().GetSingle(ctx, &nb.FunctionPrimaryKey{
-		Id:        req.FunctionID,
-		ProjectId: projectID,
-	})
+	resource, err := h.services.CompanyService().ServiceResource().GetSingle(
+		ctx, &pb.GetSingleServiceResourceReq{
+			ProjectId:     projectId.(string),
+			EnvironmentId: environmentId.(string),
+			ServiceType:   pb.ServiceType_BUILDER_SERVICE,
+		},
+	)
 	if err != nil {
-		h.handleResponse(c, status.GRPCError, fmt.Sprintf("function not found: %v", err))
+		h.handleResponse(c, status.GRPCError, err.Error())
 		return
 	}
 
-	// Guard: make sure this function belongs to the project/environment from the auth context.
-	if funcRecord.GetEnvironmentId() != environmentID {
-		h.handleResponse(c, status.Forbidden, "function does not belong to this environment")
+	funcRecord, err := h.services.GoObjectBuilderService().Function().GetSingle(ctx, &nb.FunctionPrimaryKey{
+		Id:        req.FunctionID,
+		ProjectId: resource.ResourceEnvironmentId,
+	})
+	if err != nil {
+		h.handleResponse(c, status.GRPCError, fmt.Sprintf("function not found: %v", err))
 		return
 	}
 
