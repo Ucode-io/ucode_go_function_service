@@ -10,14 +10,25 @@ import (
 	"log"
 	"strings"
 
-	nb "ucode/ucode_go_function_service/genproto/new_object_builder_service"
 	status "ucode/ucode_go_function_service/api/status_http"
 	"ucode/ucode_go_function_service/config"
+	nb "ucode/ucode_go_function_service/genproto/new_object_builder_service"
 	"ucode/ucode_go_function_service/pkg/gitlab"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
 )
+
+// skipWebhookFile returns true for files that should not be mirrored to GitLab.
+func skipWebhookFile(path string) bool {
+	skip := []string{"package-lock.json", "yarn.lock", "pnpm-lock.yaml", "node_modules/"}
+	for _, s := range skip {
+		if strings.HasSuffix(path, s) || strings.HasPrefix(path, s) {
+			return true
+		}
+	}
+	return false
+}
 
 // githubPushPayload is the subset of the GitHub push event we care about.
 type githubPushPayload struct {
@@ -146,7 +157,7 @@ func (h *Handler) HandleGithubWebhook(c *gin.Context) {
 	var toCommit []*nb.McpProjectFiles
 
 	for path := range added {
-		if gitlab.ShouldSkipFile(path) {
+		if skipWebhookFile(path) {
 			continue
 		}
 		content, fetchErr := h.getGithubFileContent(ctx, token, owner, repo, path, payload.After)
@@ -158,7 +169,7 @@ func (h *Handler) HandleGithubWebhook(c *gin.Context) {
 	}
 
 	for path := range modified {
-		if gitlab.ShouldSkipFile(path) {
+		if skipWebhookFile(path) {
 			continue
 		}
 		// Skip if we already have it from the added set (shouldn't happen, but be safe).
@@ -233,7 +244,7 @@ func (h *Handler) deleteGitlabFiles(repoID int, paths map[string]bool, ref strin
 
 	var actions []deleteAction
 	for p := range paths {
-		if !gitlab.ShouldSkipFile(p) {
+		if !skipWebhookFile(p) {
 			actions = append(actions, deleteAction{Action: "delete", FilePath: p})
 		}
 	}
@@ -250,4 +261,3 @@ func (h *Handler) deleteGitlabFiles(repoID int, paths map[string]bool, ref strin
 	_, err := gitlab.DoRequestV1(url, h.cfg.GitlabTokenMicroFront, "POST", req)
 	return err
 }
-
