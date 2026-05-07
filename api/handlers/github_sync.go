@@ -78,6 +78,8 @@ func (h *Handler) GithubSyncMicrofrontend(c *gin.Context) {
 		return
 	}
 
+	funcRecord.ProjectId = resource.ProjectId
+
 	if err := h.syncMicrofrontendToGithub(ctx, funcRecord, req.GithubRepoName); err != nil {
 		h.handleResponse(c, status.InternalServerError, err.Error())
 		return
@@ -90,7 +92,8 @@ func (h *Handler) GithubSyncMicrofrontend(c *gin.Context) {
 // and the explicit GithubSyncMicrofrontend endpoint.
 //
 // It: fetches u-gen files from GitLab → pushes to GitHub (creates repo if needed)
-//   → registers webhook → updates the function record with github_repo_name + github_webhook_id.
+//
+//	→ registers webhook → updates the function record with github_repo_name + github_webhook_id.
 //
 // githubRepoName is the desired GitHub repo name (without owner prefix).
 // If empty, the existing funcRecord.GithubRepoName is used; if that is also empty
