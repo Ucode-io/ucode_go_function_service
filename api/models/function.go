@@ -19,11 +19,14 @@ type PublishMcpProjectFront struct {
 // GithubRepoName is optional — when set, the promote handler also pushes all
 // files to the user's GitHub repository (creating it first if it doesn't exist).
 type PushMicrofrontendChangesRequest struct {
-	RepoID         int                `json:"repo_id"`
-	Files          []GitlabFileChange `json:"files"`
-	GithubRepoName string             `json:"github_repo_name"`
-	CommitMessage  string             `json:"commit_message"`
-	FunctionID     string             `json:"function_id"`
+	RepoID                int                `json:"repo_id"`
+	Files                 []GitlabFileChange `json:"files"`
+	GithubRepoName        string             `json:"github_repo_name"`
+	CommitMessage         string             `json:"commit_message"`
+	FunctionID            string             `json:"function_id"`
+	CompanyProjectID      string             `json:"company_project_id"`
+	CompanyEnvironmentID  string             `json:"company_environment_id"`
+	ResourceEnvironmentID string             `json:"resource_environment_id"`
 }
 
 // PublishAiMicroFrontendRequest is sent from the API gateway when the AI generates

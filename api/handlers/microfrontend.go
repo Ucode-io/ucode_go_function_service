@@ -840,33 +840,21 @@ func (h *Handler) PushMicrofrontendChanges(c *gin.Context) {
 
 	log.Printf("[PUSH CHANGES] commit successful, gitlab response: %s", string(result))
 
-	if req.FunctionID != "" {
-		projectID, environmentID, hasCtx := getProjectAndEnv(c)
-		if hasCtx {
-			go func(funcID, companyProjID, envID string) {
-				ctx := context.Background()
-				resource, resErr := h.services.CompanyService().ServiceResource().GetSingle(ctx, &pb.GetSingleServiceResourceReq{
-					ProjectId:     companyProjID,
-					EnvironmentId: envID,
-					ServiceType:   pb.ServiceType_BUILDER_SERVICE,
-				})
-				if resErr != nil {
-					log.Printf("[PUSH-CHANGES→GITHUB] could not get resource: %v", resErr)
-					return
-				}
-				funcRecord, funcErr := h.services.GoObjectBuilderService().Function().GetSingle(ctx, &nb.FunctionPrimaryKey{
-					Id:        funcID,
-					ProjectId: resource.ResourceEnvironmentId,
-				})
-				if funcErr != nil {
-					log.Printf("[PUSH-CHANGES→GITHUB] could not get function %s: %v", funcID, funcErr)
-					return
-				}
-				if syncErr := h.syncMicrofrontendToGithub(ctx, funcRecord, "", resource.ProjectId, resource.EnvironmentId); syncErr != nil {
-					log.Printf("[PUSH-CHANGES→GITHUB] sync failed for func_id=%s: %v", funcID, syncErr)
-				}
-			}(req.FunctionID, projectID, environmentID)
-		}
+	if req.FunctionID != "" && req.CompanyProjectID != "" && req.CompanyEnvironmentID != "" && req.ResourceEnvironmentID != "" {
+		go func(funcID, companyProjID, companyEnvID, resourceEnvID string) {
+			ctx := context.Background()
+			funcRecord, funcErr := h.services.GoObjectBuilderService().Function().GetSingle(ctx, &nb.FunctionPrimaryKey{
+				Id:        funcID,
+				ProjectId: resourceEnvID,
+			})
+			if funcErr != nil {
+				log.Printf("[PUSH-CHANGES→GITHUB] could not get function %s: %v", funcID, funcErr)
+				return
+			}
+			if syncErr := h.syncMicrofrontendToGithub(ctx, funcRecord, "", companyProjID, companyEnvID); syncErr != nil {
+				log.Printf("[PUSH-CHANGES→GITHUB] sync failed for func_id=%s: %v", funcID, syncErr)
+			}
+		}(req.FunctionID, req.CompanyProjectID, req.CompanyEnvironmentID, req.ResourceEnvironmentID)
 	}
 
 	h.handleResponse(c, status.OK, gin.H{"status": "ok"})
