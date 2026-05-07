@@ -739,12 +739,12 @@ func (h *Handler) PublishAiGeneratedMicroFrontend(c *gin.Context) {
 
 	// Step 7: If the project has a GitHub integration, mirror the new repo there in the background.
 	// This is non-blocking — a failure here does not affect the publish response.
-	go func(record *nb.Function) {
+	go func(record *nb.Function, companyProjID, envID string) {
 		ctx := context.Background()
-		if syncErr := h.syncMicrofrontendToGithub(ctx, record, ""); syncErr != nil {
+		if syncErr := h.syncMicrofrontendToGithub(ctx, record, "", companyProjID, envID); syncErr != nil {
 			log.Printf("[PUBLISH-AI→GITHUB] sync failed for func_id=%s: %v", record.GetId(), syncErr)
 		}
-	}(funcRecord)
+	}(funcRecord, project.ProjectId, req.EnvironmentId)
 
 	log.Printf("[PUBLISH-AI] done: func_id=%s repo_id=%d path=%q", funcRecord.GetId(), respCreateFork.ID, functionPath)
 	h.handleResponse(c, status.OK, funcRecord)

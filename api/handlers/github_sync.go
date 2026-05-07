@@ -78,9 +78,10 @@ func (h *Handler) GithubSyncMicrofrontend(c *gin.Context) {
 		return
 	}
 
-	funcRecord.ProjectId = resource.ProjectId
+	companyProjectId := resource.ProjectId
+	companyEnvId := resource.EnvironmentId
 
-	if err := h.syncMicrofrontendToGithub(ctx, funcRecord, req.GithubRepoName); err != nil {
+	if err := h.syncMicrofrontendToGithub(ctx, funcRecord, req.GithubRepoName, companyProjectId, companyEnvId); err != nil {
 		h.handleResponse(c, status.InternalServerError, err.Error())
 		return
 	}
@@ -98,17 +99,15 @@ func (h *Handler) GithubSyncMicrofrontend(c *gin.Context) {
 // githubRepoName is the desired GitHub repo name (without owner prefix).
 // If empty, the existing funcRecord.GithubRepoName is used; if that is also empty
 // the GitLab project path is used as a fallback.
-func (h *Handler) syncMicrofrontendToGithub(ctx context.Context, funcRecord *nb.Function, githubRepoName string) error {
-	projectID := funcRecord.GetProjectId()
-	environmentID := funcRecord.GetEnvironmentId()
+func (h *Handler) syncMicrofrontendToGithub(ctx context.Context, funcRecord *nb.Function, githubRepoName, companyProjectID, environmentID string) error {
 	gitlabRepoID := cast.ToInt(funcRecord.GetRepoId())
 
 	if gitlabRepoID == 0 {
 		return fmt.Errorf("function record has no gitlab repo_id")
 	}
 
-	// 1. GitHub integration (token + username)
-	token, username, err := h.getGithubIntegration(ctx, projectID, environmentID)
+	// 1. GitHub integration (token + username) — uses company service IDs
+	token, username, err := h.getGithubIntegration(ctx, companyProjectID, environmentID)
 	if err != nil {
 		return fmt.Errorf("github integration not found: %w", err)
 	}
