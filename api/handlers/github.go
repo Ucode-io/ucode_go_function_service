@@ -771,15 +771,18 @@ func (h *Handler) updateGithubBranchRef(ctx context.Context, token, repoBaseURL,
 
 // createGithubWebhook registers a push-event webhook on the given GitHub repo.
 // Returns the webhook ID assigned by GitHub (needed for deletion later).
-func (h *Handler) createGithubWebhook(ctx context.Context, token, owner, repo string) (webhookID string, err error) {
-	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/hooks", owner, repo)
+func (h *Handler) createGithubWebhook(ctx context.Context, token, owner, repo, companyProjectID, environmentID, resourceEnvironmentID string) (webhookID string, err error) {
+	apiURL := fmt.Sprintf("https://api.github.com/repos/%s/%s/hooks", owner, repo)
+
+	webhookURL := fmt.Sprintf("%s?project_id=%s&environment_id=%s&resource_environment_id=%s",
+		h.cfg.GatewayWebhookURL, companyProjectID, environmentID, resourceEnvironmentID)
 
 	payload := map[string]any{
 		"name":   "web",
 		"active": true,
 		"events": []string{"push"},
 		"config": map[string]any{
-			"url":          h.cfg.GatewayWebhookURL,
+			"url":          webhookURL,
 			"content_type": "json",
 			"secret":       h.cfg.GithubWebhookSecret,
 			"insecure_ssl": "0",
@@ -791,7 +794,7 @@ func (h *Handler) createGithubWebhook(ctx context.Context, token, owner, repo st
 		return "", err
 	}
 
-	req, err := githubAPIRequest(ctx, http.MethodPost, url, bytes.NewBuffer(body), token)
+	req, err := githubAPIRequest(ctx, http.MethodPost, apiURL, bytes.NewBuffer(body), token)
 	if err != nil {
 		return "", err
 	}

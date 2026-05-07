@@ -98,10 +98,23 @@ func (h *Handler) HandleGithubWebhook(c *gin.Context) {
 		return
 	}
 
+	// project_id, environment_id, and resource_environment_id are embedded in the webhook URL
+	// by createGithubWebhook so we can look up the GitHub token and DB pool without auth context.
+	companyProjectID := c.Query("project_id")
+	environmentID := c.Query("environment_id")
+	resourceEnvID := c.Query("resource_environment_id")
+	if companyProjectID == "" || environmentID == "" || resourceEnvID == "" {
+		log.Printf("[GITHUB-WEBHOOK] missing query params for repo %s", fullName)
+		h.handleResponse(c, status.BadRequest, "missing project_id, environment_id or resource_environment_id")
+		return
+	}
+
 	ctx := c.Request.Context()
 
-	// Look up the function record by github_repo_name.
+	// Look up the function record by github_repo_name using the resource_environment_id
+	// as the DB pool key (embedded in the webhook URL at registration time).
 	list, err := h.services.GoObjectBuilderService().Function().GetList(ctx, &nb.GetAllFunctionsRequest{
+		ProjectId:      resourceEnvID,
 		GithubRepoName: fullName,
 		Limit:          1,
 	})
@@ -146,7 +159,7 @@ func (h *Handler) HandleGithubWebhook(c *gin.Context) {
 	owner, repo := parts[0], parts[1]
 
 	// Fetch the GitHub token so we can read file contents.
-	token, _, err := h.getGithubIntegration(ctx, funcRecord.GetProjectId(), funcRecord.GetEnvironmentId())
+	token, _, err := h.getGithubIntegration(ctx, companyProjectID, environmentID)
 	if err != nil {
 		log.Printf("[GITHUB-WEBHOOK] could not get github token for func %s: %v", funcRecord.GetId(), err)
 		h.handleResponse(c, status.InternalServerError, fmt.Sprintf("github integration error: %v", err))
