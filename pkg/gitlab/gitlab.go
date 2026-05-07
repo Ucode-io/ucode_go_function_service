@@ -281,8 +281,9 @@ func GetPipelineStatus(gitlabURL, token string, projectID, pipelineID int) (stri
 	return pipeline.Status, nil
 }
 
-// CompareUGenToMaster calls the GitLab compare API to check whether u-gen is
-// ahead of master. Returns true when there are commits in u-gen not yet on master.
+// CompareUGenToMaster checks whether u-gen has file changes not yet on master.
+// It uses the diffs field (not commits) so that a promote — which copies file
+// content to master without merging git history — correctly reports hasChanges=false.
 func CompareUGenToMaster(gitlabURL, token string, projectID int) (bool, error) {
 	apiURL := fmt.Sprintf("%s/api/v4/projects/%d/repository/compare?from=%s&to=%s&access_token=%s",
 		gitlabURL, projectID, config.DefaultBranch, config.UGenBranch, token)
@@ -309,13 +310,13 @@ func CompareUGenToMaster(gitlabURL, token string, projectID int) (bool, error) {
 	}
 
 	var result struct {
-		Commits []struct{} `json:"commits"`
+		Diffs []struct{} `json:"diffs"`
 	}
 	if err := json.Unmarshal(body, &result); err != nil {
 		return false, fmt.Errorf("failed to parse compare response: %w", err)
 	}
 
-	return len(result.Commits) > 0, nil
+	return len(result.Diffs) > 0, nil
 }
 
 // getFileContent fetches the raw content of a single file from a GitLab repo via the Files API.
