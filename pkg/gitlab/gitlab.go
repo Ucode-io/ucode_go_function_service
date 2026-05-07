@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -281,42 +282,57 @@ func GetPipelineStatus(gitlabURL, token string, projectID, pipelineID int) (stri
 	return pipeline.Status, nil
 }
 
+// CompareResult holds the parsed GitLab compare response fields used for change detection.
+type CompareResult struct {
+	HasChanges   bool `json:"hasChanges"`
+	DiffsCount   int  `json:"diffsCount"`
+	CommitsCount int  `json:"commitsCount"`
+}
+
 // CompareUGenToMaster checks whether u-gen has file changes not yet on master.
 // It uses the diffs field (not commits) so that a promote — which copies file
 // content to master without merging git history — correctly reports hasChanges=false.
-func CompareUGenToMaster(gitlabURL, token string, projectID int) (bool, error) {
+func CompareUGenToMaster(gitlabURL, token string, projectID int) (CompareResult, error) {
 	apiURL := fmt.Sprintf("%s/api/v4/projects/%d/repository/compare?from=%s&to=%s&access_token=%s",
 		gitlabURL, projectID, config.DefaultBranch, config.UGenBranch, token)
 
 	req, err := http.NewRequest(http.MethodGet, apiURL, nil)
 	if err != nil {
-		return false, err
+		return CompareResult{}, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{Timeout: 15 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		return false, err
+		return CompareResult{}, err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return false, err
+		return CompareResult{}, err
 	}
 	if resp.StatusCode >= 400 {
-		return false, fmt.Errorf("gitlab error %d: %s", resp.StatusCode, string(body))
+		return CompareResult{}, fmt.Errorf("gitlab error %d: %s", resp.StatusCode, string(body))
 	}
 
-	var result struct {
-		Diffs []struct{} `json:"diffs"`
+	var raw struct {
+		Commits []struct{} `json:"commits"`
+		Diffs   []struct{} `json:"diffs"`
 	}
-	if err := json.Unmarshal(body, &result); err != nil {
-		return false, fmt.Errorf("failed to parse compare response: %w", err)
+	if err := json.Unmarshal(body, &raw); err != nil {
+		return CompareResult{}, fmt.Errorf("failed to parse compare response: %w", err)
 	}
 
-	return len(result.Diffs) > 0, nil
+	log.Printf("[COMPARE] project=%d from=%s to=%s commits=%d diffs=%d",
+		projectID, config.DefaultBranch, config.UGenBranch, len(raw.Commits), len(raw.Diffs))
+
+	return CompareResult{
+		HasChanges:   len(raw.Diffs) > 0,
+		DiffsCount:   len(raw.Diffs),
+		CommitsCount: len(raw.Commits),
+	}, nil
 }
 
 // getFileContent fetches the raw content of a single file from a GitLab repo via the Files API.

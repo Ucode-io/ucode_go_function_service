@@ -996,13 +996,13 @@ func (h *Handler) CheckPromoteChanges(c *gin.Context) {
 		return
 	}
 
-	hasChanges, err := gitlab.CompareUGenToMaster(h.cfg.GitlabIntegrationURL, h.cfg.GitlabTokenMicroFront, repoID)
+	result, err := gitlab.CompareUGenToMaster(h.cfg.GitlabIntegrationURL, h.cfg.GitlabTokenMicroFront, repoID)
 	if err != nil {
 		h.handleResponse(c, status.InternalServerError, err.Error())
 		return
 	}
 
-	h.handleResponse(c, status.OK, gin.H{"hasChanges": hasChanges})
+	h.handleResponse(c, status.OK, result)
 }
 
 // DeleteMicroFrontEnd godoc
