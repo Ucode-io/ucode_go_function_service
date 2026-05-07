@@ -55,7 +55,8 @@ type (
 	}
 
 	RevertMicrofrontendRequest struct {
-		RepoID    string `json:"repo_id"    binding:"required"`
-		CommitSHA string `json:"commit_sha" binding:"required"`
+		RepoID     string `json:"repo_id"    binding:"required"`
+		CommitSHA  string `json:"commit_sha" binding:"required"`
+		FunctionID string `json:"function_id"`
 	}
 )
