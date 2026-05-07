@@ -303,7 +303,8 @@ func GetPipelineStatus(gitlabURL, token string, projectID, pipelineID int) (stri
 }
 
 type CompareResult struct {
-	HasChanges bool `json:"hasChanges"`
+	HasChanges    bool `json:"hasChanges"`
+	EverPromoted  bool `json:"everPromoted"`
 }
 
 // CompareUGenToMaster checks whether u-gen has new commits since the last promote.
@@ -316,17 +317,16 @@ func CompareUGenToMaster(gitlabURL, token string, projectID int) (CompareResult,
 		return CompareResult{}, fmt.Errorf("failed to get %s HEAD: %w", config.UGenBranch, err)
 	}
 
-	// Read the SHA that was stored during the last promote.
-	// If the file doesn't exist yet (never promoted), treat as hasChanges=true.
-	// If .u-gen-sha doesn't exist yet (never promoted), treat as hasChanges=true.
+	// If .u-gen-sha doesn't exist, promote was never done.
 	lastPromotedSHA, err := getRawFileContent(gitlabURL, token, projectID, config.UGenSHAFile, config.DefaultBranch)
 	if err != nil {
-		return CompareResult{HasChanges: true}, nil
+		return CompareResult{HasChanges: true, EverPromoted: false}, nil
 	}
 
 	lastPromotedSHA = strings.TrimSpace(lastPromotedSHA)
 	return CompareResult{
-		HasChanges: currentSHA != lastPromotedSHA,
+		HasChanges:   currentSHA != lastPromotedSHA,
+		EverPromoted: true,
 	}, nil
 }
 
