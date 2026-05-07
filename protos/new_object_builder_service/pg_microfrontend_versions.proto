@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package new_object_builder_service;
+option go_package = "genproto/new_object_builder_service";
+
+service MicrofrontendVersionsService {
+  rpc CreateVersion(CreateMicrofrontendVersionRequest) returns (MicrofrontendVersion) {}
+  rpc GetVersionList(GetMicrofrontendVersionListRequest) returns (GetMicrofrontendVersionListResponse) {}
+  rpc GetVersion(GetMicrofrontendVersionRequest) returns (MicrofrontendVersion) {}
+  rpc SetCurrentVersion(SetCurrentMicrofrontendVersionRequest) returns (MicrofrontendVersion) {}
+}
+
+message MicrofrontendVersion {
+  string guid             = 1;
+  string microfrontend_id = 2;
+  string commit_message   = 3;
+  string files            = 4;
+  bool   is_current       = 5;
+  string created_at       = 6;
+  string updated_at       = 7;
+}
+
+message CreateMicrofrontendVersionRequest {
+  string resource_env_id  = 1;
+  string microfrontend_id = 2;
+  string commit_message   = 3;
+  string files            = 4;
+}
+
+message GetMicrofrontendVersionListRequest {
+  string resource_env_id  = 1;
+  string microfrontend_id = 2;
+  int32  limit            = 3;
+  int32  offset           = 4;
+}
+
+message GetMicrofrontendVersionListResponse {
+  repeated MicrofrontendVersion versions = 1;
+  int32 count = 2;
+}
+
+message GetMicrofrontendVersionRequest {
+  string resource_env_id = 1;
+  string guid            = 2;
+}
+
+message SetCurrentMicrofrontendVersionRequest {
+  string resource_env_id  = 1;
+  string microfrontend_id = 2;
+  string guid             = 3;
+}

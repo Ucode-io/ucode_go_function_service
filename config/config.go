@@ -61,6 +61,8 @@ type Config struct {
 	GithubFrontendSuccessURL  string
 	GithubFrontendErrorURL    string
 	PathToClone               string
+	GithubWebhookSecret       string
+	GatewayWebhookURL         string
 
 	// Gitlab Creds
 	GitlabBaseUrlIntegration      string
@@ -159,6 +161,8 @@ func Load() Config {
 	config.GithubFrontendSuccessURL = cast.ToString(getOrReturnDefaultValue("GITHUB_FRONTEND_SUCCESS_URL", ""))
 	config.GithubFrontendErrorURL = cast.ToString(getOrReturnDefaultValue("GITHUB_FRONTEND_ERROR_URL", ""))
 	config.PathToClone = cast.ToString(getOrReturnDefaultValue("CLONE_PATH", "./app"))
+	config.GithubWebhookSecret = cast.ToString(getOrReturnDefaultValue("GITHUB_WEBHOOK_SECRET", "5959bb628aa73c4988b8e0c12591cdcc82f8b47bc7774e5e95fe32b85865c717"))
+	config.GatewayWebhookURL = cast.ToString(getOrReturnDefaultValue("GATEWAY_WEBHOOK_URL", "https://admin-api.ucode.run/v2/webhook/github"))
 
 	// Gitlab Creds
 	config.GitlabBaseUrlIntegration = cast.ToString(getOrReturnDefaultValue("GITLAB_BASE_URL_INTEGRATION", ""))

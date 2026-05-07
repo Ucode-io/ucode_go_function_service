@@ -73,6 +73,8 @@ message Function {
     bool is_public = 25;
     int32 max_scale = 26;
     int32 former_max_scale = 27;
+    string github_repo_name = 28;
+    string github_webhook_id = 29;
 }
 
 message GetAllFunctionsRequest {
@@ -83,6 +85,7 @@ message GetAllFunctionsRequest {
     string environment_id = 5;
     repeated string type = 6;
     string function_id = 7;
+    string github_repo_name = 8;
 }
 
 message GetAllFunctionsResponse {

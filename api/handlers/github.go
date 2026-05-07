@@ -3,11 +3,13 @@ package handlers
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 	"ucode/ucode_go_function_service/api/models"
 	"ucode/ucode_go_function_service/api/status_http"
@@ -765,6 +767,123 @@ func (h *Handler) updateGithubBranchRef(ctx context.Context, token, repoBaseURL,
 		return fmt.Errorf("update branch ref returned %d: %s", resp.StatusCode, string(b))
 	}
 	return nil
+}
+
+// createGithubWebhook registers a push-event webhook on the given GitHub repo.
+// Returns the webhook ID assigned by GitHub (needed for deletion later).
+func (h *Handler) createGithubWebhook(ctx context.Context, token, owner, repo string) (webhookID string, err error) {
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/hooks", owner, repo)
+
+	payload := map[string]any{
+		"name":   "web",
+		"active": true,
+		"events": []string{"push"},
+		"config": map[string]any{
+			"url":          h.cfg.GatewayWebhookURL,
+			"content_type": "json",
+			"secret":       h.cfg.GithubWebhookSecret,
+			"insecure_ssl": "0",
+		},
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+
+	req, err := githubAPIRequest(ctx, http.MethodPost, url, bytes.NewBuffer(body), token)
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := githubHTTPClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		b, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("create webhook returned %d: %s", resp.StatusCode, string(b))
+	}
+
+	var result map[string]any
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return "", err
+	}
+
+	// GitHub returns the webhook ID as a float64 in JSON
+	id, _ := result["id"].(float64)
+	if id == 0 {
+		return "", fmt.Errorf("create webhook response contains no id")
+	}
+
+	return fmt.Sprintf("%.0f", id), nil
+}
+
+// deleteGithubWebhook removes a previously registered webhook from a GitHub repo.
+func (h *Handler) deleteGithubWebhook(ctx context.Context, token, owner, repo, webhookID string) error {
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/hooks/%s", owner, repo, webhookID)
+
+	req, err := githubAPIRequest(ctx, http.MethodDelete, url, nil, token)
+	if err != nil {
+		return err
+	}
+
+	resp, err := githubHTTPClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusNoContent {
+		b, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("delete webhook returned %d: %s", resp.StatusCode, string(b))
+	}
+
+	return nil
+}
+
+// getGithubFileContent fetches the content of a single file from a GitHub repo at a given ref (commit SHA or branch).
+func (h *Handler) getGithubFileContent(ctx context.Context, token, owner, repo, path, ref string) (string, error) {
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/contents/%s?ref=%s", owner, repo, path, ref)
+
+	req, err := githubAPIRequest(ctx, http.MethodGet, url, nil, token)
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := githubHTTPClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("get file content returned %d: %s", resp.StatusCode, string(b))
+	}
+
+	var result struct {
+		Content  string `json:"content"`
+		Encoding string `json:"encoding"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return "", err
+	}
+
+	if result.Encoding != "base64" {
+		return "", fmt.Errorf("unexpected encoding: %s", result.Encoding)
+	}
+
+	// GitHub wraps base64 in newlines — strip them before decoding
+	raw := strings.ReplaceAll(result.Content, "\n", "")
+	decoded, err := base64.StdEncoding.DecodeString(raw)
+	if err != nil {
+		return "", fmt.Errorf("base64 decode: %w", err)
+	}
+
+	return string(decoded), nil
 }
 
 // listGithubRepos returns all repositories for the authenticated GitHub user.

@@ -23,6 +23,7 @@ message CreateMcpProjectReqeust {
   string api_key = 7;
   string environment_id = 8;
   string status = 9;
+  string app_visibility = 10;
 }
 
 message McpProject {
@@ -40,6 +41,7 @@ message McpProject {
   string api_key = 12;
   string environment_id = 13;
   string status = 14;
+  string app_visibility = 15;
 }
 
 message McpProjectList {

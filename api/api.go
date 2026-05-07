@@ -67,6 +67,7 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 
 	v2 := r.Group("/v2")
 	v2.POST("/webhook/handle", h.HandleWebhook)
+	v2.POST("/webhook/github", h.HandleGithubWebhook)
 
 	grafana := v2.Group("/grafana")
 	{
@@ -106,6 +107,7 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 		microFe.GET("/micro-frontend/commits", h.GetMicrofrontendCommits)
 		microFe.GET("/micro-frontend/files-at-commit", h.GetMicrofrontendFilesAtCommit)
 		microFe.POST("/micro-frontend/revert", h.RevertMicrofrontendToCommit)
+		microFe.POST("/micro-frontend/github-sync", h.GithubSyncMicrofrontend)
 	}
 
 	knativeFunc := r.Group("/v2/invoke_function")
