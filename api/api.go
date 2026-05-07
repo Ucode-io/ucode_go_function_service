@@ -106,6 +106,8 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 		microFe.POST("/micro-frontend/promote", h.PromoteMicrofrontendToMaster)
 		// Check whether u-gen has commits not yet promoted to master
 		microFe.GET("/micro-frontend/promote/check-changes", h.CheckPromoteChanges)
+		// Poll pipeline status after promote
+		microFe.GET("/micro-frontend/promote/pipeline-status/:pipeline_id", h.GetPromotePipelineStatus)
 		microFe.GET("/micro-frontend/commits", h.GetMicrofrontendCommits)
 		microFe.GET("/micro-frontend/files-at-commit", h.GetMicrofrontendFilesAtCommit)
 		microFe.POST("/micro-frontend/revert", h.RevertMicrofrontendToCommit)

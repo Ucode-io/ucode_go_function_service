@@ -877,13 +877,14 @@ func (h *Handler) PromoteMicrofrontendToMaster(c *gin.Context) {
 
 	log.Printf("[PROMOTE] promoting repo_id=%d from %s to %s", req.RepoID, config.UGenBranch, config.DefaultBranch)
 
-	if err := gitlab.PromoteUGenToMaster(gitlabCfg, h.cfg.GitlabIntegrationURL, h.cfg.GitlabTokenMicroFront, h.cfg.GitlabProjectIdMicroFrontReact); err != nil {
+	pipelineID, err := gitlab.PromoteUGenToMaster(gitlabCfg, h.cfg.GitlabIntegrationURL, h.cfg.GitlabTokenMicroFront, h.cfg.GitlabProjectIdMicroFrontReact)
+	if err != nil {
 		log.Printf("[PROMOTE] failed: %v", err)
 		h.handleResponse(c, status.InternalServerError, err.Error())
 		return
 	}
 
-	log.Printf("[PROMOTE] repo_id=%d successfully promoted to %s", req.RepoID, config.DefaultBranch)
+	log.Printf("[PROMOTE] repo_id=%d successfully promoted to %s, pipeline_id=%d", req.RepoID, config.DefaultBranch, pipelineID)
 
 	projectID, environmentID, hasCtx := getProjectAndEnv(c)
 	if hasCtx {
@@ -924,7 +925,50 @@ func (h *Handler) PromoteMicrofrontendToMaster(c *gin.Context) {
 		}
 	}
 
-	h.handleResponse(c, status.OK, gin.H{"status": "ok"})
+	h.handleResponse(c, status.OK, gin.H{"status": "pending", "pipeline_id": pipelineID})
+}
+
+// GetPromotePipelineStatus godoc
+// @Security ApiKeyAuth
+// @ID get_promote_pipeline_status
+// @Router /v2/functions/micro-frontend/promote/pipeline-status/{pipeline_id} [GET]
+// @Summary Get the status of a promote pipeline
+// @Description Polls GitLab for the current status of a pipeline. Frontend should poll every 5s until status is "success" or "failed".
+// @Tags MicroFrontend
+// @Produce json
+// @Param pipeline_id path int true "GitLab pipeline ID"
+// @Param repo_id query int true "GitLab project ID"
+// @Success 200 {object} status.Response{data=object} "OK — {status: string}"
+// @Failure 400 {object} status.Response{data=string} "Bad Request"
+// @Failure 500 {object} status.Response{data=string} "Server Error"
+func (h *Handler) GetPromotePipelineStatus(c *gin.Context) {
+	pipelineIDStr := c.Param("pipeline_id")
+	repoIDStr := c.Query("repo_id")
+
+	if pipelineIDStr == "" || repoIDStr == "" {
+		h.handleResponse(c, status.BadRequest, "pipeline_id path param and repo_id query param are required")
+		return
+	}
+
+	pipelineID, err := strconv.Atoi(pipelineIDStr)
+	if err != nil || pipelineID == 0 {
+		h.handleResponse(c, status.BadRequest, "pipeline_id must be a valid non-zero integer")
+		return
+	}
+
+	repoID, err := strconv.Atoi(repoIDStr)
+	if err != nil || repoID == 0 {
+		h.handleResponse(c, status.BadRequest, "repo_id must be a valid non-zero integer")
+		return
+	}
+
+	pipelineStatus, err := gitlab.GetPipelineStatus(h.cfg.GitlabIntegrationURL, h.cfg.GitlabTokenMicroFront, repoID, pipelineID)
+	if err != nil {
+		h.handleResponse(c, status.InternalServerError, err.Error())
+		return
+	}
+
+	h.handleResponse(c, status.OK, gin.H{"status": pipelineStatus})
 }
 
 // CheckPromoteChanges godoc

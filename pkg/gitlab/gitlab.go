@@ -105,20 +105,22 @@ func CommitFiles(cfg IntegrationData, branch string, files []*nb.McpProjectFiles
 // templateProjectID is the GitLab ID of the React template repo — its package.json
 // and package-lock.json are always restored on master to keep npm ci in sync.
 // This is the API-level equivalent of a force push from u-gen to master.
-func PromoteUGenToMaster(cfg IntegrationData, gitlabURL, token string, templateProjectID int) error {
+// PromoteUGenToMaster syncs u-gen → master and returns the ID of the pipeline
+// that was triggered by the commit. Returns (0, err) on failure.
+func PromoteUGenToMaster(cfg IntegrationData, gitlabURL, token string, templateProjectID int) (int, error) {
 	// Step 1: get all files from u-gen with content
 	ugenFiles, err := fetchArchiveFiles(gitlabURL, token, cfg.GitlabProjectId, config.UGenBranch)
 	if err != nil {
-		return fmt.Errorf("failed to read %s branch: %w", config.UGenBranch, err)
+		return 0, fmt.Errorf("failed to read %s branch: %w", config.UGenBranch, err)
 	}
 	if len(ugenFiles) == 0 {
-		return fmt.Errorf("%s branch has no files to promote", config.UGenBranch)
+		return 0, fmt.Errorf("%s branch has no files to promote", config.UGenBranch)
 	}
 
 	// Step 2: get file paths currently on master
 	masterFiles, err := GetRepoFilesMap(cfg, config.DefaultBranch)
 	if err != nil {
-		return fmt.Errorf("failed to read %s branch file list: %w", config.DefaultBranch, err)
+		return 0, fmt.Errorf("failed to read %s branch file list: %w", config.DefaultBranch, err)
 	}
 
 	// Step 3: build commit actions — create/update u-gen files, delete master-only files
@@ -186,7 +188,7 @@ func PromoteUGenToMaster(cfg IntegrationData, gitlabURL, token string, templateP
 	apiURL := fmt.Sprintf("%s/api/v4/projects/%d/repository/commits", gitlabURL, cfg.GitlabProjectId)
 	result, err := DoRequestV1(apiURL, token, http.MethodPost, commitReq)
 	if err != nil {
-		return fmt.Errorf("commit request failed: %w", err)
+		return 0, fmt.Errorf("commit request failed: %w", err)
 	}
 
 	// Check for GitLab-level errors in the response body.
@@ -196,12 +198,87 @@ func PromoteUGenToMaster(cfg IntegrationData, gitlabURL, token string, templateP
 	if jsonErr := json.Unmarshal(result, &resp); jsonErr == nil {
 		if _, hasID := resp["id"]; !hasID {
 			if msg, ok := resp["message"]; ok {
-				return fmt.Errorf("gitlab commit error: %v", msg)
+				return 0, fmt.Errorf("gitlab commit error: %v", msg)
 			}
 		}
 	}
 
-	return nil
+	// Fetch the pipeline that was just triggered by the commit to master.
+	pipelineID, pipelineErr := getLatestPipelineID(gitlabURL, token, cfg.GitlabProjectId, config.DefaultBranch)
+	if pipelineErr != nil {
+		// Non-fatal: commit succeeded, we just can't track the pipeline.
+		return 0, nil
+	}
+	return pipelineID, nil
+}
+
+// getLatestPipelineID returns the ID of the most recently created pipeline on the given branch.
+func getLatestPipelineID(gitlabURL, token string, projectID int, branch string) (int, error) {
+	apiURL := fmt.Sprintf("%s/api/v4/projects/%d/pipelines?ref=%s&order_by=id&sort=desc&per_page=1&access_token=%s",
+		gitlabURL, projectID, branch, token)
+
+	req, err := http.NewRequest(http.MethodGet, apiURL, nil)
+	if err != nil {
+		return 0, err
+	}
+
+	client := &http.Client{Timeout: 15 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return 0, err
+	}
+	if resp.StatusCode >= 400 {
+		return 0, fmt.Errorf("gitlab error %d: %s", resp.StatusCode, string(body))
+	}
+
+	var pipelines []struct {
+		ID int `json:"id"`
+	}
+	if err := json.Unmarshal(body, &pipelines); err != nil || len(pipelines) == 0 {
+		return 0, fmt.Errorf("no pipeline found")
+	}
+	return pipelines[0].ID, nil
+}
+
+// GetPipelineStatus returns the status string of a specific pipeline
+// (e.g. "running", "success", "failed", "canceled", "pending").
+func GetPipelineStatus(gitlabURL, token string, projectID, pipelineID int) (string, error) {
+	apiURL := fmt.Sprintf("%s/api/v4/projects/%d/pipelines/%d?access_token=%s",
+		gitlabURL, projectID, pipelineID, token)
+
+	req, err := http.NewRequest(http.MethodGet, apiURL, nil)
+	if err != nil {
+		return "", err
+	}
+
+	client := &http.Client{Timeout: 15 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	if resp.StatusCode >= 400 {
+		return "", fmt.Errorf("gitlab error %d: %s", resp.StatusCode, string(body))
+	}
+
+	var pipeline struct {
+		Status string `json:"status"`
+	}
+	if err := json.Unmarshal(body, &pipeline); err != nil {
+		return "", fmt.Errorf("failed to parse pipeline response: %w", err)
+	}
+	return pipeline.Status, nil
 }
 
 // CompareUGenToMaster calls the GitLab compare API to check whether u-gen is
