@@ -771,11 +771,11 @@ func (h *Handler) updateGithubBranchRef(ctx context.Context, token, repoBaseURL,
 
 // createGithubWebhook registers a push-event webhook on the given GitHub repo.
 // Returns the webhook ID assigned by GitHub (needed for deletion later).
-func (h *Handler) createGithubWebhook(ctx context.Context, token, owner, repo, companyProjectID, environmentID string) (webhookID string, err error) {
+func (h *Handler) createGithubWebhook(ctx context.Context, token, owner, repo, companyProjectID, environmentID, resourceEnvironmentID string) (webhookID string, err error) {
 	apiURL := fmt.Sprintf("https://api.github.com/repos/%s/%s/hooks", owner, repo)
 
-	webhookURL := fmt.Sprintf("%s?project_id=%s&environment_id=%s",
-		h.cfg.GatewayWebhookURL, companyProjectID, environmentID)
+	webhookURL := fmt.Sprintf("%s?project_id=%s&environment_id=%s&resource_environment_id=%s",
+		h.cfg.GatewayWebhookURL, companyProjectID, environmentID, resourceEnvironmentID)
 
 	payload := map[string]any{
 		"name":   "web",

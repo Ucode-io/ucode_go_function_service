@@ -169,7 +169,7 @@ func (h *Handler) syncMicrofrontendToGithub(ctx context.Context, funcRecord *nb.
 	}
 
 	if webhookID == "" {
-		webhookID, err = h.createGithubWebhook(ctx, token, username, repoName, companyProjectID, environmentID)
+		webhookID, err = h.createGithubWebhook(ctx, token, username, repoName, companyProjectID, environmentID, funcRecord.GetProjectId())
 		if err != nil {
 			// Non-fatal: repo is already synced; log and continue
 			log.Printf("[GITHUB-SYNC] warning: could not create webhook on %s: %v", fullRepoName, err)
