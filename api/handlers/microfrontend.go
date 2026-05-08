@@ -167,6 +167,16 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 		return
 	}
 
+	if err = gitlab.WaitForImport(gitlab.IntegrationData{
+		GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
+		GitlabIntegrationToken: h.cfg.GitlabTokenMicroFront,
+		GitlabProjectId:        respCreateFork.ID,
+		GitlabGroupId:          h.cfg.GitlabGroupIdMicroFront,
+	}, 2*time.Minute); err != nil {
+		h.handleResponse(c, status.InvalidArgument, err.Error())
+		return
+	}
+
 	_, err = gitlab.UpdateProject(
 		gitlab.IntegrationData{
 			GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
