@@ -130,7 +130,7 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 		limitResp, err := h.services.CompanyService().Billing().CompareFunction(ctx, &pb.CompareFunctionRequest{
 			Type:   config.FARE_MICROFRONTEND,
 			FareId: project.GetFareId(),
-			Count:  count,
+			Count:  count + 1,
 		})
 		if err != nil {
 			h.handleResponse(c, status.GRPCError, err.Error())
@@ -663,7 +663,7 @@ func (h *Handler) PublishAiGeneratedMicroFrontend(c *gin.Context) {
 		limitResp, err := h.services.CompanyService().Billing().CompareFunction(ctx, &pb.CompareFunctionRequest{
 			Type:   config.FARE_MICROFRONTEND,
 			FareId: project.GetFareId(),
-			Count:  countResp.Count,
+			Count:  countResp.Count + 1,
 		})
 		if err != nil {
 			h.handleResponse(c, status.GRPCError, err.Error())

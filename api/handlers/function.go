@@ -135,7 +135,7 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 		response, err := h.services.CompanyService().Billing().CompareFunction(ctx, &pb.CompareFunctionRequest{
 			Type:   config.FARE_FUNCTION,
 			FareId: project.GetFareId(),
-			Count:  count,
+			Count:  count + 1,
 		})
 		if err != nil {
 			h.handleResponse(c, status.GRPCError, err.Error())
