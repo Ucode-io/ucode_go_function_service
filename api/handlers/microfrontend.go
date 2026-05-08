@@ -843,7 +843,7 @@ func (h *Handler) PushMicrofrontendChanges(c *gin.Context) {
 	if req.FunctionID != "" && req.ResourceEnvironmentID != "" {
 		go func(funcID, resourceEnvID string) {
 			ctx := context.Background()
-			resEnv, resErr := h.services.CompanyService().Resource().GetResourceById(ctx, &pb.GetResourceEnvironmentReq{
+			resEnv, resErr := h.services.CompanyService().Resource().GetResourceEnvironment(ctx, &pb.GetResourceEnvironmentReq{
 				Id: resourceEnvID,
 			})
 			if resErr != nil {
