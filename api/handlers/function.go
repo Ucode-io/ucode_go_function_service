@@ -143,7 +143,7 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 		}
 
 		if !response.HasAccess {
-			h.handleResponse(c, status.BadRequest, "you have reached limit of fass")
+			h.handleResponse(c, status.BadRequest, "you have reached the limit of functions on your current plan. Please upgrade to create more.")
 			return
 		}
 	}

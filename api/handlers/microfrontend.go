@@ -102,6 +102,47 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 		return
 	}
 
+	if len(project.GetFareId()) != 0 {
+		var count int32
+		switch resource.ResourceType {
+		case pb.ResourceType_MONGODB:
+			countResp, err := h.services.GetBuilderServiceByType(resource.NodeType).Function().GetCountByType(ctx, &obs.GetCountByTypeRequest{
+				ProjectId: resource.ResourceEnvironmentId,
+				Type:      []string{config.MICROFE},
+			})
+			if err != nil {
+				h.handleResponse(c, status.GRPCError, err.Error())
+				return
+			}
+			count = countResp.Count
+		case pb.ResourceType_POSTGRESQL:
+			countResp, err := h.services.GoObjectBuilderService().Function().GetCountByType(ctx, &nb.GetCountByTypeRequest{
+				ProjectId: resource.ResourceEnvironmentId,
+				Type:      []string{config.MICROFE},
+			})
+			if err != nil {
+				h.handleResponse(c, status.GRPCError, err.Error())
+				return
+			}
+			count = countResp.Count
+		}
+
+		limitResp, err := h.services.CompanyService().Billing().CompareFunction(ctx, &pb.CompareFunctionRequest{
+			Type:   config.FARE_MICROFRONTEND,
+			FareId: project.GetFareId(),
+			Count:  count,
+		})
+		if err != nil {
+			h.handleResponse(c, status.GRPCError, err.Error())
+			return
+		}
+
+		if !limitResp.HasAccess {
+			h.handleResponse(c, status.BadRequest, "you have reached the limit of micro-frontends on your current plan. Please upgrade to create more.")
+			return
+		}
+	}
+
 	var projectName = strings.ReplaceAll(strings.TrimSpace(project.Title), " ", "-")
 	projectName = strings.ToLower(projectName)
 
@@ -597,6 +638,32 @@ func (h *Handler) PublishAiGeneratedMicroFrontend(c *gin.Context) {
 	if len(project.GetTitle()) == 0 {
 		h.handleResponse(c, status.BadRequest, "project name is required")
 		return
+	}
+
+	if len(project.GetFareId()) != 0 {
+		countResp, err := h.services.GoObjectBuilderService().Function().GetCountByType(ctx, &nb.GetCountByTypeRequest{
+			ProjectId: resource.ResourceEnvironmentId,
+			Type:      []string{config.MICROFE},
+		})
+		if err != nil {
+			h.handleResponse(c, status.GRPCError, err.Error())
+			return
+		}
+
+		limitResp, err := h.services.CompanyService().Billing().CompareFunction(ctx, &pb.CompareFunctionRequest{
+			Type:   config.FARE_MICROFRONTEND,
+			FareId: project.GetFareId(),
+			Count:  countResp.Count,
+		})
+		if err != nil {
+			h.handleResponse(c, status.GRPCError, err.Error())
+			return
+		}
+
+		if !limitResp.HasAccess {
+			h.handleResponse(c, status.BadRequest, "you have reached the limit of micro-frontends on your current plan. Please upgrade to create more.")
+			return
+		}
 	}
 
 	projectName := strings.ToLower(strings.ReplaceAll(strings.TrimSpace(project.Title), " ", "-"))
