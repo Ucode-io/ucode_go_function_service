@@ -244,6 +244,7 @@ func (h *Handler) PublishMcpProjectFront(c *gin.Context) {
 			GitlabProjectId:        repoId,
 			GitlabGroupId:          h.cfg.GitlabGroupIdMicroFront,
 		},
+		config.DefaultBranch,
 		mcpProject.ProjectFiles,
 	)
 
@@ -264,6 +265,7 @@ func (h *Handler) PublishMcpProjectFront(c *gin.Context) {
 					GitlabProjectId:        repoId,
 					GitlabGroupId:          h.cfg.GitlabGroupIdMicroFront,
 				},
+				config.DefaultBranch,
 				mcpProject.ProjectFiles,
 			)
 

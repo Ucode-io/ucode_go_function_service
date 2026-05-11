@@ -14,6 +14,18 @@ service VersionHistoryService {
 
   rpc CreateFunctionLog(FunctionLogReq) returns (google.protobuf.Empty);
   rpc GetFunctionLogs(GetFunctionLogsReq) returns (GetFunctionLogsResp);
+  rpc GetPerformanceMetrics(GetPerformanceMetricsRequest) returns (GetPerformanceMetricsResponse);
+}
+
+message GetPerformanceMetricsRequest {
+  string project_id = 1;
+  string from_date = 2; // YYYY-MM-DD
+  string to_date = 3;   // YYYY-MM-DD
+}
+
+message GetPerformanceMetricsResponse {
+  float average_duration = 1;
+  float error_rate = 2;
 }
 
 message GetFunctionLogsResp {
@@ -106,6 +118,12 @@ message VersionHistory {
   string table_slug = 13;
   string version_id = 14;
   Version version = 15;
+  string method_api = 16;
+  string time_started = 17;
+  string time_completed = 18;
+  int64 duration = 19;
+  int64 status_code = 20;
+  string table_label = 21;
 }
 
 message CreateVersionHistoryRequest {
@@ -124,6 +142,12 @@ message CreateVersionHistoryRequest {
   string type = 13;
   string table_slug = 14;
   string version_id = 15;
+  string method_api = 16;
+  string time_started = 17;
+  string time_completed = 18;
+  int64 duration = 19;
+  int64 status_code = 20;
+  string table_label = 21;
 }
 
 message ListVersionHistory {

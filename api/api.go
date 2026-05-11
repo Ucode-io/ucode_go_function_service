@@ -40,12 +40,17 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 		invokeFunction.POST("/:function-path", h.InvokeFunctionByPath)
 	}
 
-	github := v1.Group("/github")
+	r.GET("/v1/github/callback", h.GithubCallback)
+
+	github := r.Group("/v1/github")
+	github.Use(h.AuthMiddleware(cfg))
 	{
-		github.GET("/login", h.GithubLogin)
-		github.GET("/user", h.GithubGetUser)
-		github.GET("/repos", h.GithubGetRepos)
-		github.GET("/branches", h.GithubGetBranches)
+		github.GET("/connect", h.GithubConnect)
+		github.GET("/integration", h.GithubGetIntegration)
+		github.GET("/integration/validate", h.GithubValidateToken)
+		github.DELETE("/integration/:id", h.GithubDeleteIntegration)
+		github.POST("/repo", h.GithubCreateRepo)
+		github.GET("/repos", h.GithubGetRepoList)
 	}
 
 	gitlab := v1.Group("/gitlab")
@@ -54,10 +59,15 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 		gitlab.GET("/user", h.GitlabGetUser)
 		gitlab.GET("/repos", h.GitlabGetRepos)
 		gitlab.GET("/branches", h.GitlabGetBranches)
+		gitlab.GET("/tree", h.GitlabGetTree)
+		gitlab.GET("/file", h.GitlabGetFile)
+		gitlab.PUT("/file", h.GitlabUpdateFile)
+		gitlab.GET("/pipeline", h.GitlabGetPipelineStatus)
 	}
 
 	v2 := r.Group("/v2")
 	v2.POST("/webhook/handle", h.HandleWebhook)
+	v2.POST("/webhook/github", h.HandleGithubWebhook)
 
 	grafana := v2.Group("/grafana")
 	{
@@ -71,6 +81,7 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 		// Function (OpenFass, Knative)
 		functions.POST("", h.CreateFunction)
 		functions.GET("/:function_id", h.GetFunctionByID)
+		functions.GET("/:function_id/codebase", h.GetFunctionCodebase)
 		functions.GET("", h.GetAllFunctions)
 		functions.PUT("", h.UpdateFunction)
 		functions.DELETE(":function_id", h.DeleteFunction)
@@ -85,6 +96,22 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 		microFe.GET("/micro-frontend", h.GetAllMicroFrontEnd)
 		microFe.PUT("/micro-frontend", h.UpdateMicroFrontEnd)
 		microFe.DELETE("/micro-frontend/:micro-frontend-id", h.DeleteMicroFrontEnd)
+		// AI-generated project: creates microfrontend + pushes all files to u-gen branch
+		microFe.POST("/micro-frontend/publish-ai", h.PublishAiGeneratedMicroFrontend)
+		// AI edit: get files from u-gen branch of an existing microfrontend
+		microFe.GET("/micro-frontend/files", h.GetMicrofrontendFiles)
+		// AI edit: push changed files back to u-gen branch of an existing microfrontend
+		microFe.PUT("/micro-frontend/push-changes", h.PushMicrofrontendChanges)
+		// Promote u-gen → master (triggers CI/CD pipeline)
+		microFe.POST("/micro-frontend/promote", h.PromoteMicrofrontendToMaster)
+		// Check whether u-gen has commits not yet promoted to master
+		microFe.GET("/micro-frontend/promote/check-changes", h.CheckPromoteChanges)
+		// Poll pipeline status after promote
+		microFe.GET("/micro-frontend/promote/pipeline-status/:pipeline_id", h.GetPromotePipelineStatus)
+		microFe.GET("/micro-frontend/commits", h.GetMicrofrontendCommits)
+		microFe.GET("/micro-frontend/files-at-commit", h.GetMicrofrontendFilesAtCommit)
+		microFe.POST("/micro-frontend/revert", h.RevertMicrofrontendToCommit)
+		microFe.POST("/micro-frontend/github-sync", h.GithubSyncMicrofrontend)
 	}
 
 	knativeFunc := r.Group("/v2/invoke_function")

@@ -3,7 +3,11 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"log"
+	"regexp"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/google/uuid"
@@ -98,6 +102,47 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 		return
 	}
 
+	if len(project.GetFareId()) != 0 {
+		var count int32
+		switch resource.ResourceType {
+		case pb.ResourceType_MONGODB:
+			countResp, err := h.services.GetBuilderServiceByType(resource.NodeType).Function().GetCountByType(ctx, &obs.GetCountByTypeRequest{
+				ProjectId: resource.ResourceEnvironmentId,
+				Type:      []string{config.MICROFE},
+			})
+			if err != nil {
+				h.handleResponse(c, status.GRPCError, err.Error())
+				return
+			}
+			count = countResp.Count
+		case pb.ResourceType_POSTGRESQL:
+			countResp, err := h.services.GoObjectBuilderService().Function().GetCountByType(ctx, &nb.GetCountByTypeRequest{
+				ProjectId: resource.ResourceEnvironmentId,
+				Type:      []string{config.MICROFE},
+			})
+			if err != nil {
+				h.handleResponse(c, status.GRPCError, err.Error())
+				return
+			}
+			count = countResp.Count
+		}
+
+		limitResp, err := h.services.CompanyService().Billing().CompareFunction(ctx, &pb.CompareFunctionRequest{
+			Type:   config.FARE_MICROFRONTEND,
+			FareId: project.GetFareId(),
+			Count:  count + 1,
+		})
+		if err != nil {
+			h.handleResponse(c, status.GRPCError, err.Error())
+			return
+		}
+
+		if !limitResp.HasAccess {
+			h.handleResponse(c, status.BadRequest, "you have reached the limit of micro-frontends on your current plan. Please upgrade to create more.")
+			return
+		}
+	}
+
 	var projectName = strings.ReplaceAll(strings.TrimSpace(project.Title), " ", "-")
 	projectName = strings.ToLower(projectName)
 
@@ -119,6 +164,16 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 		}
 	} else {
 		h.handleResponse(c, status.NotImplemented, "framework type is not valid, it should be [REACT]")
+		return
+	}
+
+	if err = gitlab.WaitForImport(gitlab.IntegrationData{
+		GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
+		GitlabIntegrationToken: h.cfg.GitlabTokenMicroFront,
+		GitlabProjectId:        respCreateFork.ID,
+		GitlabGroupId:          h.cfg.GitlabGroupIdMicroFront,
+	}, 2*time.Minute); err != nil {
+		h.handleResponse(c, status.InvalidArgument, err.Error())
 		return
 	}
 
@@ -520,6 +575,536 @@ func (h *Handler) UpdateMicroFrontEnd(c *gin.Context) {
 	}
 
 	h.handleResponse(c, status.NoContent, &empty.Empty{})
+}
+
+// PublishAiGeneratedMicroFrontend godoc
+// @Security ApiKeyAuth
+// @ID publish_ai_generated_micro_frontend
+// @Router /v2/functions/micro-frontend/publish-ai [POST]
+// @Summary Publish AI Generated Micro Frontend
+// @Description Creates a new microfrontend, then pushes AI-generated files to the u-gen branch.
+// @Tags MicroFrontend
+// @Accept json
+// @Produce json
+// @Param body body models.PublishAiMicroFrontendRequest true "PublishAiMicroFrontendRequest"
+// @Success 200 {object} status.Response "Data"
+// @Failure 400 {object} status.Response{data=string} "Bad Request"
+// @Failure 500 {object} status.Response{data=string} "Server Error"
+func (h *Handler) PublishAiGeneratedMicroFrontend(c *gin.Context) {
+	var req models.PublishAiMicroFrontendRequest
+
+	ctx, cancel := context.WithCancel(c.Request.Context())
+	defer cancel()
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.handleResponse(c, status.BadRequest, err.Error())
+		return
+	}
+
+	if !util.IsValidUUID(req.ProjectId) {
+		h.handleResponse(c, status.InvalidArgument, "project_id is an invalid uuid")
+		return
+	}
+
+	if !util.IsValidUUID(req.EnvironmentId) {
+		h.handleResponse(c, status.InvalidArgument, "environment_id is an invalid uuid")
+		return
+	}
+
+	if len(req.Files) == 0 {
+		h.handleResponse(c, status.InvalidArgument, "files are required")
+		return
+	}
+
+	if !util.IsValidFunctionName(req.Path) {
+		h.handleResponse(c, status.InvalidArgument, "path must contain only lowercase letters, numbers, and hyphens")
+		return
+	}
+
+	resource, err := h.services.CompanyService().ServiceResource().GetSingle(
+		ctx, &pb.GetSingleServiceResourceReq{
+			ProjectId:     req.ProjectId,
+			EnvironmentId: req.EnvironmentId,
+			ServiceType:   pb.ServiceType_BUILDER_SERVICE,
+		},
+	)
+	if err != nil {
+		h.handleResponse(c, status.GRPCError, err.Error())
+		return
+	}
+
+	environment, err := h.services.CompanyService().Environment().GetById(ctx, &pb.EnvironmentPrimaryKey{Id: req.EnvironmentId})
+	if err != nil {
+		h.handleResponse(c, status.GRPCError, err.Error())
+		return
+	}
+
+	project, err := h.services.CompanyService().Project().GetById(ctx, &pb.GetProjectByIdRequest{ProjectId: environment.GetProjectId()})
+	if err != nil {
+		h.handleResponse(c, status.GRPCError, err.Error())
+		return
+	}
+
+	if len(project.GetTitle()) == 0 {
+		h.handleResponse(c, status.BadRequest, "project name is required")
+		return
+	}
+
+	if len(project.GetFareId()) != 0 {
+		countResp, err := h.services.GoObjectBuilderService().Function().GetCountByType(ctx, &nb.GetCountByTypeRequest{
+			ProjectId: resource.ResourceEnvironmentId,
+			Type:      []string{config.MICROFE},
+		})
+		if err != nil {
+			h.handleResponse(c, status.GRPCError, err.Error())
+			return
+		}
+
+		limitResp, err := h.services.CompanyService().Billing().CompareFunction(ctx, &pb.CompareFunctionRequest{
+			Type:   config.FARE_MICROFRONTEND,
+			FareId: project.GetFareId(),
+			Count:  countResp.Count + 1,
+		})
+		if err != nil {
+			h.handleResponse(c, status.GRPCError, err.Error())
+			return
+		}
+
+		if !limitResp.HasAccess {
+			h.handleResponse(c, status.BadRequest, "you have reached the limit of micro-frontends on your current plan. Please upgrade to create more.")
+			return
+		}
+	}
+
+	projectName := strings.ToLower(strings.ReplaceAll(strings.TrimSpace(project.Title), " ", "-"))
+	projectName = regexp.MustCompile(`[^a-z0-9-]+`).ReplaceAllString(projectName, "")
+	projectName = strings.Trim(projectName, "-")
+	if projectName == "" {
+		projectName = "p"
+	}
+
+	pathPart := strings.ReplaceAll(req.Path, "-", "_")
+	maxProjectLen := 20 - 1 - len(pathPart)
+	if maxProjectLen < 1 {
+		maxProjectLen = 1
+	}
+	if len(projectName) > maxProjectLen {
+		projectName = strings.TrimRight(projectName[:maxProjectLen], "-")
+		if projectName == "" {
+			projectName = "p"
+		}
+	}
+	functionPath := projectName + "_" + pathPart
+
+	log.Printf("[PUBLISH-AI] project_id=%s env_id=%s raw_title=%q function_path=%q files=%d",
+		req.ProjectId, req.EnvironmentId, project.Title, functionPath, len(req.Files))
+
+	// Step 1: Fork the GitLab React template (creates repo with master branch)
+	log.Printf("[PUBLISH-AI] step1: forking template → path=%q", functionPath)
+	respCreateFork, err := gitlab.CreateProjectFork(functionPath, gitlab.IntegrationData{
+		GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
+		GitlabIntegrationToken: h.cfg.GitlabTokenMicroFront,
+		GitlabProjectId:        h.cfg.GitlabProjectIdMicroFrontReact,
+		GitlabGroupId:          h.cfg.GitlabGroupIdMicroFront,
+	})
+	if err != nil {
+		log.Printf("[PUBLISH-AI] step1 FAILED (fork): %v", err)
+		h.handleResponse(c, status.InvalidArgument, err.Error())
+		return
+	}
+	log.Printf("[PUBLISH-AI] step1 ok: repo_id=%d default_branch=%s", respCreateFork.ID, respCreateFork.DefaultBranch)
+
+	gitlabCfg := gitlab.IntegrationData{
+		GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
+		GitlabIntegrationToken: h.cfg.GitlabTokenMicroFront,
+		GitlabProjectId:        respCreateFork.ID,
+		GitlabGroupId:          h.cfg.GitlabGroupIdMicroFront,
+	}
+
+	// Wait for GitLab to finish importing the forked project.
+	// Fork/import is async — pipelines and variables fail with 400 if triggered too early.
+	log.Printf("[PUBLISH-AI] waiting for repo_id=%d import to complete...", respCreateFork.ID)
+	if err = gitlab.WaitForImport(gitlabCfg, 15*time.Minute); err != nil {
+		log.Printf("[PUBLISH-AI] import wait FAILED: %v", err)
+		h.handleResponse(c, status.InvalidArgument, fmt.Sprintf("gitlab import not ready: %v", err))
+		return
+	}
+	log.Printf("[PUBLISH-AI] repo_id=%d import complete", respCreateFork.ID)
+
+	// Step 2: Update CI config path
+	log.Printf("[PUBLISH-AI] step2: updating CI config path for repo_id=%d", respCreateFork.ID)
+	_, err = gitlab.UpdateProject(gitlabCfg, map[string]any{"ci_config_path": ".gitlab-ci.yml"})
+	if err != nil {
+		log.Printf("[PUBLISH-AI] step2 FAILED (update project): %v", err)
+		h.handleResponse(c, status.InvalidArgument, err.Error())
+		return
+	}
+
+	// Step 3: Create INGRESS_HOST variable and trigger initial pipeline on master
+	id := uuid.New().String()
+	repoHost := fmt.Sprintf("%s-%s", id, h.cfg.GitlabHostMicroFront)
+	host := map[string]any{"key": "INGRESS_HOST", "value": repoHost}
+
+	log.Printf("[PUBLISH-AI] step3a: creating INGRESS_HOST variable for repo_id=%d", respCreateFork.ID)
+	_, err = gitlab.CreateProjectVariable(gitlabCfg, host)
+	if err != nil {
+		log.Printf("[PUBLISH-AI] step3a FAILED (create variable): %v", err)
+		h.handleResponse(c, status.InvalidArgument, err.Error())
+		return
+	}
+
+	log.Printf("[PUBLISH-AI] step3b: triggering pipeline for repo_id=%d", respCreateFork.ID)
+	_, err = gitlab.CreatePipeline(gitlabCfg, map[string]any{"variables": []map[string]any{host}})
+	if err != nil {
+		log.Printf("[PUBLISH-AI] step3b FAILED (create pipeline): %v", err)
+		h.handleResponse(c, status.InvalidArgument, err.Error())
+		return
+	}
+
+	// Step 4: Save the function record with master as the default branch
+	log.Printf("[PUBLISH-AI] step4: saving function record name=%q path=%q repo_id=%d", req.Name, functionPath, respCreateFork.ID)
+	createFunction := &obs.CreateFunctionRequest{
+		Path:          functionPath,
+		Name:          req.Name,
+		Description:   "Generated by AI",
+		ProjectId:     resource.ResourceEnvironmentId,
+		EnvironmentId: req.EnvironmentId,
+		Type:          config.MICROFE,
+		Url:           repoHost,
+		RepoId:        fmt.Sprintf("%d", respCreateFork.ID),
+		Branch:        respCreateFork.DefaultBranch,
+		Resource:      resource.Id,
+	}
+
+	var newCreateFunc = &nb.CreateFunctionRequest{}
+	if err = helper.MarshalToStruct(createFunction, &newCreateFunc); err != nil {
+		log.Printf("[PUBLISH-AI] step4 FAILED (marshal): %v", err)
+		h.handleResponse(c, status.BadRequest, err.Error())
+		return
+	}
+
+	funcRecord, err := h.services.GoObjectBuilderService().Function().Create(ctx, newCreateFunc)
+	if err != nil {
+		log.Printf("[PUBLISH-AI] step4 FAILED (db create): %v", err)
+		h.handleResponse(c, status.GRPCError, err.Error())
+		return
+	}
+	log.Printf("[PUBLISH-AI] step4 ok: func_id=%s", funcRecord.GetId())
+
+	// Step 5: Create u-gen branch from master.
+	log.Printf("[PUBLISH-AI] step5: creating %s branch for repo_id=%d", config.UGenBranch, respCreateFork.ID)
+	if err = gitlab.CreateBranch(gitlabCfg, config.UGenBranch, config.DefaultBranch); err != nil {
+		log.Printf("[PUBLISH-AI] step5 FAILED (create branch): %v", err)
+		h.handleResponse(c, status.InternalServerError, fmt.Sprintf("failed to create %s branch: %v", config.UGenBranch, err))
+		return
+	}
+
+	// Step 6: Convert and commit AI-generated files to u-gen branch.
+	nbFiles := make([]*nb.McpProjectFiles, 0, len(req.Files))
+	for _, f := range req.Files {
+		nbFiles = append(nbFiles, &nb.McpProjectFiles{
+			Path:    f.FilePath,
+			Content: f.Content,
+		})
+	}
+
+	log.Printf("[PUBLISH-AI] step6: committing %d file(s) to branch %s for repo_id=%d", len(nbFiles), config.UGenBranch, respCreateFork.ID)
+	if _, err = gitlab.CommitFiles(gitlabCfg, config.UGenBranch, nbFiles); err != nil {
+		log.Printf("[PUBLISH-AI] step6 FAILED (commit files): %v", err)
+		h.handleResponse(c, status.InternalServerError, fmt.Sprintf("failed to commit files to %s: %v", config.UGenBranch, err))
+		return
+	}
+
+	// Step 7: If the project has a GitHub integration, mirror the new repo there in the background.
+	// This is non-blocking — a failure here does not affect the publish response.
+	go func(record *nb.Function, companyProjID, envID string) {
+		ctx := context.Background()
+		if syncErr := h.syncMicrofrontendToGithub(ctx, record, "", companyProjID, envID); syncErr != nil {
+			log.Printf("[PUBLISH-AI→GITHUB] sync failed for func_id=%s: %v", record.GetId(), syncErr)
+		}
+	}(funcRecord, project.ProjectId, req.EnvironmentId)
+
+	log.Printf("[PUBLISH-AI] done: func_id=%s repo_id=%d path=%q", funcRecord.GetId(), respCreateFork.ID, functionPath)
+	h.handleResponse(c, status.OK, funcRecord)
+}
+
+// GetMicrofrontendFiles godoc
+// @Security ApiKeyAuth
+// @ID get_microfrontend_files
+// @Router /v2/functions/micro-frontend/files [GET]
+// @Summary Get files from a microfrontend's u-gen branch
+// @Description Returns all source files from the u-gen branch of the microfrontend's GitLab repo.
+// @Tags MicroFrontend
+// @Accept json
+// @Produce json
+// @Param repo_id query int true "GitLab numeric project ID"
+// @Success 200 {object} status.Response{data=map[string][]gitlab.RepoFile} "Data"
+// @Failure 400 {object} status.Response{data=string} "Bad Request"
+// @Failure 500 {object} status.Response{data=string} "Server Error"
+func (h *Handler) GetMicrofrontendFiles(c *gin.Context) {
+	repoID := cast.ToInt(c.Query("repo_id"))
+	if repoID == 0 {
+		h.handleResponse(c, status.InvalidArgument, "repo_id is required")
+		return
+	}
+
+	files, err := gitlab.GetRepoCodebase(h.cfg.GitlabIntegrationURL, h.cfg.GitlabTokenMicroFront, repoID)
+	if err != nil {
+		h.handleResponse(c, status.InternalServerError, err.Error())
+		return
+	}
+
+	h.handleResponse(c, status.OK, gin.H{"files": files})
+}
+
+// PushMicrofrontendChanges godoc
+// @Security ApiKeyAuth
+// @ID push_microfrontend_changes
+// @Router /v2/functions/micro-frontend/push-changes [PUT]
+// @Summary Push AI-edited files to the u-gen branch of an existing microfrontend
+// @Description Commits the provided files to the u-gen branch of the microfrontend's GitLab repo.
+// @Tags MicroFrontend
+// @Accept json
+// @Produce json
+// @Param body body models.PushMicrofrontendChangesRequest true "PushMicrofrontendChangesRequest"
+// @Success 200 {object} status.Response "OK"
+// @Failure 400 {object} status.Response{data=string} "Bad Request"
+// @Failure 500 {object} status.Response{data=string} "Server Error"
+func (h *Handler) PushMicrofrontendChanges(c *gin.Context) {
+	var req models.PushMicrofrontendChangesRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.handleResponse(c, status.BadRequest, err.Error())
+		return
+	}
+
+	if req.RepoID == 0 {
+		h.handleResponse(c, status.InvalidArgument, "repo_id is required")
+		return
+	}
+
+	if len(req.Files) == 0 {
+		h.handleResponse(c, status.InvalidArgument, "files are required")
+		return
+	}
+
+	gitlabCfg := gitlab.IntegrationData{
+		GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
+		GitlabIntegrationToken: h.cfg.GitlabTokenMicroFront,
+		GitlabProjectId:        req.RepoID,
+		GitlabGroupId:          h.cfg.GitlabGroupIdMicroFront,
+	}
+
+	nbFiles := make([]*nb.McpProjectFiles, 0, len(req.Files))
+	for _, f := range req.Files {
+		nbFiles = append(nbFiles, &nb.McpProjectFiles{
+			Path:    f.FilePath,
+			Content: f.Content,
+		})
+	}
+
+	log.Printf("[PUSH CHANGES] pushing %d file(s) to repo_id=%d branch=%s", len(nbFiles), req.RepoID, config.UGenBranch)
+	for _, f := range nbFiles {
+		log.Printf("[PUSH CHANGES]   -> %s (%d bytes)", f.Path, len(f.Content))
+	}
+
+	result, err := gitlab.CommitFiles(gitlabCfg, config.UGenBranch, nbFiles, req.CommitMessage)
+	if err != nil {
+		log.Printf("[PUSH CHANGES] commit failed: %v", err)
+		h.handleResponse(c, status.InternalServerError, fmt.Sprintf("failed to push to %s branch: %v", config.UGenBranch, err))
+		return
+	}
+
+	log.Printf("[PUSH CHANGES] commit successful, gitlab response: %s", string(result))
+
+	if req.FunctionID != "" && req.ResourceEnvironmentID != "" {
+		go func(funcID, resourceEnvID string) {
+			ctx := context.Background()
+			resEnv, resErr := h.services.CompanyService().Resource().GetResourceEnvironment(ctx, &pb.GetResourceEnvironmentReq{
+				Id: resourceEnvID,
+			})
+			if resErr != nil {
+				log.Printf("[PUSH-CHANGES→GITHUB] could not get resource_environment %s: %v", resourceEnvID, resErr)
+				return
+			}
+			funcRecord, funcErr := h.services.GoObjectBuilderService().Function().GetSingle(ctx, &nb.FunctionPrimaryKey{
+				Id:        funcID,
+				ProjectId: resourceEnvID,
+			})
+			if funcErr != nil {
+				log.Printf("[PUSH-CHANGES→GITHUB] could not get function %s: %v", funcID, funcErr)
+				return
+			}
+			if syncErr := h.syncMicrofrontendToGithub(ctx, funcRecord, "", resEnv.GetProjectId(), resEnv.GetEnvironmentId()); syncErr != nil {
+				log.Printf("[PUSH-CHANGES→GITHUB] sync failed for func_id=%s: %v", funcID, syncErr)
+			}
+		}(req.FunctionID, req.ResourceEnvironmentID)
+	}
+
+	h.handleResponse(c, status.OK, gin.H{"status": "ok"})
+}
+
+// PromoteMicrofrontendToMaster godoc
+// @Security ApiKeyAuth
+// @ID promote_microfrontend_to_master
+// @Router /v2/functions/micro-frontend/promote [POST]
+// @Summary Promote u-gen branch to master
+// @Description Syncs all files from the u-gen branch to master in a single commit, triggering the CI/CD pipeline. u-gen is treated as the source of truth — files missing from u-gen are deleted from master.
+// @Tags MicroFrontend
+// @Accept json
+// @Produce json
+// @Param body body models.PushMicrofrontendChangesRequest true "repo_id required, files ignored"
+// @Success 200 {object} status.Response "OK"
+// @Failure 400 {object} status.Response{data=string} "Bad Request"
+// @Failure 500 {object} status.Response{data=string} "Server Error"
+func (h *Handler) PromoteMicrofrontendToMaster(c *gin.Context) {
+	var req models.PushMicrofrontendChangesRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.handleResponse(c, status.BadRequest, err.Error())
+		return
+	}
+
+	if req.RepoID == 0 {
+		h.handleResponse(c, status.InvalidArgument, "repo_id is required")
+		return
+	}
+
+	gitlabCfg := gitlab.IntegrationData{
+		GitlabIntegrationUrl:   h.cfg.GitlabIntegrationURL,
+		GitlabIntegrationToken: h.cfg.GitlabTokenMicroFront,
+		GitlabProjectId:        req.RepoID,
+		GitlabGroupId:          h.cfg.GitlabGroupIdMicroFront,
+	}
+
+	log.Printf("[PROMOTE] promoting repo_id=%d from %s to %s", req.RepoID, config.UGenBranch, config.DefaultBranch)
+
+	pipelineID, err := gitlab.PromoteUGenToMaster(gitlabCfg, h.cfg.GitlabIntegrationURL, h.cfg.GitlabTokenMicroFront, h.cfg.GitlabProjectIdMicroFrontReact)
+	if err != nil {
+		log.Printf("[PROMOTE] failed: %v", err)
+		h.handleResponse(c, status.InternalServerError, err.Error())
+		return
+	}
+
+	log.Printf("[PROMOTE] repo_id=%d successfully promoted to %s, pipeline_id=%d", req.RepoID, config.DefaultBranch, pipelineID)
+
+	projectID, environmentID, hasCtx := getProjectAndEnv(c)
+	if hasCtx {
+		githubToken, githubUsername, integErr := h.getGithubIntegration(c.Request.Context(), projectID, environmentID)
+		if integErr != nil {
+			log.Printf("[PROMOTE→GITHUB] no GitHub integration, skipping: %v", integErr)
+		} else {
+			repoID := req.RepoID
+			repoName := req.GithubRepoName // may be empty — resolved inside goroutine
+			gitlabURL := h.cfg.GitlabIntegrationURL
+			gitlabToken := h.cfg.GitlabTokenMicroFront
+			go func() {
+				ctx := context.Background()
+
+				// Derive repo name from GitLab project path if not explicitly provided.
+				if repoName == "" {
+					var nameErr error
+					repoName, nameErr = gitlab.GetProjectPath(gitlabURL, gitlabToken, repoID)
+					if nameErr != nil {
+						log.Printf("[PROMOTE→GITHUB] could not resolve repo name for GitLab project %d: %v", repoID, nameErr)
+						return
+					}
+					log.Printf("[PROMOTE→GITHUB] using GitLab project path as GitHub repo name: %q", repoName)
+				}
+
+				files, fetchErr := gitlab.GetRepoCodebase(gitlabURL, gitlabToken, repoID)
+				if fetchErr != nil {
+					log.Printf("[PROMOTE→GITHUB] could not fetch files from GitLab repo %d: %v", repoID, fetchErr)
+					return
+				}
+
+				if pushErr := h.pushMicrofrontendToGithub(ctx, githubToken, githubUsername, repoName, files); pushErr != nil {
+					log.Printf("[PROMOTE→GITHUB] push to github repo %s/%s failed: %v", githubUsername, repoName, pushErr)
+					return
+				}
+				log.Printf("[PROMOTE→GITHUB] pushed %d file(s) to github repo %s/%s", len(files), githubUsername, repoName)
+			}()
+		}
+	}
+
+	h.handleResponse(c, status.OK, gin.H{"status": "pending", "pipeline_id": pipelineID})
+}
+
+// GetPromotePipelineStatus godoc
+// @Security ApiKeyAuth
+// @ID get_promote_pipeline_status
+// @Router /v2/functions/micro-frontend/promote/pipeline-status/{pipeline_id} [GET]
+// @Summary Get the status of a promote pipeline
+// @Description Polls GitLab for the current status of a pipeline. Frontend should poll every 5s until status is "success" or "failed".
+// @Tags MicroFrontend
+// @Produce json
+// @Param pipeline_id path int true "GitLab pipeline ID"
+// @Param repo_id query int true "GitLab project ID"
+// @Success 200 {object} status.Response{data=object} "OK — {status: string}"
+// @Failure 400 {object} status.Response{data=string} "Bad Request"
+// @Failure 500 {object} status.Response{data=string} "Server Error"
+func (h *Handler) GetPromotePipelineStatus(c *gin.Context) {
+	pipelineIDStr := c.Param("pipeline_id")
+	repoIDStr := c.Query("repo_id")
+
+	if pipelineIDStr == "" || repoIDStr == "" {
+		h.handleResponse(c, status.BadRequest, "pipeline_id path param and repo_id query param are required")
+		return
+	}
+
+	pipelineID, err := strconv.Atoi(pipelineIDStr)
+	if err != nil || pipelineID == 0 {
+		h.handleResponse(c, status.BadRequest, "pipeline_id must be a valid non-zero integer")
+		return
+	}
+
+	repoID, err := strconv.Atoi(repoIDStr)
+	if err != nil || repoID == 0 {
+		h.handleResponse(c, status.BadRequest, "repo_id must be a valid non-zero integer")
+		return
+	}
+
+	pipelineStatus, err := gitlab.GetPipelineStatus(h.cfg.GitlabIntegrationURL, h.cfg.GitlabTokenMicroFront, repoID, pipelineID)
+	if err != nil {
+		h.handleResponse(c, status.InternalServerError, err.Error())
+		return
+	}
+
+	h.handleResponse(c, status.OK, gin.H{"status": pipelineStatus})
+}
+
+// CheckPromoteChanges godoc
+// @Security ApiKeyAuth
+// @ID check_promote_changes
+// @Router /v2/functions/micro-frontend/promote/check-changes [GET]
+// @Summary Check if u-gen has changes not yet promoted to master
+// @Description Calls the GitLab compare API (master...u-gen) and returns whether there are unpromoted commits.
+// @Tags MicroFrontend
+// @Produce json
+// @Param repo_id query int true "GitLab project ID"
+// @Success 200 {object} status.Response{data=object} "OK — {hasChanges: bool}"
+// @Failure 400 {object} status.Response{data=string} "Bad Request"
+// @Failure 500 {object} status.Response{data=string} "Server Error"
+func (h *Handler) CheckPromoteChanges(c *gin.Context) {
+	repoIDStr := c.Query("repo_id")
+	if repoIDStr == "" {
+		h.handleResponse(c, status.BadRequest, "repo_id query param is required")
+		return
+	}
+
+	repoID, err := strconv.Atoi(repoIDStr)
+	if err != nil || repoID == 0 {
+		h.handleResponse(c, status.BadRequest, "repo_id must be a valid non-zero integer")
+		return
+	}
+
+	result, err := gitlab.CompareUGenToMaster(h.cfg.GitlabIntegrationURL, h.cfg.GitlabTokenMicroFront, repoID)
+	if err != nil {
+		h.handleResponse(c, status.InternalServerError, err.Error())
+		return
+	}
+
+	h.handleResponse(c, status.OK, result)
 }
 
 // DeleteMicroFrontEnd godoc

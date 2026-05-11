@@ -53,6 +53,8 @@ message GetAllFilesRequest {
     string sort = 2;
     string project_id = 3;
     string folder_name = 4;
+    int32 limit = 5;
+    int32 offset = 6;
 }
 
 message FilePrimaryKey {

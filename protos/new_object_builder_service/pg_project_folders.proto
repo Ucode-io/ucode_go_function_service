@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+package new_object_builder_service;
+option go_package = "genproto/new_object_builder_service";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+
+// ==================== Project Folders Service ====================
+
+service ProjectFoldersService {
+  rpc CreateProjectFolder(CreateProjectFolderRequest) returns (ProjectFolder) {}
+  rpc GetProjectFolderById(ProjectFolderPrimaryKey) returns (ProjectFolder) {}
+  rpc GetAllProjectFolders(GetAllProjectFoldersRequest) returns (GetAllProjectFoldersResponse) {}
+  rpc UpdateProjectFolder(UpdateProjectFolderRequest) returns (ProjectFolder) {}
+  rpc DeleteProjectFolder(ProjectFolderPrimaryKey) returns (google.protobuf.Empty) {}
+  rpc UpdateProjectFolderOrder(UpdateProjectFolderOrderRequest) returns (google.protobuf.Empty) {}
+}
+
+// ==================== ProjectFolder ====================
+
+message ProjectFolder {
+  string id = 1;
+  string label = 2;
+  string parent_id = 3;
+  string type = 4;
+  string icon = 5;
+  int32  order_number = 6;
+  string mcp_project_id = 7;
+  string chat_id = 8;
+  google.protobuf.Struct attributes = 9;
+  repeated ProjectFolder children = 10;
+  string created_at = 11;
+  string updated_at = 12;
+  ProjectFolderProjectData project_data = 13;
+}
+
+message ProjectFolderProjectData {
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  string created_at = 4;
+  string updated_at = 5;
+}
+
+message CreateProjectFolderRequest {
+  string resource_env_id = 1;
+  string label = 2;
+  string parent_id = 3;
+  string type = 4;
+  string icon = 5;
+  int32  order_number = 6;
+  string mcp_project_id = 7;
+  string chat_id = 8;
+  google.protobuf.Struct attributes = 9;
+}
+
+message UpdateProjectFolderRequest {
+  string resource_env_id = 1;
+  string id = 2;
+  string label = 3;
+  string parent_id = 4;
+  string icon = 5;
+  int32  order_number = 6;
+  google.protobuf.Struct attributes = 7;
+}
+
+message ProjectFolderPrimaryKey {
+  string resource_env_id = 1;
+  string id = 2;
+}
+
+message GetAllProjectFoldersRequest {
+  string resource_env_id = 1;
+  string parent_id = 2;
+  string type = 3;
+  string label = 4;
+  string order_by = 5;
+  string order_direction = 6;
+  int32  limit = 7;
+  int32  offset = 8;
+}
+
+message GetAllProjectFoldersResponse {
+  repeated ProjectFolder project_folders = 1;
+  int32 count = 2;
+}
+
+message ProjectFolderOrderItem {
+  string id = 1;
+  int32  order_number = 2;
+}
+
+message UpdateProjectFolderOrderRequest {
+  string resource_env_id = 1;
+  repeated ProjectFolderOrderItem items = 2;
+}

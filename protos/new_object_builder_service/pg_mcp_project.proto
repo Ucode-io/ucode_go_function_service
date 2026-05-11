@@ -19,6 +19,11 @@ message CreateMcpProjectReqeust {
   string description = 2;
   repeated McpProjectFiles project_files = 3;
   google.protobuf.Struct project_env = 5;
+  string ucode_project_id = 6;
+  string api_key = 7;
+  string environment_id = 8;
+  string status = 9;
+  string app_visibility = 10;
 }
 
 message McpProject {
@@ -32,6 +37,11 @@ message McpProject {
   FunctionData function_data = 8;
   string created_at = 9;
   string updated_at = 10;
+  string ucode_project_id = 11;
+  string api_key = 12;
+  string environment_id = 13;
+  string status = 14;
+  string app_visibility = 15;
 }
 
 message McpProjectList {
@@ -44,6 +54,9 @@ message GetMcpProjectListReq {
   uint32 limit = 1;
   uint32 offset = 2;
   string title = 3;
+  string order_by = 5;
+  string order_direction = 6;
+  repeated string ids = 7;
 }
 
 message McpProjectId {

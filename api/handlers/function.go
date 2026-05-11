@@ -135,7 +135,7 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 		response, err := h.services.CompanyService().Billing().CompareFunction(ctx, &pb.CompareFunctionRequest{
 			Type:   config.FARE_FUNCTION,
 			FareId: project.GetFareId(),
-			Count:  count,
+			Count:  count + 1,
 		})
 		if err != nil {
 			h.handleResponse(c, status.GRPCError, err.Error())
@@ -143,7 +143,7 @@ func (h *Handler) CreateFunction(c *gin.Context) {
 		}
 
 		if !response.HasAccess {
-			h.handleResponse(c, status.BadRequest, "you have reached limit of fass")
+			h.handleResponse(c, status.BadRequest, "you have reached the limit of functions on your current plan. Please upgrade to create more.")
 			return
 		}
 	}

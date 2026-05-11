@@ -15,6 +15,15 @@ service ApiKeys {
   rpc RefreshApiToken (RefreshApiTokenReq) returns (RefreshApiTokenRes) {}
   rpc GetEnvID(GetReq) returns (GetRes) {}
   rpc ListClientToken(ListClientTokenRequest) returns(ListClientTokenResponse) {}
+  rpc GetProjectApiKeysCount(GetProjectApiKeysCountRequest) returns (GetProjectApiKeysCountResponse) {}
+}
+
+message GetProjectApiKeysCountRequest {
+  string project_id = 1;
+}
+
+message GetProjectApiKeysCountResponse {
+  int32 count = 1;
 }
 
 message GenerateApiTokenReq {

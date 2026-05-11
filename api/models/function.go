@@ -13,6 +13,32 @@ type PublishMcpProjectFront struct {
 	Type        string `json:"type"`
 }
 
+// PushMicrofrontendChangesRequest is sent from the API gateway to push
+// AI-edited files to the u-gen branch of an existing microfrontend repo.
+// RepoID is the numeric GitLab project ID stored on the function record.
+// GithubRepoName is optional — when set, the promote handler also pushes all
+// files to the user's GitHub repository (creating it first if it doesn't exist).
+type PushMicrofrontendChangesRequest struct {
+	RepoID                int                `json:"repo_id"`
+	Files                 []GitlabFileChange `json:"files"`
+	GithubRepoName        string             `json:"github_repo_name"`
+	CommitMessage         string             `json:"commit_message"`
+	FunctionID            string             `json:"function_id"`
+	ResourceEnvironmentID string             `json:"resource_environment_id"`
+}
+
+// PublishAiMicroFrontendRequest is sent from the API gateway when the AI generates
+// a new project. The handler creates the microfrontend, then pushes all files to
+// the u-gen branch (NOT master — master is reserved for pipeline triggers).
+type PublishAiMicroFrontendRequest struct {
+	ProjectId     string                    `json:"project_id"`
+	EnvironmentId string                    `json:"environment_id"`
+	Name          string                    `json:"name"`
+	Path          string                    `json:"path"`
+	FrameworkType string                    `json:"framework_type"`
+	Files         []GitlabFileChange `json:"files"`
+}
+
 type CreateFunctionRequest struct {
 	Path             string `json:"path"`
 	Name             string `json:"name"`

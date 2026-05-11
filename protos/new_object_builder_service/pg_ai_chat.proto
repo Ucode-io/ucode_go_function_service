@@ -1,0 +1,169 @@
+syntax = "proto3";
+
+package new_object_builder_service;
+option go_package = "genproto/new_object_builder_service";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+
+// ==================== AI Chat Service ====================
+
+service AiChatService {
+  // Chats
+  rpc CreateChat(CreateChatRequest) returns (Chat) {}
+  rpc GetChat(ChatPrimaryKey) returns (Chat) {}
+  rpc GetChatByProjectId(ChatByProjectIdRequest) returns (Chat) {}
+  rpc GetAllChats(GetAllChatsRequest) returns (GetAllChatsResponse) {}
+  rpc UpdateChat(UpdateChatRequest) returns (Chat) {}
+  rpc DeleteChat(ChatPrimaryKey) returns (google.protobuf.Empty) {}
+
+  // Messages
+  rpc CreateMessage(CreateMessageRequest) returns (Message) {}
+  rpc GetMessages(GetMessagesRequest) returns (GetMessagesResponse) {}
+  rpc DeleteMessage(MessagePrimaryKey) returns (google.protobuf.Empty) {}
+
+  // File Versions
+  rpc CreateFileVersion(CreateFileVersionRequest) returns (FileVersion) {}
+  rpc GetFileVersions(GetFileVersionsRequest) returns (GetFileVersionsResponse) {}
+  rpc GetFileVersionsByMessage(GetFileVersionsByMessageRequest) returns (GetFileVersionsResponse) {}
+}
+
+// ==================== Chat ====================
+
+message Chat {
+  string id = 1;
+  string project_id = 2;
+  string title = 3;
+  string description = 4;
+  string model = 5;
+  int32  total_tokens = 6;
+  repeated Message messages = 7;
+  string created_at = 8;
+  string updated_at = 9;
+}
+
+message CreateChatRequest {
+  string resource_env_id = 1;
+  string project_id = 2;
+  string title = 3;
+  string description = 4;
+  string model = 5;
+}
+
+message UpdateChatRequest {
+  string resource_env_id = 1;
+  string id = 2;
+  string title = 3;
+  string description = 4;
+  string model = 5;
+  int32  total_tokens = 6;
+  string project_id = 7;
+}
+
+message ChatPrimaryKey {
+  string resource_env_id = 1;
+  string id = 2;
+  bool   with_messages = 3;
+}
+
+message ChatByProjectIdRequest {
+  string resource_env_id = 1;
+  string project_id = 2;
+  bool   with_messages = 3;
+}
+
+message GetAllChatsRequest {
+  string resource_env_id = 1;
+  string title = 2;
+  string model = 3;
+  string project_id = 4;
+  string order_by = 5;
+  string order_direction = 6;
+  int32  limit = 7;
+  int32  offset = 8;
+}
+
+message GetAllChatsResponse {
+  repeated Chat chats = 1;
+  int32 count = 2;
+}
+
+// ==================== Messages ====================
+
+message Message {
+  string id = 1;
+  string chat_id = 2;
+  string role = 3;
+  string content = 4;
+  repeated string images = 5;
+  bool   has_files = 6;
+  int32  tokens_used = 7;
+  repeated FileVersion file_versions = 8;
+  string created_at = 9;
+}
+
+message CreateMessageRequest {
+  string resource_env_id = 1;
+  string chat_id = 2;
+  string role = 3;
+  string content = 4;
+  repeated string images = 5;
+  bool   has_files = 6;
+  int32  tokens_used = 7;
+}
+
+message GetMessagesRequest {
+  string resource_env_id = 1;
+  string chat_id = 2;
+  int32  limit = 3;
+  int32  offset = 4;
+}
+
+message GetMessagesResponse {
+  repeated Message messages = 1;
+  int32 count = 2;
+}
+
+message MessagePrimaryKey {
+  string resource_env_id = 1;
+  string id = 2;
+}
+
+// ==================== File Versions ====================
+
+message FileVersion {
+  string id = 1;
+  string file_id = 2;
+  string message_id = 3;
+  int32  version_num = 4;
+  string content = 5;
+  google.protobuf.Struct file_graph = 6;
+  string change_summary = 7;
+  string created_at = 8;
+}
+
+message CreateFileVersionRequest {
+  string resource_env_id = 1;
+  string file_id = 2;
+  string message_id = 3;
+  string content = 4;
+  google.protobuf.Struct file_graph = 5;
+  string change_summary = 6;
+}
+
+message GetFileVersionsRequest {
+  string resource_env_id = 1;
+  string file_id = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message GetFileVersionsByMessageRequest {
+  string resource_env_id = 1;
+  string message_id = 2;
+}
+
+message GetFileVersionsResponse {
+  repeated FileVersion file_versions = 1;
+  int32 count = 2;
+}

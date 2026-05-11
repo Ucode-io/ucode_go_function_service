@@ -45,4 +45,10 @@ const (
 	AccessDeniedError = "you don't have permission to access this function"
 
 	DefaultBranch = "master"
+	UGenBranch    = "u-gen"
+
+	// UGenSHAFile is written to master during every promote and contains the
+	// u-gen HEAD commit SHA at the time of that promote. check-changes compares
+	// the current u-gen HEAD with this value to reliably detect new changes.
+	UGenSHAFile = ".u-gen-sha"
 )
