@@ -213,21 +213,32 @@ func PromoteUGenToMaster(cfg IntegrationData, gitlabURL, token string, templateP
 	}
 
 	// Check for GitLab-level errors in the response body.
-	// Success responses contain both "id" and "message" (the commit message).
+	// Success responses contain both "id" (commit SHA) and "message" (commit message).
 	// Error responses contain only "message" with no "id".
+	var commitSHA string
 	var resp map[string]any
 	if jsonErr := json.Unmarshal(result, &resp); jsonErr == nil {
-		if _, hasID := resp["id"]; !hasID {
+		if id, hasID := resp["id"]; !hasID {
 			if msg, ok := resp["message"]; ok {
 				return 0, fmt.Errorf("gitlab commit error: %v", msg)
 			}
+			_ = id
+		} else if sha, ok := id.(string); ok {
+			commitSHA = sha
 		}
 	}
 
 	// Fetch the pipeline that was just triggered by the commit to master.
+	// We use the commit SHA to avoid returning a stale pipeline ID from a previous run.
+	if commitSHA != "" {
+		pipelineID, pipelineErr := waitForPipelineBySHA(gitlabURL, token, cfg.GitlabProjectId, commitSHA, 15*time.Second)
+		if pipelineErr == nil {
+			return pipelineID, nil
+		}
+	}
+	// Fallback: get latest pipeline if SHA-based lookup fails.
 	pipelineID, pipelineErr := getLatestPipelineID(gitlabURL, token, cfg.GitlabProjectId, config.DefaultBranch)
 	if pipelineErr != nil {
-		// Non-fatal: commit succeeded, we just can't track the pipeline.
 		return 0, nil
 	}
 	return pipelineID, nil
@@ -265,6 +276,40 @@ func getLatestPipelineID(gitlabURL, token string, projectID int, branch string) 
 		return 0, fmt.Errorf("no pipeline found")
 	}
 	return pipelines[0].ID, nil
+}
+
+// waitForPipelineBySHA polls GitLab until a pipeline for the given commit SHA appears.
+// GitLab creates the pipeline asynchronously after a commit, so we retry for up to maxWait.
+func waitForPipelineBySHA(gitlabURL, token string, projectID int, sha string, maxWait time.Duration) (int, error) {
+	deadline := time.Now().Add(maxWait)
+	for time.Now().Before(deadline) {
+		apiURL := fmt.Sprintf("%s/api/v4/projects/%d/pipelines?sha=%s&order_by=id&sort=desc&per_page=1&access_token=%s",
+			gitlabURL, projectID, sha, token)
+
+		req, err := http.NewRequest(http.MethodGet, apiURL, nil)
+		if err != nil {
+			return 0, err
+		}
+
+		client := &http.Client{Timeout: 10 * time.Second}
+		resp, err := client.Do(req)
+		if err == nil {
+			body, _ := io.ReadAll(resp.Body)
+			resp.Body.Close()
+
+			if resp.StatusCode < 400 {
+				var pipelines []struct {
+					ID int `json:"id"`
+				}
+				if json.Unmarshal(body, &pipelines) == nil && len(pipelines) > 0 {
+					return pipelines[0].ID, nil
+				}
+			}
+		}
+
+		time.Sleep(2 * time.Second)
+	}
+	return 0, fmt.Errorf("pipeline for commit %s not found within %s", sha, maxWait)
 }
 
 // GetPipelineStatus returns the status string of a specific pipeline
