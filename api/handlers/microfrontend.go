@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -143,11 +142,8 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 		}
 	}
 
-	var projectName = strings.ReplaceAll(strings.TrimSpace(project.Title), " ", "-")
-	projectName = strings.ToLower(projectName)
-
 	var (
-		functionPath   = projectName + "_" + strings.ReplaceAll(function.Path, "-", "_")
+		functionPath   = helper.GitlabPath(project.Title) + "_" + strings.ReplaceAll(function.Path, "-", "_")
 		respCreateFork gitlab.ForkResponse
 	)
 
@@ -676,14 +672,8 @@ func (h *Handler) PublishAiGeneratedMicroFrontend(c *gin.Context) {
 		}
 	}
 
-	projectName := strings.ToLower(strings.ReplaceAll(strings.TrimSpace(project.Title), " ", "-"))
-	projectName = regexp.MustCompile(`[^a-z0-9-]+`).ReplaceAllString(projectName, "")
-	projectName = strings.Trim(projectName, "-")
-	if projectName == "" {
-		projectName = "p"
-	}
-
 	pathPart := strings.ReplaceAll(req.Path, "-", "_")
+	projectName := helper.GitlabPath(project.Title)
 	maxProjectLen := 20 - 1 - len(pathPart)
 	if maxProjectLen < 1 {
 		maxProjectLen = 1

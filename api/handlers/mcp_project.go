@@ -94,8 +94,7 @@ func (h *Handler) PublishMcpProjectFront(c *gin.Context) {
 		}
 
 		var (
-			projectName    = strings.ToLower(strings.ReplaceAll(strings.TrimSpace(project.Title), " ", "-"))
-			functionPath   = projectName + "_" + strings.ReplaceAll(mcpProject.GetTitle(), "-", "_")
+			functionPath   = helper.GitlabPath(project.Title) + "_" + strings.ReplaceAll(mcpProject.GetTitle(), "-", "_")
 			respCreateFork gitlab.ForkResponse
 		)
 

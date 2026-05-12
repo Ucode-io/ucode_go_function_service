@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -86,4 +87,21 @@ func IsExpired(createdAt, expiresIn int64) bool {
 	)
 
 	return time.Now().After(expirationTime)
+}
+
+func GitlabPath(raw string) string {
+
+	var (
+		reNonAlnum    = regexp.MustCompile(`[^a-z0-9]+`)
+		reMultiHyphen = regexp.MustCompile(`-{2,}`)
+	)
+
+	s := strings.ToLower(strings.TrimSpace(raw))
+	s = reNonAlnum.ReplaceAllString(s, "-")
+	s = reMultiHyphen.ReplaceAllString(s, "-")
+	s = strings.Trim(s, "-")
+	if s == "" {
+		s = "p"
+	}
+	return s
 }
