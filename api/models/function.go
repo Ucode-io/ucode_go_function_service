@@ -25,6 +25,7 @@ type PushMicrofrontendChangesRequest struct {
 	CommitMessage         string             `json:"commit_message"`
 	FunctionID            string             `json:"function_id"`
 	ResourceEnvironmentID string             `json:"resource_environment_id"`
+	McpProjectId          string             `json:"mcp_project_id"`
 }
 
 // PublishAiMicroFrontendRequest is sent from the API gateway when the AI generates

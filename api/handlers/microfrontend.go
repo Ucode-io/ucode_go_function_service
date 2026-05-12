@@ -978,6 +978,48 @@ func (h *Handler) PromoteMicrofrontendToMaster(c *gin.Context) {
 
 	log.Printf("[PROMOTE] repo_id=%d successfully promoted to %s, pipeline_id=%d", req.RepoID, config.DefaultBranch, pipelineID)
 
+	projectId, ok := c.Get("project_id")
+	if !ok || !util.IsValidUUID(projectId.(string)) {
+		h.handleResponse(c, status.InvalidArgument, "invalid project_id")
+		return
+	}
+
+	environmentId, ok := c.Get("environment_id")
+	if !ok || !util.IsValidUUID(environmentId.(string)) {
+		h.handleResponse(c, status.InvalidArgument, "invalid environment_id")
+		return
+	}
+
+	resource, err := h.services.CompanyService().ServiceResource().GetSingle(
+		c.Request.Context(),
+		&pb.GetSingleServiceResourceReq{
+			ProjectId:     projectId.(string),
+			EnvironmentId: environmentId.(string),
+			ServiceType:   pb.ServiceType_BUILDER_SERVICE,
+		},
+	)
+	if err != nil {
+		h.handleResponse(c, status.GRPCError, err.Error())
+		return
+	}
+
+	if req.McpProjectId != "" {
+		mcpProject, mcpErr := h.services.GoObjectBuilderService().McpProject().GetMcpProjectFiles(
+			c.Request.Context(), &nb.McpProjectId{
+				ResourceEnvId: resource.ResourceEnvironmentId,
+				Id:            req.McpProjectId,
+			},
+		)
+		if mcpErr != nil {
+			log.Printf("[PROMOTE] could not get mcp_project %s: %v", req.McpProjectId, mcpErr)
+		} else {
+			mcpProject.IsPublished = true
+			if _, updateErr := h.services.GoObjectBuilderService().McpProject().UpdateMcpProject(c.Request.Context(), mcpProject); updateErr != nil {
+				log.Printf("[PROMOTE] could not update is_published for mcp_project %s: %v", req.McpProjectId, updateErr)
+			}
+		}
+	}
+
 	projectID, environmentID, hasCtx := getProjectAndEnv(c)
 	if hasCtx {
 		githubToken, githubUsername, integErr := h.getGithubIntegration(c.Request.Context(), projectID, environmentID)

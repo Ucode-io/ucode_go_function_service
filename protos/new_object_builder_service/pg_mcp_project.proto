@@ -42,6 +42,7 @@ message McpProject {
   string environment_id = 13;
   string status = 14;
   string app_visibility = 15;
+  bool is_published = 16;
 }
 
 message McpProjectList {
