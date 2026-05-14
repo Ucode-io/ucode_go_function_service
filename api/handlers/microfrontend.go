@@ -1005,23 +1005,6 @@ func (h *Handler) PromoteMicrofrontendToMaster(c *gin.Context) {
 		return
 	}
 
-	if req.McpProjectId != "" {
-		mcpProject, mcpErr := h.services.GoObjectBuilderService().McpProject().GetMcpProjectFiles(
-			c.Request.Context(), &nb.McpProjectId{
-				ResourceEnvId: resource.ResourceEnvironmentId,
-				Id:            req.McpProjectId,
-			},
-		)
-		if mcpErr != nil {
-			log.Printf("[PROMOTE] could not get mcp_project %s: %v", req.McpProjectId, mcpErr)
-		} else {
-			mcpProject.IsPublished = true
-			if _, updateErr := h.services.GoObjectBuilderService().McpProject().UpdateMcpProject(c.Request.Context(), mcpProject); updateErr != nil {
-				log.Printf("[PROMOTE] could not update is_published for mcp_project %s: %v", req.McpProjectId, updateErr)
-			}
-		}
-	}
-
 	funcRecord, funcErr := h.services.GoObjectBuilderService().Function().GetSingle(
 		c.Request.Context(),
 		&nb.FunctionPrimaryKey{
@@ -1046,6 +1029,21 @@ func (h *Handler) PromoteMicrofrontendToMaster(c *gin.Context) {
 		)
 		if updateErr != nil {
 			log.Printf("[PROMOTE] could not mark head mcp_project %s published: %v", funcRecord.GetMcpProjectId(), updateErr)
+		}
+	} else if req.McpProjectId != "" {
+		mcpProject, mcpErr := h.services.GoObjectBuilderService().McpProject().GetMcpProjectFiles(
+			c.Request.Context(), &nb.McpProjectId{
+				ResourceEnvId: resource.ResourceEnvironmentId,
+				Id:            req.McpProjectId,
+			},
+		)
+		if mcpErr != nil {
+			log.Printf("[PROMOTE] function repo_id=%d has no MCP refs and legacy mcp_project_id %s was not found in child resource env: %v", req.RepoID, req.McpProjectId, mcpErr)
+		} else {
+			mcpProject.IsPublished = true
+			if _, updateErr := h.services.GoObjectBuilderService().McpProject().UpdateMcpProject(c.Request.Context(), mcpProject); updateErr != nil {
+				log.Printf("[PROMOTE] could not update is_published for mcp_project %s: %v", req.McpProjectId, updateErr)
+			}
 		}
 	}
 
