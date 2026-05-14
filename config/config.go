@@ -53,16 +53,16 @@ type Config struct {
 	N8NBaseUrl     string
 
 	// Github Creds
-	GithubBaseUrl             string
-	GithubApiBaseUrl          string
-	GithubClientId            string
-	GithubClientSecret        string
-	GithubRedirectURI         string
-	GithubFrontendSuccessURL  string
-	GithubFrontendErrorURL    string
-	PathToClone               string
-	GithubWebhookSecret       string
-	GatewayWebhookURL         string
+	GithubBaseUrl            string
+	GithubApiBaseUrl         string
+	GithubClientId           string
+	GithubClientSecret       string
+	GithubRedirectURI        string
+	GithubFrontendSuccessURL string
+	GithubFrontendErrorURL   string
+	PathToClone              string
+	GithubWebhookSecret      string
+	GatewayWebhookURL        string
 
 	// Gitlab Creds
 	GitlabBaseUrlIntegration      string
@@ -158,7 +158,7 @@ func Load() Config {
 	config.GithubClientId = cast.ToString(getOrReturnDefaultValue("GITHUB_CLIENT_ID", ""))
 	config.GithubClientSecret = cast.ToString(getOrReturnDefaultValue("GITHUB_CLIENT_SECRET", ""))
 	config.GithubRedirectURI = cast.ToString(getOrReturnDefaultValue("GITHUB_REDIRECT_URI", ""))
-	config.GithubFrontendSuccessURL = cast.ToString(getOrReturnDefaultValue("GITHUB_FRONTEND_SUCCESS_URL", ""))
+	config.GithubFrontendSuccessURL = cast.ToString(getOrReturnDefaultValue("GITHUB_FRONTEND_SUCCESS_URL1", "ugen-cquc.vercel.app"))
 	config.GithubFrontendErrorURL = cast.ToString(getOrReturnDefaultValue("GITHUB_FRONTEND_ERROR_URL", ""))
 	config.PathToClone = cast.ToString(getOrReturnDefaultValue("CLONE_PATH", "./app"))
 	config.GithubWebhookSecret = cast.ToString(getOrReturnDefaultValue("GITHUB_WEBHOOK_SECRET", "5959bb628aa73c4988b8e0c12591cdcc82f8b47bc7774e5e95fe32b85865c717"))
