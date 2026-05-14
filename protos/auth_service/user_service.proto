@@ -177,6 +177,7 @@ message CreateUserRequest {
     string node_type = 20;
     string tin = 21;
     google.protobuf.Struct additional_data = 22;
+    string google_id = 23;
 }
 
 message UserPrimaryKey {

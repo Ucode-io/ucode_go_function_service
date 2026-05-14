@@ -24,6 +24,11 @@ message CreateMcpProjectReqeust {
   string environment_id = 8;
   string status = 9;
   string app_visibility = 10;
+  string project_image = 11;
+  string microfrontend_id = 12;
+  string microfrontend_repo_id = 13;
+  string microfrontend_branch = 14;
+  string microfrontend_url = 15;
 }
 
 message McpProject {
@@ -43,6 +48,11 @@ message McpProject {
   string status = 14;
   string app_visibility = 15;
   bool is_published = 16;
+  string project_image = 17;
+  string microfrontend_id = 18;
+  string microfrontend_repo_id = 19;
+  string microfrontend_branch = 20;
+  string microfrontend_url = 21;
 }
 
 message McpProjectList {

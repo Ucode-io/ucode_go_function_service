@@ -772,6 +772,8 @@ func (h *Handler) PublishAiGeneratedMicroFrontend(c *gin.Context) {
 		h.handleResponse(c, status.BadRequest, err.Error())
 		return
 	}
+	newCreateFunc.McpProjectId = req.McpProjectId
+	newCreateFunc.McpResourceEnvId = req.McpResourceEnvId
 
 	funcRecord, err := h.services.GoObjectBuilderService().Function().Create(ctx, newCreateFunc)
 	if err != nil {
@@ -1017,6 +1019,33 @@ func (h *Handler) PromoteMicrofrontendToMaster(c *gin.Context) {
 			if _, updateErr := h.services.GoObjectBuilderService().McpProject().UpdateMcpProject(c.Request.Context(), mcpProject); updateErr != nil {
 				log.Printf("[PROMOTE] could not update is_published for mcp_project %s: %v", req.McpProjectId, updateErr)
 			}
+		}
+	}
+
+	funcRecord, funcErr := h.services.GoObjectBuilderService().Function().GetSingle(
+		c.Request.Context(),
+		&nb.FunctionPrimaryKey{
+			ProjectId: resource.ResourceEnvironmentId,
+			RepoId:    cast.ToString(req.RepoID),
+		},
+	)
+	if funcErr != nil {
+		log.Printf("[PROMOTE] could not get function by repo_id=%d: %v", req.RepoID, funcErr)
+	} else if funcRecord.GetMcpProjectId() != "" && funcRecord.GetMcpResourceEnvId() != "" {
+		_, updateErr := h.services.GoObjectBuilderService().McpProject().UpdateMcpProject(
+			c.Request.Context(),
+			&nb.McpProject{
+				ResourceEnvId:       funcRecord.GetMcpResourceEnvId(),
+				Id:                  funcRecord.GetMcpProjectId(),
+				IsPublished:         true,
+				MicrofrontendId:     funcRecord.GetId(),
+				MicrofrontendRepoId: funcRecord.GetRepoId(),
+				MicrofrontendBranch: funcRecord.GetBranch(),
+				MicrofrontendUrl:    funcRecord.GetUrl(),
+			},
+		)
+		if updateErr != nil {
+			log.Printf("[PROMOTE] could not mark head mcp_project %s published: %v", funcRecord.GetMcpProjectId(), updateErr)
 		}
 	}
 

@@ -122,6 +122,7 @@ message User {
     string hash_type = 17;
     string status = 18;
     string tin = 19;
+    string google_id = 20;
 }
 message Timezone {
     string id = 1;
