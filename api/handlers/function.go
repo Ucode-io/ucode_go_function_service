@@ -1465,6 +1465,11 @@ func (h *Handler) InvokeFunctionByApiPath(c *gin.Context) {
 
 		url := fmt.Sprintf("http://%s.%s%s", path, h.cfg.KnativeBaseUrl, apiPath)
 
+		// HISOBIM PROJECT
+		if authInfo.GetProjectId() == "b744d518-5f66-4818-bfd7-9f3f44ce3379" {
+			url = fmt.Sprintf("http://%s.%s%s", path, h.cfg.KnativeBaseUrlUz, apiPath)
+		}
+
 		req, err := http.NewRequest(http.MethodPost, url, &bodyBuffer)
 		if err != nil {
 			h.handleResponse(c, status.BadRequest, err.Error())
@@ -1598,6 +1603,15 @@ func (h *Handler) AlterScale(name string, maxScale int32) error {
 }
 
 func (h *Handler) ExecKnative(path string, req models.NewInvokeFunctionRequest) (models.InvokeFunctionResponse, error) {
+	if cast.ToString(req.Data["project_id"]) == "b744d518-5f66-4818-bfd7-9f3f44ce3379" {
+		url := fmt.Sprintf("http://%s.%s", path, h.cfg.KnativeBaseUrlUz)
+		resp, err := util.DoRequest(url, http.MethodPost, req)
+		if err != nil {
+			return models.InvokeFunctionResponse{}, err
+		}
+
+		return resp, nil
+	}
 	url := fmt.Sprintf("http://%s.%s", path, h.cfg.KnativeBaseUrl)
 	resp, err := util.DoRequest(url, http.MethodPost, req)
 	if err != nil {

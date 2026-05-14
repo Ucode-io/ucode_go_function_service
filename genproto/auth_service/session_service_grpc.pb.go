@@ -53,6 +53,8 @@ type SessionServiceClient interface {
 	DeleteSessionsExceptCurrent(ctx context.Context, in *DeleteSessionsExceptCurrentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UserDefaultProject(ctx context.Context, in *UserDefaultProjectReq, opts ...grpc.CallOption) (*UserDefaultProjectResp, error)
 	UgenLogin(ctx context.Context, in *UgenLoginReq, opts ...grpc.CallOption) (*UgenLoginResp, error)
+	UgenGoogleLogin(ctx context.Context, in *UgenGoogleLoginReq, opts ...grpc.CallOption) (*UgenLoginResp, error)
+	UgenAuthSession(ctx context.Context, in *UgenAuthSessionReq, opts ...grpc.CallOption) (*UgenLoginResp, error)
 	GetUserInfoByToken(ctx context.Context, in *GetUserInfoByTokenReq, opts ...grpc.CallOption) (*GetUserInfoByTokenResp, error)
 }
 
@@ -334,6 +336,24 @@ func (c *sessionServiceClient) UgenLogin(ctx context.Context, in *UgenLoginReq, 
 	return out, nil
 }
 
+func (c *sessionServiceClient) UgenGoogleLogin(ctx context.Context, in *UgenGoogleLoginReq, opts ...grpc.CallOption) (*UgenLoginResp, error) {
+	out := new(UgenLoginResp)
+	err := c.cc.Invoke(ctx, "/auth_service.SessionService/UgenGoogleLogin", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sessionServiceClient) UgenAuthSession(ctx context.Context, in *UgenAuthSessionReq, opts ...grpc.CallOption) (*UgenLoginResp, error) {
+	out := new(UgenLoginResp)
+	err := c.cc.Invoke(ctx, "/auth_service.SessionService/UgenAuthSession", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *sessionServiceClient) GetUserInfoByToken(ctx context.Context, in *GetUserInfoByTokenReq, opts ...grpc.CallOption) (*GetUserInfoByTokenResp, error) {
 	out := new(GetUserInfoByTokenResp)
 	err := c.cc.Invoke(ctx, "/auth_service.SessionService/GetUserInfoByToken", in, out, opts...)
@@ -377,6 +397,8 @@ type SessionServiceServer interface {
 	DeleteSessionsExceptCurrent(context.Context, *DeleteSessionsExceptCurrentRequest) (*emptypb.Empty, error)
 	UserDefaultProject(context.Context, *UserDefaultProjectReq) (*UserDefaultProjectResp, error)
 	UgenLogin(context.Context, *UgenLoginReq) (*UgenLoginResp, error)
+	UgenGoogleLogin(context.Context, *UgenGoogleLoginReq) (*UgenLoginResp, error)
+	UgenAuthSession(context.Context, *UgenAuthSessionReq) (*UgenLoginResp, error)
 	GetUserInfoByToken(context.Context, *GetUserInfoByTokenReq) (*GetUserInfoByTokenResp, error)
 	mustEmbedUnimplementedSessionServiceServer()
 }
@@ -474,6 +496,12 @@ func (UnimplementedSessionServiceServer) UserDefaultProject(context.Context, *Us
 }
 func (UnimplementedSessionServiceServer) UgenLogin(context.Context, *UgenLoginReq) (*UgenLoginResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UgenLogin not implemented")
+}
+func (UnimplementedSessionServiceServer) UgenGoogleLogin(context.Context, *UgenGoogleLoginReq) (*UgenLoginResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UgenGoogleLogin not implemented")
+}
+func (UnimplementedSessionServiceServer) UgenAuthSession(context.Context, *UgenAuthSessionReq) (*UgenLoginResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UgenAuthSession not implemented")
 }
 func (UnimplementedSessionServiceServer) GetUserInfoByToken(context.Context, *GetUserInfoByTokenReq) (*GetUserInfoByTokenResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserInfoByToken not implemented")
@@ -1031,6 +1059,42 @@ func _SessionService_UgenLogin_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SessionService_UgenGoogleLogin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UgenGoogleLoginReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SessionServiceServer).UgenGoogleLogin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth_service.SessionService/UgenGoogleLogin",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SessionServiceServer).UgenGoogleLogin(ctx, req.(*UgenGoogleLoginReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SessionService_UgenAuthSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UgenAuthSessionReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SessionServiceServer).UgenAuthSession(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth_service.SessionService/UgenAuthSession",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SessionServiceServer).UgenAuthSession(ctx, req.(*UgenAuthSessionReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _SessionService_GetUserInfoByToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetUserInfoByTokenReq)
 	if err := dec(in); err != nil {
@@ -1175,6 +1239,14 @@ var SessionService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UgenLogin",
 			Handler:    _SessionService_UgenLogin_Handler,
+		},
+		{
+			MethodName: "UgenGoogleLogin",
+			Handler:    _SessionService_UgenGoogleLogin_Handler,
+		},
+		{
+			MethodName: "UgenAuthSession",
+			Handler:    _SessionService_UgenAuthSession_Handler,
 		},
 		{
 			MethodName: "GetUserInfoByToken",

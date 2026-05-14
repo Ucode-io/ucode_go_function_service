@@ -48,21 +48,22 @@ type Config struct {
 	GoObjectBuilderGRPCPort    string
 
 	// Fass urls
-	OpeFassBaseUrl string
-	KnativeBaseUrl string
-	N8NBaseUrl     string
+	OpeFassBaseUrl   string
+	KnativeBaseUrl   string
+	KnativeBaseUrlUz string
+	N8NBaseUrl       string
 
 	// Github Creds
-	GithubBaseUrl             string
-	GithubApiBaseUrl          string
-	GithubClientId            string
-	GithubClientSecret        string
-	GithubRedirectURI         string
-	GithubFrontendSuccessURL  string
-	GithubFrontendErrorURL    string
-	PathToClone               string
-	GithubWebhookSecret       string
-	GatewayWebhookURL         string
+	GithubBaseUrl            string
+	GithubApiBaseUrl         string
+	GithubClientId           string
+	GithubClientSecret       string
+	GithubRedirectURI        string
+	GithubFrontendSuccessURL string
+	GithubFrontendErrorURL   string
+	PathToClone              string
+	GithubWebhookSecret      string
+	GatewayWebhookURL        string
 
 	// Gitlab Creds
 	GitlabBaseUrlIntegration      string
@@ -150,6 +151,7 @@ func Load() Config {
 	// Fass Urls
 	config.OpeFassBaseUrl = cast.ToString(getOrReturnDefaultValue("OPENFASS_BASE_URL", ""))
 	config.KnativeBaseUrl = cast.ToString(getOrReturnDefaultValue("KNATIVE_BASE_URL", ""))
+	config.KnativeBaseUrlUz = cast.ToString(getOrReturnDefaultValue("FUNC_BASE_URL_UZB", "knative-fn-uz"))
 	config.N8NBaseUrl = cast.ToString(getOrReturnDefaultValue("N8N_BASE_URL", ""))
 
 	// Github Creds
