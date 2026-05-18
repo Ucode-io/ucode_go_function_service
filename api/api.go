@@ -41,6 +41,8 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 	}
 
 	r.GET("/v1/github/callback", h.GithubCallback)
+	r.GET("/v1/ext-gitlab/callback", h.ExtGitlabCallback)
+	r.GET("/v1/bitbucket/callback", h.BitbucketCallback)
 
 	github := r.Group("/v1/github")
 	github.Use(h.AuthMiddleware(cfg))
@@ -51,6 +53,25 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 		github.DELETE("/integration/:id", h.GithubDeleteIntegration)
 		github.POST("/repo", h.GithubCreateRepo)
 		github.GET("/repos", h.GithubGetRepoList)
+	}
+
+	extGitlab := r.Group("/v1/ext-gitlab")
+	extGitlab.Use(h.AuthMiddleware(cfg))
+	{
+		extGitlab.GET("/connect", h.ExtGitlabConnect)
+		extGitlab.GET("/integration", h.ExtGitlabGetIntegration)
+		extGitlab.GET("/integration/validate", h.ExtGitlabValidateToken)
+		extGitlab.DELETE("/integration/:id", h.ExtGitlabDeleteIntegration)
+	}
+
+	bitbucket := r.Group("/v1/bitbucket")
+	bitbucket.Use(h.AuthMiddleware(cfg))
+	{
+		bitbucket.GET("/connect", h.BitbucketConnect)
+		bitbucket.GET("/integration", h.BitbucketGetIntegration)
+		bitbucket.GET("/integration/validate", h.BitbucketValidateToken)
+		bitbucket.DELETE("/integration/:id", h.BitbucketDeleteIntegration)
+		bitbucket.GET("/workspaces", h.BitbucketWorkspaces)
 	}
 
 	gitlab := v1.Group("/gitlab")
@@ -68,6 +89,8 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 	v2 := r.Group("/v2")
 	v2.POST("/webhook/handle", h.HandleWebhook)
 	v2.POST("/webhook/github", h.HandleGithubWebhook)
+	v2.POST("/webhook/ext-gitlab", h.HandleExtGitlabWebhook)
+	v2.POST("/webhook/bitbucket", h.HandleBitbucketWebhook)
 
 	grafana := v2.Group("/grafana")
 	{
@@ -112,6 +135,8 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 		microFe.GET("/micro-frontend/files-at-commit", h.GetMicrofrontendFilesAtCommit)
 		microFe.POST("/micro-frontend/revert", h.RevertMicrofrontendToCommit)
 		microFe.POST("/micro-frontend/github-sync", h.GithubSyncMicrofrontend)
+		microFe.POST("/micro-frontend/ext-gitlab-sync", h.ExtGitlabSyncMicrofrontend)
+		microFe.POST("/micro-frontend/bitbucket-sync", h.BitbucketSyncMicrofrontend)
 	}
 
 	knativeFunc := r.Group("/v2/invoke_function")

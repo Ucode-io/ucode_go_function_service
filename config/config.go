@@ -69,6 +69,19 @@ type Config struct {
 	GitlabClientIdIntegration     string
 	GitlabClientSecretIntegration string
 	GitlabRedirectUriIntegration  string
+	GitlabFrontendSuccessURL      string
+	GitlabFrontendErrorURL        string
+	GitlabWebhookSecret           string
+
+	// Bitbucket Creds
+	BitbucketBaseURL            string
+	BitbucketApiBaseURL         string
+	BitbucketClientID           string
+	BitbucketClientSecret       string
+	BitbucketRedirectURI        string
+	BitbucketFrontendSuccessURL string
+	BitbucketFrontendErrorURL   string
+	BitbucketWebhookSecret      string
 
 	// Gitlab Creds
 	GitlabIntegrationURL string
@@ -165,10 +178,23 @@ func Load() Config {
 	config.GatewayWebhookURL = cast.ToString(getOrReturnDefaultValue("GATEWAY_WEBHOOK_URL", "https://admin-api.ucode.run/v2/webhook/github"))
 
 	// Gitlab Creds
-	config.GitlabBaseUrlIntegration = cast.ToString(getOrReturnDefaultValue("GITLAB_BASE_URL_INTEGRATION", ""))
+	config.GitlabBaseUrlIntegration = cast.ToString(getOrReturnDefaultValue("GITLAB_BASE_URL_INTEGRATION", "https://gitlab.com"))
 	config.GitlabClientIdIntegration = cast.ToString(getOrReturnDefaultValue("GITLAB_CLIENT_ID_INTEGRATION", ""))
 	config.GitlabClientSecretIntegration = cast.ToString(getOrReturnDefaultValue("GITLAB_CLIENT_SECRET_INTEGRATION", ""))
 	config.GitlabRedirectUriIntegration = cast.ToString(getOrReturnDefaultValue("GITLAB_REDIRECT_URI_INTEGRATION", ""))
+	config.GitlabFrontendSuccessURL = cast.ToString(getOrReturnDefaultValue("GITLAB_FRONTEND_SUCCESS_URL", config.GithubFrontendSuccessURL))
+	config.GitlabFrontendErrorURL = cast.ToString(getOrReturnDefaultValue("GITLAB_FRONTEND_ERROR_URL", config.GithubFrontendErrorURL))
+	config.GitlabWebhookSecret = cast.ToString(getOrReturnDefaultValue("GITLAB_WEBHOOK_SECRET", config.GithubWebhookSecret))
+
+	// Bitbucket Creds
+	config.BitbucketBaseURL = cast.ToString(getOrReturnDefaultValue("BITBUCKET_BASE_URL", "https://bitbucket.org"))
+	config.BitbucketApiBaseURL = cast.ToString(getOrReturnDefaultValue("BITBUCKET_API_BASE_URL", "https://api.bitbucket.org/2.0"))
+	config.BitbucketClientID = cast.ToString(getOrReturnDefaultValue("BITBUCKET_CLIENT_ID", ""))
+	config.BitbucketClientSecret = cast.ToString(getOrReturnDefaultValue("BITBUCKET_CLIENT_SECRET", ""))
+	config.BitbucketRedirectURI = cast.ToString(getOrReturnDefaultValue("BITBUCKET_REDIRECT_URI", ""))
+	config.BitbucketFrontendSuccessURL = cast.ToString(getOrReturnDefaultValue("BITBUCKET_FRONTEND_SUCCESS_URL", config.GithubFrontendSuccessURL))
+	config.BitbucketFrontendErrorURL = cast.ToString(getOrReturnDefaultValue("BITBUCKET_FRONTEND_ERROR_URL", config.GithubFrontendErrorURL))
+	config.BitbucketWebhookSecret = cast.ToString(getOrReturnDefaultValue("BITBUCKET_WEBHOOK_SECRET", config.GithubWebhookSecret))
 
 	// Gitlab Creds
 	config.GitlabIntegrationURL = cast.ToString(getOrReturnDefaultValue("GITLAB_URL", ""))
