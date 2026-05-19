@@ -42,6 +42,8 @@ service SessionService {
   rpc UserDefaultProject(UserDefaultProjectReq) returns (UserDefaultProjectResp) {}
 
   rpc UgenLogin(UgenLoginReq) returns (UgenLoginResp) {}
+  rpc UgenGoogleLogin(UgenGoogleLoginReq) returns (UgenLoginResp) {}
+  rpc UgenAuthSession(UgenAuthSessionReq) returns (UgenLoginResp) {}
 
   rpc GetUserInfoByToken(GetUserInfoByTokenReq) returns (GetUserInfoByTokenResp) {}
 }
@@ -70,6 +72,20 @@ message UgenLoginReq {
 message UgenLoginResp {
   V2LoginResponse response = 1;
   google.protobuf.Struct project_data = 2;
+}
+
+message UgenGoogleLoginReq {
+  string google_id = 1;
+  string email = 2;
+  string name = 3;
+  string picture = 4;
+  string client_ip = 5;
+  string user_agent = 6;
+}
+
+message UgenAuthSessionReq {
+  string access_token = 1;
+  string refresh_token = 2;
 }
 
 message UserDefaultProjectReq {

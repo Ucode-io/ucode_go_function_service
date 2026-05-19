@@ -297,7 +297,7 @@ func (h *Handler) RevertMicrofrontendToCommit(c *gin.Context) {
 					ServiceType:   pb.ServiceType_BUILDER_SERVICE,
 				})
 				if resErr != nil {
-					log.Printf("[REVERT→GITHUB] could not get resource: %v", resErr)
+					log.Printf("[REVERT→MIRRORS] could not get resource: %v", resErr)
 					return
 				}
 				funcRecord, funcErr := h.services.GoObjectBuilderService().Function().GetSingle(ctx, &nb.FunctionPrimaryKey{
@@ -305,12 +305,10 @@ func (h *Handler) RevertMicrofrontendToCommit(c *gin.Context) {
 					ProjectId: resource.ResourceEnvironmentId,
 				})
 				if funcErr != nil {
-					log.Printf("[REVERT→GITHUB] could not get function %s: %v", funcID, funcErr)
+					log.Printf("[REVERT→MIRRORS] could not get function %s: %v", funcID, funcErr)
 					return
 				}
-				if syncErr := h.syncMicrofrontendToGithub(ctx, funcRecord, "", resource.ProjectId, resource.EnvironmentId); syncErr != nil {
-					log.Printf("[REVERT→GITHUB] sync failed for func_id=%s: %v", funcID, syncErr)
-				}
+				h.syncAllMicrofrontendMirrors(ctx, funcRecord, resource.ProjectId, resource.EnvironmentId)
 			}(req.FunctionID, projectID, environmentID)
 		}
 	}

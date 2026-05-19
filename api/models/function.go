@@ -25,18 +25,21 @@ type PushMicrofrontendChangesRequest struct {
 	CommitMessage         string             `json:"commit_message"`
 	FunctionID            string             `json:"function_id"`
 	ResourceEnvironmentID string             `json:"resource_environment_id"`
+	McpProjectId          string             `json:"mcp_project_id"`
 }
 
 // PublishAiMicroFrontendRequest is sent from the API gateway when the AI generates
 // a new project. The handler creates the microfrontend, then pushes all files to
 // the u-gen branch (NOT master — master is reserved for pipeline triggers).
 type PublishAiMicroFrontendRequest struct {
-	ProjectId     string                    `json:"project_id"`
-	EnvironmentId string                    `json:"environment_id"`
-	Name          string                    `json:"name"`
-	Path          string                    `json:"path"`
-	FrameworkType string                    `json:"framework_type"`
-	Files         []GitlabFileChange `json:"files"`
+	ProjectId        string             `json:"project_id"`
+	EnvironmentId    string             `json:"environment_id"`
+	Name             string             `json:"name"`
+	Path             string             `json:"path"`
+	FrameworkType    string             `json:"framework_type"`
+	Files            []GitlabFileChange `json:"files"`
+	McpProjectId     string             `json:"mcp_project_id,omitempty"`
+	McpResourceEnvId string             `json:"mcp_resource_env_id,omitempty"`
 }
 
 type CreateFunctionRequest struct {

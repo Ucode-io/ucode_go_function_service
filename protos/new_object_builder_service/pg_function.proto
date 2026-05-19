@@ -44,6 +44,8 @@ message CreateFunctionRequest {
     bool is_public = 25;
     int32 max_scale = 26;
     int32 former_max_scale = 27;
+    string mcp_project_id = 28;
+    string mcp_resource_env_id = 29;
 }
 
 message Function {
@@ -75,6 +77,8 @@ message Function {
     int32 former_max_scale = 27;
     string github_repo_name = 28;
     string github_webhook_id = 29;
+    string mcp_project_id = 30;
+    string mcp_resource_env_id = 31;
 }
 
 message GetAllFunctionsRequest {
@@ -99,6 +103,7 @@ message FunctionPrimaryKey {
     string path = 3;
     string source_url = 4;
     string branch = 5;
+    string repo_id = 6;
 }
 
 message UpdateManyUrlAndPassword {
