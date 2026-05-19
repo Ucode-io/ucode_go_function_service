@@ -164,7 +164,7 @@ func Load() Config {
 	// Fass Urls
 	config.OpeFassBaseUrl = cast.ToString(getOrReturnDefaultValue("OPENFASS_BASE_URL", ""))
 	config.KnativeBaseUrl = cast.ToString(getOrReturnDefaultValue("KNATIVE_BASE_URL", ""))
-	config.KnativeBaseUrlUz = cast.ToString(getOrReturnDefaultValue("FUNC_BASE_URL_UZB", "knative-fn-uz"))
+	config.KnativeBaseUrlUz = cast.ToString(getOrReturnDefaultValue("FUNC_BASE_URL_UZB", ""))
 	config.N8NBaseUrl = cast.ToString(getOrReturnDefaultValue("N8N_BASE_URL", ""))
 
 	// Github Creds
