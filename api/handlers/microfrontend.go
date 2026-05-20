@@ -137,7 +137,11 @@ func (h *Handler) CreateMicroFrontEnd(c *gin.Context) {
 		}
 
 		if !limitResp.HasAccess {
-			h.handleResponse(c, status.BadRequest, "you have reached the limit of micro-frontends on your current plan. Please upgrade to create more.")
+			h.handleResponse(c, status.PaymentRequired, models.PaymentRequiredData{
+				Type: "payment_required",
+				Code: "microfrontend_limit",
+				Unit: "microfrontends",
+			})
 			return
 		}
 	}
@@ -667,7 +671,11 @@ func (h *Handler) PublishAiGeneratedMicroFrontend(c *gin.Context) {
 		}
 
 		if !limitResp.HasAccess {
-			h.handleResponse(c, status.BadRequest, "you have reached the limit of micro-frontends on your current plan. Please upgrade to create more.")
+			h.handleResponse(c, status.PaymentRequired, models.PaymentRequiredData{
+				Type: "payment_required",
+				Code: "microfrontend_limit",
+				Unit: "microfrontends",
+			})
 			return
 		}
 	}
