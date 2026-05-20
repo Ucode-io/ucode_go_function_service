@@ -27,6 +27,7 @@ message CreateUgenTemplateReq {
     string source_mcp_resource_env_id = 11;
     string source_function_id = 12;
     string source_repo_id = 13;
+    repeated string images = 14;
 }
 
 message GetUgenTemplateListReq {
@@ -58,6 +59,7 @@ message UpdateUgenTemplateReq {
     string source_mcp_resource_env_id = 12;
     string source_function_id = 13;
     string source_repo_id = 14;
+    repeated string images = 15;
 }
 
 message DeleteUgenTemplateReq {
@@ -82,4 +84,5 @@ message UgenTemplate {
     string source_mcp_resource_env_id = 15;
     string source_function_id = 16;
     string source_repo_id = 17;
+    repeated string images = 18;
 }

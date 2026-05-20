@@ -780,6 +780,8 @@ func (h *Handler) PublishAiGeneratedMicroFrontend(c *gin.Context) {
 		h.handleResponse(c, status.BadRequest, err.Error())
 		return
 	}
+	newCreateFunc.McpProjectId = req.McpProjectId
+	newCreateFunc.McpResourceEnvId = req.McpResourceEnvId
 
 	funcRecord, err := h.services.GoObjectBuilderService().Function().Create(ctx, newCreateFunc)
 	if err != nil {
@@ -813,13 +815,10 @@ func (h *Handler) PublishAiGeneratedMicroFrontend(c *gin.Context) {
 		return
 	}
 
-	// Step 7: If the project has a GitHub integration, mirror the new repo there in the background.
+	// Step 7: Mirror the new repo to any connected external providers in the background.
 	// This is non-blocking — a failure here does not affect the publish response.
 	go func(record *nb.Function, companyProjID, envID string) {
-		ctx := context.Background()
-		if syncErr := h.syncMicrofrontendToGithub(ctx, record, "", companyProjID, envID); syncErr != nil {
-			log.Printf("[PUBLISH-AI→GITHUB] sync failed for func_id=%s: %v", record.GetId(), syncErr)
-		}
+		h.syncAllMicrofrontendMirrors(context.Background(), record, companyProjID, envID)
 	}(funcRecord, project.ProjectId, req.EnvironmentId)
 
 	log.Printf("[PUBLISH-AI] done: func_id=%s repo_id=%d path=%q", funcRecord.GetId(), respCreateFork.ID, functionPath)
@@ -922,7 +921,7 @@ func (h *Handler) PushMicrofrontendChanges(c *gin.Context) {
 				Id: resourceEnvID,
 			})
 			if resErr != nil {
-				log.Printf("[PUSH-CHANGES→GITHUB] could not get resource_environment %s: %v", resourceEnvID, resErr)
+				log.Printf("[PUSH-CHANGES→MIRRORS] could not get resource_environment %s: %v", resourceEnvID, resErr)
 				return
 			}
 			funcRecord, funcErr := h.services.GoObjectBuilderService().Function().GetSingle(ctx, &nb.FunctionPrimaryKey{
@@ -930,12 +929,10 @@ func (h *Handler) PushMicrofrontendChanges(c *gin.Context) {
 				ProjectId: resourceEnvID,
 			})
 			if funcErr != nil {
-				log.Printf("[PUSH-CHANGES→GITHUB] could not get function %s: %v", funcID, funcErr)
+				log.Printf("[PUSH-CHANGES→MIRRORS] could not get function %s: %v", funcID, funcErr)
 				return
 			}
-			if syncErr := h.syncMicrofrontendToGithub(ctx, funcRecord, "", resEnv.GetProjectId(), resEnv.GetEnvironmentId()); syncErr != nil {
-				log.Printf("[PUSH-CHANGES→GITHUB] sync failed for func_id=%s: %v", funcID, syncErr)
-			}
+			h.syncAllMicrofrontendMirrors(ctx, funcRecord, resEnv.GetProjectId(), resEnv.GetEnvironmentId())
 		}(req.FunctionID, req.ResourceEnvironmentID)
 	}
 
@@ -1011,7 +1008,32 @@ func (h *Handler) PromoteMicrofrontendToMaster(c *gin.Context) {
 		return
 	}
 
-	if req.McpProjectId != "" {
+	funcRecord, funcErr := h.services.GoObjectBuilderService().Function().GetSingle(
+		c.Request.Context(),
+		&nb.FunctionPrimaryKey{
+			ProjectId: resource.ResourceEnvironmentId,
+			RepoId:    cast.ToString(req.RepoID),
+		},
+	)
+	if funcErr != nil {
+		log.Printf("[PROMOTE] could not get function by repo_id=%d: %v", req.RepoID, funcErr)
+	} else if funcRecord.GetMcpProjectId() != "" && funcRecord.GetMcpResourceEnvId() != "" {
+		_, updateErr := h.services.GoObjectBuilderService().McpProject().UpdateMcpProject(
+			c.Request.Context(),
+			&nb.McpProject{
+				ResourceEnvId:       funcRecord.GetMcpResourceEnvId(),
+				Id:                  funcRecord.GetMcpProjectId(),
+				IsPublished:         true,
+				MicrofrontendId:     funcRecord.GetId(),
+				MicrofrontendRepoId: funcRecord.GetRepoId(),
+				MicrofrontendBranch: funcRecord.GetBranch(),
+				MicrofrontendUrl:    funcRecord.GetUrl(),
+			},
+		)
+		if updateErr != nil {
+			log.Printf("[PROMOTE] could not mark head mcp_project %s published: %v", funcRecord.GetMcpProjectId(), updateErr)
+		}
+	} else if req.McpProjectId != "" {
 		mcpProject, mcpErr := h.services.GoObjectBuilderService().McpProject().GetMcpProjectFiles(
 			c.Request.Context(), &nb.McpProjectId{
 				ResourceEnvId: resource.ResourceEnvironmentId,
@@ -1019,7 +1041,7 @@ func (h *Handler) PromoteMicrofrontendToMaster(c *gin.Context) {
 			},
 		)
 		if mcpErr != nil {
-			log.Printf("[PROMOTE] could not get mcp_project %s: %v", req.McpProjectId, mcpErr)
+			log.Printf("[PROMOTE] function repo_id=%d has no MCP refs and legacy mcp_project_id %s was not found in child resource env: %v", req.RepoID, req.McpProjectId, mcpErr)
 		} else {
 			mcpProject.IsPublished = true
 			if _, updateErr := h.services.GoObjectBuilderService().McpProject().UpdateMcpProject(c.Request.Context(), mcpProject); updateErr != nil {
@@ -1028,43 +1050,8 @@ func (h *Handler) PromoteMicrofrontendToMaster(c *gin.Context) {
 		}
 	}
 
-	projectID, environmentID, hasCtx := getProjectAndEnv(c)
-	if hasCtx {
-		githubToken, githubUsername, integErr := h.getGithubIntegration(c.Request.Context(), projectID, environmentID)
-		if integErr != nil {
-			log.Printf("[PROMOTE→GITHUB] no GitHub integration, skipping: %v", integErr)
-		} else {
-			repoID := req.RepoID
-			repoName := req.GithubRepoName // may be empty — resolved inside goroutine
-			gitlabURL := h.cfg.GitlabIntegrationURL
-			gitlabToken := h.cfg.GitlabTokenMicroFront
-			go func() {
-				ctx := context.Background()
-
-				// Derive repo name from GitLab project path if not explicitly provided.
-				if repoName == "" {
-					var nameErr error
-					repoName, nameErr = gitlab.GetProjectPath(gitlabURL, gitlabToken, repoID)
-					if nameErr != nil {
-						log.Printf("[PROMOTE→GITHUB] could not resolve repo name for GitLab project %d: %v", repoID, nameErr)
-						return
-					}
-					log.Printf("[PROMOTE→GITHUB] using GitLab project path as GitHub repo name: %q", repoName)
-				}
-
-				files, fetchErr := gitlab.GetRepoCodebase(gitlabURL, gitlabToken, repoID)
-				if fetchErr != nil {
-					log.Printf("[PROMOTE→GITHUB] could not fetch files from GitLab repo %d: %v", repoID, fetchErr)
-					return
-				}
-
-				if pushErr := h.pushMicrofrontendToGithub(ctx, githubToken, githubUsername, repoName, files); pushErr != nil {
-					log.Printf("[PROMOTE→GITHUB] push to github repo %s/%s failed: %v", githubUsername, repoName, pushErr)
-					return
-				}
-				log.Printf("[PROMOTE→GITHUB] pushed %d file(s) to github repo %s/%s", len(files), githubUsername, repoName)
-			}()
-		}
+	if funcRecord != nil {
+		go h.syncAllMicrofrontendMirrors(context.Background(), funcRecord, projectId.(string), environmentId.(string))
 	}
 
 	h.handleResponse(c, status.OK, gin.H{"status": "pending", "pipeline_id": pipelineID})
