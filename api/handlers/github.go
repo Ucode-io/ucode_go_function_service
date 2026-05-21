@@ -15,6 +15,7 @@ import (
 	"ucode/ucode_go_function_service/api/status_http"
 	pb "ucode/ucode_go_function_service/genproto/company_service"
 	"ucode/ucode_go_function_service/pkg/gitlab"
+	"ucode/ucode_go_function_service/pkg/logger"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -77,12 +78,19 @@ func githubAPIRequest(ctx context.Context, method, url string, body io.Reader, t
 func (h *Handler) GithubConnect(c *gin.Context) {
 	projectID, environmentID, ok := getProjectAndEnv(c)
 	if !ok {
+		h.log.Error("github connect: missing project_id or environment_id")
 		h.handleResponse(c, status_http.InvalidArgument, "project_id and environment_id required")
 		return
 	}
 
 	userID, _ := c.Get("user_id")
 	userIDStr, _ := userID.(string)
+
+	h.log.Info("github connect: initiated",
+		logger.String("project_id", projectID),
+		logger.String("environment_id", environmentID),
+		logger.String("user_id", userIDStr),
+	)
 
 	payload := githubStatePayload{
 		ProjectID:     projectID,
@@ -91,6 +99,7 @@ func (h *Handler) GithubConnect(c *gin.Context) {
 	}
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
+		h.log.Error("github connect: failed to encode state", logger.String("error", err.Error()))
 		h.handleResponse(c, status_http.InternalServerError, "failed to encode state")
 		return
 	}
@@ -98,17 +107,27 @@ func (h *Handler) GithubConnect(c *gin.Context) {
 	state := uuid.NewString()
 	redisKey := githubStatePrefix + state
 	if err := h.redis.SetX(c.Request.Context(), redisKey, string(payloadBytes), githubStateTTL); err != nil {
+		h.log.Error("github connect: failed to store state in Redis",
+			logger.String("redis_key", redisKey),
+			logger.String("error", err.Error()),
+		)
 		h.handleResponse(c, status_http.InternalServerError, "failed to store OAuth state")
 		return
 	}
 
 	params := url.Values{}
 	params.Set("client_id", h.cfg.GithubClientId)
-	params.Set("redirect_url", h.cfg.GithubRedirectURI)
+	params.Set("redirect_uri", h.cfg.GithubRedirectURI)
 	params.Set("state", state)
 	params.Set("scope", "repo read:user user:email")
 
 	authURL := githubAuthURL + "?" + params.Encode()
+
+	h.log.Info("github connect: auth URL built",
+		logger.String("redirect_uri", h.cfg.GithubRedirectURI),
+		logger.String("state", state),
+	)
+
 	h.handleResponse(c, status_http.OK, authURL)
 }
 
