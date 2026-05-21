@@ -51,6 +51,11 @@ var (
 		Status:      "FORBIDDEN",
 		Description: "...",
 	}
+	PaymentRequired = Status{
+		Code:        http.StatusPaymentRequired,
+		Status:      "PAYMENT_REQUIRED",
+		Description: "Billing plan limit has been reached",
+	}
 	TooManyRequests = Status{
 		Code:        http.StatusTooManyRequests,
 		Status:      "TOO_MANY_REQUESTS",
