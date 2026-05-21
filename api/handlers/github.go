@@ -104,7 +104,7 @@ func (h *Handler) GithubConnect(c *gin.Context) {
 
 	params := url.Values{}
 	params.Set("client_id", h.cfg.GithubClientId)
-	params.Set("redirect_uri", h.cfg.GithubRedirectURI)
+	params.Set("redirect_url", h.cfg.GithubRedirectURI)
 	params.Set("state", state)
 	params.Set("scope", "repo read:user user:email")
 
