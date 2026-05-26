@@ -73,6 +73,12 @@ type bitbucketWorkspace struct {
 	IsAdmin    bool   `json:"is_admin"`
 }
 
+type bitbucketProject struct {
+	Key  string `json:"key"`
+	Name string `json:"name"`
+	UUID string `json:"uuid"`
+}
+
 type providerCommitChange struct {
 	Added    []string `json:"added"`
 	Modified []string `json:"modified"`
@@ -88,6 +94,11 @@ type BitbucketSyncMicrofrontendRequest struct {
 	FunctionID          string `json:"function_id" binding:"required"`
 	BitbucketWorkspace  string `json:"bitbucket_workspace"`
 	BitbucketRepoSlug   string `json:"bitbucket_repo_slug"`
+	BitbucketProjectKey string `json:"bitbucket_project_key"`
+}
+
+type BitbucketWorkspaceRequest struct {
+	BitbucketWorkspace  string `json:"bitbucket_workspace" binding:"required"`
 	BitbucketProjectKey string `json:"bitbucket_project_key"`
 }
 
@@ -314,6 +325,30 @@ func (h *Handler) BitbucketWorkspaces(c *gin.Context) {
 	h.handleResponse(c, status.OK, workspaces)
 }
 
+func (h *Handler) BitbucketSaveWorkspace(c *gin.Context) {
+	var req BitbucketWorkspaceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.handleResponse(c, status.BadRequest, err.Error())
+		return
+	}
+
+	projectID, environmentID, ok := getProjectAndEnv(c)
+	if !ok {
+		h.handleResponse(c, status.InvalidArgument, "project_id and environment_id required")
+		return
+	}
+
+	if err := h.rememberBitbucketDefaults(c.Request.Context(), projectID, environmentID, req.BitbucketWorkspace, req.BitbucketProjectKey); err != nil {
+		h.handleResponse(c, status.InternalServerError, err.Error())
+		return
+	}
+
+	h.handleResponse(c, status.OK, gin.H{
+		"bitbucket_workspace":   req.BitbucketWorkspace,
+		"bitbucket_project_key": req.BitbucketProjectKey,
+	})
+}
+
 func (h *Handler) ExtGitlabSyncMicrofrontend(c *gin.Context) {
 	var req ExtGitlabSyncMicrofrontendRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -430,6 +465,12 @@ func (h *Handler) syncMicrofrontendToBitbucket(ctx context.Context, funcRecord *
 	}
 	if workspace == "" {
 		workspace, err = h.defaultBitbucketWorkspace(ctx, token.AccessToken)
+		if err != nil {
+			return err
+		}
+	}
+	if projectKey == "" {
+		projectKey, err = h.defaultBitbucketProjectKey(ctx, token.AccessToken, workspace)
 		if err != nil {
 			return err
 		}
@@ -1301,15 +1342,42 @@ func (h *Handler) defaultBitbucketWorkspace(ctx context.Context, token string) (
 	if err != nil {
 		return "", err
 	}
-	for _, workspace := range workspaces {
-		if workspace.IsAdmin && workspace.Slug != "" {
-			return workspace.Slug, nil
-		}
-	}
 	if len(workspaces) > 0 && workspaces[0].Slug != "" {
 		return workspaces[0].Slug, nil
 	}
 	return "", fmt.Errorf("no Bitbucket workspace found")
+}
+
+func (h *Handler) listBitbucketProjects(ctx context.Context, token, workspace string) ([]bitbucketProject, error) {
+	var result []bitbucketProject
+	nextURL := fmt.Sprintf("%s/workspaces/%s/projects?pagelen=100", strings.TrimRight(h.cfg.BitbucketApiBaseURL, "/"), url.PathEscape(workspace))
+	for nextURL != "" {
+		req, err := h.externalBearerRequest(ctx, http.MethodGet, nextURL, nil, token)
+		if err != nil {
+			return nil, err
+		}
+		var page struct {
+			Next   string             `json:"next"`
+			Values []bitbucketProject `json:"values"`
+		}
+		if err := h.doJSON(req, http.StatusOK, &page); err != nil {
+			return nil, err
+		}
+		result = append(result, page.Values...)
+		nextURL = page.Next
+	}
+	return result, nil
+}
+
+func (h *Handler) defaultBitbucketProjectKey(ctx context.Context, token, workspace string) (string, error) {
+	projects, err := h.listBitbucketProjects(ctx, token, workspace)
+	if err != nil {
+		return "", err
+	}
+	if len(projects) > 0 && projects[0].Key != "" {
+		return projects[0].Key, nil
+	}
+	return "", fmt.Errorf("no Bitbucket project found in workspace %s", workspace)
 }
 
 func (h *Handler) ensureBitbucketRepo(ctx context.Context, token, workspace, repoSlug, projectKey string) error {
