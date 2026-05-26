@@ -36,10 +36,12 @@ const (
 var externalHTTPClient = &http.Client{Timeout: 30 * time.Second}
 
 type externalOAuthToken struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token,omitempty"`
-	TokenType    string `json:"token_type,omitempty"`
-	ExpiresAt    int64  `json:"expires_at,omitempty"`
+	AccessToken         string `json:"access_token"`
+	RefreshToken        string `json:"refresh_token,omitempty"`
+	TokenType           string `json:"token_type,omitempty"`
+	ExpiresAt           int64  `json:"expires_at,omitempty"`
+	BitbucketWorkspace  string `json:"bitbucket_workspace,omitempty"`
+	BitbucketProjectKey string `json:"bitbucket_project_key,omitempty"`
 }
 
 type externalIntegration struct {
@@ -83,9 +85,10 @@ type ExtGitlabSyncMicrofrontendRequest struct {
 }
 
 type BitbucketSyncMicrofrontendRequest struct {
-	FunctionID         string `json:"function_id" binding:"required"`
-	BitbucketWorkspace string `json:"bitbucket_workspace"`
-	BitbucketRepoSlug  string `json:"bitbucket_repo_slug"`
+	FunctionID          string `json:"function_id" binding:"required"`
+	BitbucketWorkspace  string `json:"bitbucket_workspace"`
+	BitbucketRepoSlug   string `json:"bitbucket_repo_slug"`
+	BitbucketProjectKey string `json:"bitbucket_project_key"`
 }
 
 func (h *Handler) ExtGitlabConnect(c *gin.Context) {
@@ -343,7 +346,7 @@ func (h *Handler) BitbucketSyncMicrofrontend(c *gin.Context) {
 		return
 	}
 
-	if err := h.syncMicrofrontendToBitbucket(c.Request.Context(), funcRecord, req.BitbucketWorkspace, req.BitbucketRepoSlug, resource.ProjectId, resource.EnvironmentId); err != nil {
+	if err := h.syncMicrofrontendToBitbucket(c.Request.Context(), funcRecord, req.BitbucketWorkspace, req.BitbucketRepoSlug, req.BitbucketProjectKey, resource.ProjectId, resource.EnvironmentId); err != nil {
 		h.handleResponse(c, status.InternalServerError, err.Error())
 		return
 	}
@@ -358,7 +361,7 @@ func (h *Handler) syncAllMicrofrontendMirrors(ctx context.Context, funcRecord *n
 	if err := h.syncMicrofrontendToExtGitlab(ctx, funcRecord, "", companyProjectID, environmentID); err != nil {
 		log.Printf("[MIRROR→EXT-GITLAB] sync skipped/failed for func_id=%s: %v", funcRecord.GetId(), err)
 	}
-	if err := h.syncMicrofrontendToBitbucket(ctx, funcRecord, "", "", companyProjectID, environmentID); err != nil {
+	if err := h.syncMicrofrontendToBitbucket(ctx, funcRecord, "", "", "", companyProjectID, environmentID); err != nil {
 		log.Printf("[MIRROR→BITBUCKET] sync skipped/failed for func_id=%s: %v", funcRecord.GetId(), err)
 	}
 }
@@ -408,19 +411,25 @@ func (h *Handler) syncMicrofrontendToExtGitlab(ctx context.Context, funcRecord *
 	return nil
 }
 
-func (h *Handler) syncMicrofrontendToBitbucket(ctx context.Context, funcRecord *nb.Function, workspace, repoSlug, companyProjectID, environmentID string) error {
+func (h *Handler) syncMicrofrontendToBitbucket(ctx context.Context, funcRecord *nb.Function, workspace, repoSlug, projectKey, companyProjectID, environmentID string) error {
 	gitlabRepoID := cast.ToInt(funcRecord.GetRepoId())
 	if gitlabRepoID == 0 {
 		return fmt.Errorf("function record has no gitlab repo_id")
 	}
 
-	token, err := h.getExternalProviderAccessToken(ctx, pb.ResourceType_BITBUCKET, companyProjectID, environmentID)
+	token, err := h.getExternalProviderToken(ctx, pb.ResourceType_BITBUCKET, companyProjectID, environmentID)
 	if err != nil {
 		return fmt.Errorf("Bitbucket integration not found: %w", err)
 	}
 
 	if workspace == "" {
-		workspace, err = h.defaultBitbucketWorkspace(ctx, token)
+		workspace = token.BitbucketWorkspace
+	}
+	if projectKey == "" {
+		projectKey = token.BitbucketProjectKey
+	}
+	if workspace == "" {
+		workspace, err = h.defaultBitbucketWorkspace(ctx, token.AccessToken)
 		if err != nil {
 			return err
 		}
@@ -441,13 +450,17 @@ func (h *Handler) syncMicrofrontendToBitbucket(ctx context.Context, funcRecord *
 		return fmt.Errorf("no files found in u-gen branch for repo %d", gitlabRepoID)
 	}
 
-	if err := h.ensureBitbucketRepo(ctx, token, workspace, repoSlug); err != nil {
+	if err := h.rememberBitbucketDefaults(ctx, companyProjectID, environmentID, workspace, projectKey); err != nil {
+		log.Printf("[BITBUCKET-SYNC] warning: could not remember workspace/project key: %v", err)
+	}
+
+	if err := h.ensureBitbucketRepo(ctx, token.AccessToken, workspace, repoSlug, projectKey); err != nil {
 		return err
 	}
-	if err := h.pushFilesToBitbucket(ctx, token, workspace, repoSlug, files); err != nil {
+	if err := h.pushFilesToBitbucket(ctx, token.AccessToken, workspace, repoSlug, files); err != nil {
 		return err
 	}
-	if err := h.ensureBitbucketWebhook(ctx, token, workspace, repoSlug, funcRecord.GetId(), companyProjectID, environmentID, funcRecord.GetProjectId()); err != nil {
+	if err := h.ensureBitbucketWebhook(ctx, token.AccessToken, workspace, repoSlug, funcRecord.GetId(), companyProjectID, environmentID, funcRecord.GetProjectId()); err != nil {
 		log.Printf("[BITBUCKET-SYNC] warning: could not create webhook for %s/%s: %v", workspace, repoSlug, err)
 	}
 
@@ -852,23 +865,31 @@ func (h *Handler) getExternalIntegration(ctx context.Context, resourceType pb.Re
 }
 
 func (h *Handler) getExternalProviderAccessToken(ctx context.Context, resourceType pb.ResourceType, projectID, environmentID string) (string, error) {
-	integration, err := h.getExternalIntegration(ctx, resourceType, projectID, environmentID)
+	token, err := h.getExternalProviderToken(ctx, resourceType, projectID, environmentID)
 	if err != nil {
 		return "", err
+	}
+	return token.AccessToken, nil
+}
+
+func (h *Handler) getExternalProviderToken(ctx context.Context, resourceType pb.ResourceType, projectID, environmentID string) (externalOAuthToken, error) {
+	integration, err := h.getExternalIntegration(ctx, resourceType, projectID, environmentID)
+	if err != nil {
+		return externalOAuthToken{}, err
 	}
 
 	token, err := decodeExternalToken(integration.GetToken())
 	if err != nil {
-		return "", err
+		return externalOAuthToken{}, err
 	}
 	if token.AccessToken == "" {
-		return "", fmt.Errorf("stored token is empty")
+		return externalOAuthToken{}, fmt.Errorf("stored token is empty")
 	}
 	if token.ExpiresAt == 0 || time.Now().Add(2*time.Minute).Unix() < token.ExpiresAt {
-		return token.AccessToken, nil
+		return token, nil
 	}
 	if token.RefreshToken == "" {
-		return "", fmt.Errorf("stored token expired and has no refresh token")
+		return externalOAuthToken{}, fmt.Errorf("stored token expired and has no refresh token")
 	}
 
 	var refreshed externalOAuthToken
@@ -881,17 +902,50 @@ func (h *Handler) getExternalProviderAccessToken(ctx context.Context, resourceTy
 		err = fmt.Errorf("unsupported provider %s", resourceType.String())
 	}
 	if err != nil {
-		return "", err
+		return externalOAuthToken{}, err
 	}
+	refreshed.BitbucketWorkspace = token.BitbucketWorkspace
+	refreshed.BitbucketProjectKey = token.BitbucketProjectKey
 
 	_, err = h.upsertExternalIntegration(ctx, resourceType, refreshed, integration.GetUsername(), integration.GetName(), githubStatePayload{
 		ProjectID:     projectID,
 		EnvironmentID: environmentID,
 	})
 	if err != nil {
-		return "", fmt.Errorf("save refreshed token: %w", err)
+		return externalOAuthToken{}, fmt.Errorf("save refreshed token: %w", err)
 	}
-	return refreshed.AccessToken, nil
+	return refreshed, nil
+}
+
+func (h *Handler) rememberBitbucketDefaults(ctx context.Context, projectID, environmentID, workspace, projectKey string) error {
+	if workspace == "" && projectKey == "" {
+		return nil
+	}
+	integration, err := h.getExternalIntegration(ctx, pb.ResourceType_BITBUCKET, projectID, environmentID)
+	if err != nil {
+		return err
+	}
+	token, err := decodeExternalToken(integration.GetToken())
+	if err != nil {
+		return err
+	}
+	changed := false
+	if workspace != "" && token.BitbucketWorkspace != workspace {
+		token.BitbucketWorkspace = workspace
+		changed = true
+	}
+	if projectKey != "" && token.BitbucketProjectKey != projectKey {
+		token.BitbucketProjectKey = projectKey
+		changed = true
+	}
+	if !changed {
+		return nil
+	}
+	_, err = h.upsertExternalIntegration(ctx, pb.ResourceType_BITBUCKET, token, integration.GetUsername(), integration.GetName(), githubStatePayload{
+		ProjectID:     projectID,
+		EnvironmentID: environmentID,
+	})
+	return err
 }
 
 func decodeExternalToken(raw string) (externalOAuthToken, error) {
@@ -1258,7 +1312,7 @@ func (h *Handler) defaultBitbucketWorkspace(ctx context.Context, token string) (
 	return "", fmt.Errorf("no Bitbucket workspace found")
 }
 
-func (h *Handler) ensureBitbucketRepo(ctx context.Context, token, workspace, repoSlug string) error {
+func (h *Handler) ensureBitbucketRepo(ctx context.Context, token, workspace, repoSlug, projectKey string) error {
 	repoURL := fmt.Sprintf("%s/repositories/%s/%s", strings.TrimRight(h.cfg.BitbucketApiBaseURL, "/"), url.PathEscape(workspace), url.PathEscape(repoSlug))
 	req, err := h.externalBearerRequest(ctx, http.MethodGet, repoURL, nil, token)
 	if err != nil {
@@ -1277,10 +1331,14 @@ func (h *Handler) ensureBitbucketRepo(ctx context.Context, token, workspace, rep
 		return fmt.Errorf("Bitbucket check repo returned %d: %s", resp.StatusCode, string(b))
 	}
 
-	payload, _ := json.Marshal(map[string]any{
+	createPayload := map[string]any{
 		"scm":        "git",
 		"is_private": true,
-	})
+	}
+	if projectKey != "" {
+		createPayload["project"] = map[string]any{"key": strings.ToUpper(projectKey)}
+	}
+	payload, _ := json.Marshal(createPayload)
 	req, err = h.externalBearerRequest(ctx, http.MethodPost, repoURL, bytes.NewBuffer(payload), token)
 	if err != nil {
 		return err
