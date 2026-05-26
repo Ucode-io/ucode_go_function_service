@@ -114,7 +114,7 @@ func SetUpAPI(r *gin.Engine, h handlers.Handler, cfg config.Config) {
 
 	microFe := v2.Group("/functions")
 	{
-		// MICROFRONTEND (React)
+		/// MICROFRONTEND (React)
 		microFe.POST("/micro-frontend", h.CreateMicroFrontEnd)
 		microFe.GET("/micro-frontend/:micro-frontend-id", h.GetMicroFrontEndByID)
 		microFe.GET("/micro-frontend", h.GetAllMicroFrontEnd)
