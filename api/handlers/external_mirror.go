@@ -1351,8 +1351,10 @@ func (h *Handler) pushFilesToBitbucket(ctx context.Context, token, workspace, re
 	var body bytes.Buffer
 	writer := multipart.NewWriter(&body)
 	_ = writer.WriteField("message", "Update from ucode platform")
+	_ = writer.WriteField("branch", config.DefaultBranch)
 	for _, file := range files {
-		part, err := writer.CreateFormFile(file.Path, file.Path)
+		fieldPath := "/" + strings.TrimLeft(file.Path, "/")
+		part, err := writer.CreateFormFile(fieldPath, path.Base(file.Path))
 		if err != nil {
 			return err
 		}
