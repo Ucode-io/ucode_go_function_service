@@ -1180,7 +1180,7 @@ func (h *Handler) getExtGitlabFileContent(ctx context.Context, token string, pro
 
 func (h *Handler) listBitbucketWorkspaces(ctx context.Context, token string) ([]bitbucketWorkspace, error) {
 	var result []bitbucketWorkspace
-	nextURL := strings.TrimRight(h.cfg.BitbucketApiBaseURL, "/") + "/user/permissions/workspaces?pagelen=100"
+	nextURL := strings.TrimRight(h.cfg.BitbucketApiBaseURL, "/") + "/user/workspaces?pagelen=100"
 	for nextURL != "" {
 		req, err := h.externalBearerRequest(ctx, http.MethodGet, nextURL, nil, token)
 		if err != nil {
@@ -1189,8 +1189,12 @@ func (h *Handler) listBitbucketWorkspaces(ctx context.Context, token string) ([]
 		var page struct {
 			Next   string `json:"next"`
 			Values []struct {
-				Permission string `json:"permission"`
-				Workspace  struct {
+				Permission    string `json:"permission"`
+				Administrator bool   `json:"administrator"`
+				Slug          string `json:"slug"`
+				Name          string `json:"name"`
+				UUID          string `json:"uuid"`
+				Workspace     struct {
 					Slug string `json:"slug"`
 					Name string `json:"name"`
 					UUID string `json:"uuid"`
@@ -1201,12 +1205,34 @@ func (h *Handler) listBitbucketWorkspaces(ctx context.Context, token string) ([]
 			return nil, err
 		}
 		for _, item := range page.Values {
+			slug := item.Workspace.Slug
+			name := item.Workspace.Name
+			uuid := item.Workspace.UUID
+			if slug == "" {
+				slug = item.Slug
+			}
+			if name == "" {
+				name = item.Name
+			}
+			if uuid == "" {
+				uuid = item.UUID
+			}
+
+			permission := item.Permission
+			if permission == "" {
+				if item.Administrator {
+					permission = "admin"
+				} else {
+					permission = "member"
+				}
+			}
+
 			result = append(result, bitbucketWorkspace{
-				Slug:       item.Workspace.Slug,
-				Name:       item.Workspace.Name,
-				UUID:       item.Workspace.UUID,
-				Permission: item.Permission,
-				IsAdmin:    item.Permission == "admin" || item.Permission == "owner",
+				Slug:       slug,
+				Name:       name,
+				UUID:       uuid,
+				Permission: permission,
+				IsAdmin:    item.Administrator || permission == "admin" || permission == "owner",
 			})
 		}
 		nextURL = page.Next
