@@ -115,41 +115,42 @@ func (h *Handler) ExtGitlabCallback(c *gin.Context) {
 	code := c.Query("code")
 	state := c.Query("state")
 	if code == "" || state == "" {
-		c.Redirect(http.StatusTemporaryRedirect, h.cfg.GitlabFrontendErrorURL+"?reason=missing_params")
+		redirectWithQuery(c, h.cfg.GitlabFrontendErrorURL, map[string]string{"provider": "gitlab", "reason": "missing_params"})
 		return
 	}
 
 	stateData, err := h.consumeExternalOAuthState(c.Request.Context(), extGitlabStatePrefix, state)
 	if err != nil {
-		c.Redirect(http.StatusTemporaryRedirect, h.cfg.GitlabFrontendErrorURL+"?reason=invalid_state")
+		redirectWithQuery(c, h.cfg.GitlabFrontendErrorURL, map[string]string{"provider": "gitlab", "reason": "invalid_state"})
 		return
 	}
 
 	token, err := h.exchangeExtGitlabCode(c.Request.Context(), code)
 	if err != nil {
 		h.log.Error("external gitlab callback token exchange failed: " + err.Error())
-		c.Redirect(http.StatusTemporaryRedirect, h.cfg.GitlabFrontendErrorURL+"?reason=token_exchange_failed")
+		redirectWithQuery(c, h.cfg.GitlabFrontendErrorURL, map[string]string{"provider": "gitlab", "reason": "token_exchange_failed"})
 		return
 	}
 
 	user, err := h.fetchExtGitlabUser(c.Request.Context(), token.AccessToken)
 	if err != nil {
 		h.log.Error("external gitlab callback fetch user failed: " + err.Error())
-		c.Redirect(http.StatusTemporaryRedirect, h.cfg.GitlabFrontendErrorURL+"?reason=fetch_user_failed")
+		redirectWithQuery(c, h.cfg.GitlabFrontendErrorURL, map[string]string{"provider": "gitlab", "reason": "fetch_user_failed"})
 		return
 	}
 
 	integrationID, err := h.upsertExternalIntegration(c.Request.Context(), pb.ResourceType_GITLAB, token, user.Username, user.Name, stateData)
 	if err != nil {
 		h.log.Error("external gitlab callback save integration failed: " + err.Error())
-		c.Redirect(http.StatusTemporaryRedirect, h.cfg.GitlabFrontendErrorURL+"?reason=save_failed")
+		redirectWithQuery(c, h.cfg.GitlabFrontendErrorURL, map[string]string{"provider": "gitlab", "reason": "save_failed"})
 		return
 	}
 
-	params := url.Values{}
-	params.Set("integration_id", integrationID)
-	params.Set("username", user.Username)
-	c.Redirect(http.StatusTemporaryRedirect, h.cfg.GitlabFrontendSuccessURL+"?"+params.Encode())
+	redirectWithQuery(c, h.cfg.GitlabFrontendSuccessURL, map[string]string{
+		"provider":       "gitlab",
+		"integration_id": integrationID,
+		"username":       user.Username,
+	})
 }
 
 func (h *Handler) ExtGitlabGetIntegration(c *gin.Context) {
@@ -211,27 +212,27 @@ func (h *Handler) BitbucketCallback(c *gin.Context) {
 	code := c.Query("code")
 	state := c.Query("state")
 	if code == "" || state == "" {
-		c.Redirect(http.StatusTemporaryRedirect, h.cfg.BitbucketFrontendErrorURL+"?reason=missing_params")
+		redirectWithQuery(c, h.cfg.BitbucketFrontendErrorURL, map[string]string{"provider": "bitbucket", "reason": "missing_params"})
 		return
 	}
 
 	stateData, err := h.consumeExternalOAuthState(c.Request.Context(), bitbucketStatePrefix, state)
 	if err != nil {
-		c.Redirect(http.StatusTemporaryRedirect, h.cfg.BitbucketFrontendErrorURL+"?reason=invalid_state")
+		redirectWithQuery(c, h.cfg.BitbucketFrontendErrorURL, map[string]string{"provider": "bitbucket", "reason": "invalid_state"})
 		return
 	}
 
 	token, err := h.exchangeBitbucketCode(c.Request.Context(), code)
 	if err != nil {
 		h.log.Error("bitbucket callback token exchange failed: " + err.Error())
-		c.Redirect(http.StatusTemporaryRedirect, h.cfg.BitbucketFrontendErrorURL+"?reason=token_exchange_failed")
+		redirectWithQuery(c, h.cfg.BitbucketFrontendErrorURL, map[string]string{"provider": "bitbucket", "reason": "token_exchange_failed"})
 		return
 	}
 
 	user, err := h.fetchBitbucketUser(c.Request.Context(), token.AccessToken)
 	if err != nil {
 		h.log.Error("bitbucket callback fetch user failed: " + err.Error())
-		c.Redirect(http.StatusTemporaryRedirect, h.cfg.BitbucketFrontendErrorURL+"?reason=fetch_user_failed")
+		redirectWithQuery(c, h.cfg.BitbucketFrontendErrorURL, map[string]string{"provider": "bitbucket", "reason": "fetch_user_failed"})
 		return
 	}
 
@@ -247,14 +248,15 @@ func (h *Handler) BitbucketCallback(c *gin.Context) {
 	integrationID, err := h.upsertExternalIntegration(c.Request.Context(), pb.ResourceType_BITBUCKET, token, username, name, stateData)
 	if err != nil {
 		h.log.Error("bitbucket callback save integration failed: " + err.Error())
-		c.Redirect(http.StatusTemporaryRedirect, h.cfg.BitbucketFrontendErrorURL+"?reason=save_failed")
+		redirectWithQuery(c, h.cfg.BitbucketFrontendErrorURL, map[string]string{"provider": "bitbucket", "reason": "save_failed"})
 		return
 	}
 
-	params := url.Values{}
-	params.Set("integration_id", integrationID)
-	params.Set("username", username)
-	c.Redirect(http.StatusTemporaryRedirect, h.cfg.BitbucketFrontendSuccessURL+"?"+params.Encode())
+	redirectWithQuery(c, h.cfg.BitbucketFrontendSuccessURL, map[string]string{
+		"provider":       "bitbucket",
+		"integration_id": integrationID,
+		"username":       username,
+	})
 }
 
 func (h *Handler) BitbucketGetIntegration(c *gin.Context) {
@@ -1521,4 +1523,31 @@ func pathEscapeSegments(p string) string {
 		parts[i] = url.PathEscape(part)
 	}
 	return strings.Join(parts, "/")
+}
+
+func redirectWithQuery(c *gin.Context, base string, params map[string]string) {
+	u, err := url.Parse(base)
+	if err != nil {
+		q := url.Values{}
+		for key, value := range params {
+			if value != "" {
+				q.Set(key, value)
+			}
+		}
+		separator := "?"
+		if strings.Contains(base, "?") {
+			separator = "&"
+		}
+		c.Redirect(http.StatusTemporaryRedirect, base+separator+q.Encode())
+		return
+	}
+
+	q := u.Query()
+	for key, value := range params {
+		if value != "" {
+			q.Set(key, value)
+		}
+	}
+	u.RawQuery = q.Encode()
+	c.Redirect(http.StatusTemporaryRedirect, u.String())
 }
