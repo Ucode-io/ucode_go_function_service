@@ -11,6 +11,7 @@ service McpProjectService {
   rpc GetAllMcpProject(GetMcpProjectListReq) returns (McpProjectList) {}
   rpc GetMcpProjectFiles(McpProjectId) returns (McpProject) {}
   rpc DeleteMcpProject(McpProjectId) returns (McpProject) {}
+  rpc GetPublishedMcpProjectCount(GetPublishedMcpProjectCountReq) returns (GetPublishedMcpProjectCountResp) {}
 }
 
 message CreateMcpProjectReqeust {
@@ -29,6 +30,7 @@ message CreateMcpProjectReqeust {
   string microfrontend_repo_id = 13;
   string microfrontend_branch = 14;
   string microfrontend_url = 15;
+  string project_type = 16;
 }
 
 message McpProject {
@@ -53,6 +55,7 @@ message McpProject {
   string microfrontend_repo_id = 19;
   string microfrontend_branch = 20;
   string microfrontend_url = 21;
+  string project_type = 22;
 }
 
 message McpProjectList {
@@ -97,4 +100,12 @@ message FunctionData {
   string repo_id = 7;
   string created_at = 8;
   string updated_at = 9;
+}
+
+message GetPublishedMcpProjectCountReq {
+  string resource_env_id = 1;
+}
+
+message GetPublishedMcpProjectCountResp {
+  int32 count = 1;
 }

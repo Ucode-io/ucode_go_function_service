@@ -4,6 +4,7 @@ package new_object_builder_service;
 option go_package="genproto/new_object_builder_service";
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
 
 service FunctionServiceV2 {
     rpc Create(CreateFunctionRequest) returns (Function) {}
@@ -79,6 +80,21 @@ message Function {
     string github_webhook_id = 29;
     string mcp_project_id = 30;
     string mcp_resource_env_id = 31;
+    repeated FunctionCustomEvent custom_events = 32;
+}
+
+message FunctionCustomEvent {
+    string id = 1;
+    string table_slug = 2;
+    string event_path = 3;
+    string label = 4;
+    string icon = 5;
+    string url = 6;
+    bool disable = 7;
+    string method = 8;
+    string action_type = 9;
+    google.protobuf.Struct attributes = 10;
+    string path = 11;
 }
 
 message GetAllFunctionsRequest {
@@ -90,6 +106,7 @@ message GetAllFunctionsRequest {
     repeated string type = 6;
     string function_id = 7;
     string github_repo_name = 8;
+    bool include_custom_events = 9;
 }
 
 message GetAllFunctionsResponse {

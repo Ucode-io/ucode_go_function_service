@@ -56,8 +56,10 @@ type BillingServiceClient interface {
 	// Subscription
 	GetSubscription(ctx context.Context, in *PrimaryKey, opts ...grpc.CallOption) (*Subscription, error)
 	UpdateSubscription(ctx context.Context, in *Subscription, opts ...grpc.CallOption) (*Subscription, error)
+	CancelSubscription(ctx context.Context, in *CancelSubscriptionRequest, opts ...grpc.CallOption) (*Subscription, error)
 	// Discount
 	ListDiscounts(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListDiscountsResponse, error)
+	ListBillingPeriods(ctx context.Context, in *ListBillingPeriodsRequest, opts ...grpc.CallOption) (*ListBillingPeriodsResponse, error)
 	UpdateSubscriptionEndDate(ctx context.Context, in *UpdateSubscriptionEndDateReq, opts ...grpc.CallOption) (*UpdateSubscriptionEndDateResp, error)
 	GetPricingLimits(ctx context.Context, in *GetPricingLimitsRequest, opts ...grpc.CallOption) (*GetPricingLimitsResponse, error)
 	LogUsage(ctx context.Context, in *LogUsageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -317,9 +319,27 @@ func (c *billingServiceClient) UpdateSubscription(ctx context.Context, in *Subsc
 	return out, nil
 }
 
+func (c *billingServiceClient) CancelSubscription(ctx context.Context, in *CancelSubscriptionRequest, opts ...grpc.CallOption) (*Subscription, error) {
+	out := new(Subscription)
+	err := c.cc.Invoke(ctx, "/company_service.BillingService/CancelSubscription", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *billingServiceClient) ListDiscounts(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListDiscountsResponse, error) {
 	out := new(ListDiscountsResponse)
 	err := c.cc.Invoke(ctx, "/company_service.BillingService/ListDiscounts", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *billingServiceClient) ListBillingPeriods(ctx context.Context, in *ListBillingPeriodsRequest, opts ...grpc.CallOption) (*ListBillingPeriodsResponse, error) {
+	out := new(ListBillingPeriodsResponse)
+	err := c.cc.Invoke(ctx, "/company_service.BillingService/ListBillingPeriods", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -417,8 +437,10 @@ type BillingServiceServer interface {
 	// Subscription
 	GetSubscription(context.Context, *PrimaryKey) (*Subscription, error)
 	UpdateSubscription(context.Context, *Subscription) (*Subscription, error)
+	CancelSubscription(context.Context, *CancelSubscriptionRequest) (*Subscription, error)
 	// Discount
 	ListDiscounts(context.Context, *ListRequest) (*ListDiscountsResponse, error)
+	ListBillingPeriods(context.Context, *ListBillingPeriodsRequest) (*ListBillingPeriodsResponse, error)
 	UpdateSubscriptionEndDate(context.Context, *UpdateSubscriptionEndDateReq) (*UpdateSubscriptionEndDateResp, error)
 	GetPricingLimits(context.Context, *GetPricingLimitsRequest) (*GetPricingLimitsResponse, error)
 	LogUsage(context.Context, *LogUsageRequest) (*emptypb.Empty, error)
@@ -513,8 +535,14 @@ func (UnimplementedBillingServiceServer) GetSubscription(context.Context, *Prima
 func (UnimplementedBillingServiceServer) UpdateSubscription(context.Context, *Subscription) (*Subscription, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateSubscription not implemented")
 }
+func (UnimplementedBillingServiceServer) CancelSubscription(context.Context, *CancelSubscriptionRequest) (*Subscription, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CancelSubscription not implemented")
+}
 func (UnimplementedBillingServiceServer) ListDiscounts(context.Context, *ListRequest) (*ListDiscountsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListDiscounts not implemented")
+}
+func (UnimplementedBillingServiceServer) ListBillingPeriods(context.Context, *ListBillingPeriodsRequest) (*ListBillingPeriodsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListBillingPeriods not implemented")
 }
 func (UnimplementedBillingServiceServer) UpdateSubscriptionEndDate(context.Context, *UpdateSubscriptionEndDateReq) (*UpdateSubscriptionEndDateResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateSubscriptionEndDate not implemented")
@@ -1033,6 +1061,24 @@ func _BillingService_UpdateSubscription_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _BillingService_CancelSubscription_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CancelSubscriptionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BillingServiceServer).CancelSubscription(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/company_service.BillingService/CancelSubscription",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BillingServiceServer).CancelSubscription(ctx, req.(*CancelSubscriptionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _BillingService_ListDiscounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListRequest)
 	if err := dec(in); err != nil {
@@ -1047,6 +1093,24 @@ func _BillingService_ListDiscounts_Handler(srv interface{}, ctx context.Context,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(BillingServiceServer).ListDiscounts(ctx, req.(*ListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _BillingService_ListBillingPeriods_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListBillingPeriodsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BillingServiceServer).ListBillingPeriods(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/company_service.BillingService/ListBillingPeriods",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BillingServiceServer).ListBillingPeriods(ctx, req.(*ListBillingPeriodsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1275,8 +1339,16 @@ var BillingService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _BillingService_UpdateSubscription_Handler,
 		},
 		{
+			MethodName: "CancelSubscription",
+			Handler:    _BillingService_CancelSubscription_Handler,
+		},
+		{
 			MethodName: "ListDiscounts",
 			Handler:    _BillingService_ListDiscounts_Handler,
+		},
+		{
+			MethodName: "ListBillingPeriods",
+			Handler:    _BillingService_ListBillingPeriods_Handler,
 		},
 		{
 			MethodName: "UpdateSubscriptionEndDate",

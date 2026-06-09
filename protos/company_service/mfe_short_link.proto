@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package company_service;
+option go_package = "genproto/company_service";
+
+import "google/protobuf/empty.proto";
+
+service MfeShortLinkService {
+  rpc Create(MfeShortLink) returns (MfeShortLink) {}
+  rpc GetBySlug(MfeShortLinkSlugReq) returns (MfeShortLink) {}
+  rpc GetByFunctionId(MfeShortLinkFunctionReq) returns (MfeShortLink) {}
+  rpc DeleteByProjectId(MfeShortLinkProjectReq) returns (google.protobuf.Empty) {}
+}
+
+message MfeShortLink {
+  string id             = 1;
+  string slug           = 2;
+  string url            = 3;
+  string project_id     = 4;  // ucode project id → FK project(id)
+  string created_at     = 5;
+  string mcp_project_id = 6;  // AI-generated project (mcp_project)
+  string function_id    = 7;  // GitLab function / microfrontend id
+}
+
+message MfeShortLinkSlugReq {
+  string slug = 1;
+}
+
+message MfeShortLinkProjectReq {
+  string project_id = 1;
+}
+
+message MfeShortLinkFunctionReq {
+  string function_id = 1;
+}

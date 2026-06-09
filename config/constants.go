@@ -39,6 +39,7 @@ const (
 	// Fare Types
 	FARE_FUNCTION      string = "function"
 	FARE_MICROFRONTEND string = "microfrontend"
+	FARE_PROJECTS      string = "projects"
 
 	ENTER_PRICE_TYPE string = "ENTER_PRICE"
 

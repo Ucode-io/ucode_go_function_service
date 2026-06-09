@@ -98,6 +98,7 @@ message CreateTableRequest {
     string layout_id = 27;
     bool is_login_table = 28;
     string menu_id = 29;
+    string ucode_project_id = 30;
 }
 
 message IncrementID {

@@ -11,6 +11,15 @@ service UgenTemplateService {
     rpc GetById(GetUgenTemplateByIdReq) returns (UgenTemplate) {}
     rpc Update(UpdateUgenTemplateReq) returns (UgenTemplate) {}
     rpc Delete(DeleteUgenTemplateReq) returns (google.protobuf.Empty) {}
+    rpc SetReaction(SetUgenTemplateReactionReq) returns (UgenTemplateReaction) {}
+    rpc DeleteReaction(DeleteUgenTemplateReactionReq) returns (google.protobuf.Empty) {}
+    rpc ListReactions(GetUgenTemplateReactionListReq) returns (GetUgenTemplateReactionListResponse) {}
+}
+
+enum UgenTemplateReactionType {
+    UGEN_TEMPLATE_REACTION_TYPE_UNSPECIFIED = 0;
+    UGEN_TEMPLATE_REACTION_TYPE_LIKE = 1;
+    UGEN_TEMPLATE_REACTION_TYPE_DISLIKE = 2;
 }
 
 message CreateUgenTemplateReq {
@@ -33,6 +42,7 @@ message CreateUgenTemplateReq {
 message GetUgenTemplateListReq {
     int32 limit = 1;
     int32 offset = 2;
+    string user_id = 3;
 }
 
 message GetUgenTemplateListResponse {
@@ -42,6 +52,7 @@ message GetUgenTemplateListResponse {
 
 message GetUgenTemplateByIdReq {
     string id = 1;
+    string user_id = 2;
 }
 
 message UpdateUgenTemplateReq {
@@ -66,6 +77,39 @@ message DeleteUgenTemplateReq {
     string id = 1;
 }
 
+message SetUgenTemplateReactionReq {
+    string template_id = 1;
+    string user_id = 2;
+    UgenTemplateReactionType reaction_type = 3;
+}
+
+message DeleteUgenTemplateReactionReq {
+    string template_id = 1;
+    string user_id = 2;
+}
+
+message GetUgenTemplateReactionListReq {
+    string template_id = 1;
+    UgenTemplateReactionType reaction_type = 2;
+    int32 limit = 3;
+    int32 offset = 4;
+}
+
+message GetUgenTemplateReactionListResponse {
+    repeated UgenTemplateReaction reactions = 1;
+    int32 count = 2;
+}
+
+message UgenTemplateReaction {
+    string id = 1;
+    string template_id = 2;
+    string user_id = 3;
+    UgenTemplateReactionType reaction_type = 4;
+    string created_at = 5;
+    string updated_at = 6;
+    int64 deleted_at = 7;
+}
+
 message UgenTemplate {
     string id = 1;
     string name = 2;
@@ -85,4 +129,7 @@ message UgenTemplate {
     string source_function_id = 16;
     string source_repo_id = 17;
     repeated string images = 18;
+    int32 like_count = 19;
+    int32 dislike_count = 20;
+    UgenTemplateReactionType current_user_reaction = 21;
 }

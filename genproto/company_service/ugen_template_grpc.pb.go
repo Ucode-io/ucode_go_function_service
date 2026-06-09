@@ -28,6 +28,9 @@ type UgenTemplateServiceClient interface {
 	GetById(ctx context.Context, in *GetUgenTemplateByIdReq, opts ...grpc.CallOption) (*UgenTemplate, error)
 	Update(ctx context.Context, in *UpdateUgenTemplateReq, opts ...grpc.CallOption) (*UgenTemplate, error)
 	Delete(ctx context.Context, in *DeleteUgenTemplateReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	SetReaction(ctx context.Context, in *SetUgenTemplateReactionReq, opts ...grpc.CallOption) (*UgenTemplateReaction, error)
+	DeleteReaction(ctx context.Context, in *DeleteUgenTemplateReactionReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ListReactions(ctx context.Context, in *GetUgenTemplateReactionListReq, opts ...grpc.CallOption) (*GetUgenTemplateReactionListResponse, error)
 }
 
 type ugenTemplateServiceClient struct {
@@ -83,6 +86,33 @@ func (c *ugenTemplateServiceClient) Delete(ctx context.Context, in *DeleteUgenTe
 	return out, nil
 }
 
+func (c *ugenTemplateServiceClient) SetReaction(ctx context.Context, in *SetUgenTemplateReactionReq, opts ...grpc.CallOption) (*UgenTemplateReaction, error) {
+	out := new(UgenTemplateReaction)
+	err := c.cc.Invoke(ctx, "/company_service.UgenTemplateService/SetReaction", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ugenTemplateServiceClient) DeleteReaction(ctx context.Context, in *DeleteUgenTemplateReactionReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/company_service.UgenTemplateService/DeleteReaction", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ugenTemplateServiceClient) ListReactions(ctx context.Context, in *GetUgenTemplateReactionListReq, opts ...grpc.CallOption) (*GetUgenTemplateReactionListResponse, error) {
+	out := new(GetUgenTemplateReactionListResponse)
+	err := c.cc.Invoke(ctx, "/company_service.UgenTemplateService/ListReactions", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UgenTemplateServiceServer is the server API for UgenTemplateService service.
 // All implementations must embed UnimplementedUgenTemplateServiceServer
 // for forward compatibility
@@ -92,6 +122,9 @@ type UgenTemplateServiceServer interface {
 	GetById(context.Context, *GetUgenTemplateByIdReq) (*UgenTemplate, error)
 	Update(context.Context, *UpdateUgenTemplateReq) (*UgenTemplate, error)
 	Delete(context.Context, *DeleteUgenTemplateReq) (*emptypb.Empty, error)
+	SetReaction(context.Context, *SetUgenTemplateReactionReq) (*UgenTemplateReaction, error)
+	DeleteReaction(context.Context, *DeleteUgenTemplateReactionReq) (*emptypb.Empty, error)
+	ListReactions(context.Context, *GetUgenTemplateReactionListReq) (*GetUgenTemplateReactionListResponse, error)
 	mustEmbedUnimplementedUgenTemplateServiceServer()
 }
 
@@ -113,6 +146,15 @@ func (UnimplementedUgenTemplateServiceServer) Update(context.Context, *UpdateUge
 }
 func (UnimplementedUgenTemplateServiceServer) Delete(context.Context, *DeleteUgenTemplateReq) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
+}
+func (UnimplementedUgenTemplateServiceServer) SetReaction(context.Context, *SetUgenTemplateReactionReq) (*UgenTemplateReaction, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetReaction not implemented")
+}
+func (UnimplementedUgenTemplateServiceServer) DeleteReaction(context.Context, *DeleteUgenTemplateReactionReq) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteReaction not implemented")
+}
+func (UnimplementedUgenTemplateServiceServer) ListReactions(context.Context, *GetUgenTemplateReactionListReq) (*GetUgenTemplateReactionListResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListReactions not implemented")
 }
 func (UnimplementedUgenTemplateServiceServer) mustEmbedUnimplementedUgenTemplateServiceServer() {}
 
@@ -217,6 +259,60 @@ func _UgenTemplateService_Delete_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UgenTemplateService_SetReaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetUgenTemplateReactionReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UgenTemplateServiceServer).SetReaction(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/company_service.UgenTemplateService/SetReaction",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UgenTemplateServiceServer).SetReaction(ctx, req.(*SetUgenTemplateReactionReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UgenTemplateService_DeleteReaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteUgenTemplateReactionReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UgenTemplateServiceServer).DeleteReaction(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/company_service.UgenTemplateService/DeleteReaction",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UgenTemplateServiceServer).DeleteReaction(ctx, req.(*DeleteUgenTemplateReactionReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UgenTemplateService_ListReactions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUgenTemplateReactionListReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UgenTemplateServiceServer).ListReactions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/company_service.UgenTemplateService/ListReactions",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UgenTemplateServiceServer).ListReactions(ctx, req.(*GetUgenTemplateReactionListReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UgenTemplateService_ServiceDesc is the grpc.ServiceDesc for UgenTemplateService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -243,6 +339,18 @@ var UgenTemplateService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Delete",
 			Handler:    _UgenTemplateService_Delete_Handler,
+		},
+		{
+			MethodName: "SetReaction",
+			Handler:    _UgenTemplateService_SetReaction_Handler,
+		},
+		{
+			MethodName: "DeleteReaction",
+			Handler:    _UgenTemplateService_DeleteReaction_Handler,
+		},
+		{
+			MethodName: "ListReactions",
+			Handler:    _UgenTemplateService_ListReactions_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

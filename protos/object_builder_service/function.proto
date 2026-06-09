@@ -4,6 +4,7 @@ package object_builder_service;
 option go_package="genproto/object_builder_service";
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
 
 
 service FunctionService {
@@ -75,6 +76,21 @@ message Function {
     bool is_public = 25;
     int32 max_scale = 26;
     int32 former_max_scale = 27;
+    repeated FunctionCustomEvent custom_events = 28;
+}
+
+message FunctionCustomEvent {
+    string id = 1;
+    string table_slug = 2;
+    string event_path = 3;
+    string label = 4;
+    string icon = 5;
+    string url = 6;
+    bool disable = 7;
+    string method = 8;
+    string action_type = 9;
+    google.protobuf.Struct attributes = 10;
+    string path = 11;
 }
 
 message GetAllFunctionsRequest {
@@ -85,6 +101,7 @@ message GetAllFunctionsRequest {
     string environment_id = 5;
     repeated string type = 6;
     string function_id = 7;
+    bool include_custom_events = 8;
 }
 
 message GetAllFunctionsResponse {

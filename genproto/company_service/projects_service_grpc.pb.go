@@ -46,6 +46,7 @@ type ProjectServiceClient interface {
 	GetProjectUgenStatus(ctx context.Context, in *GetProjectUgenStatusRequest, opts ...grpc.CallOption) (*GetProjectUgenStatusResponse, error)
 	UpdateProjectUgenAccess(ctx context.Context, in *UpdateProjectUgenAccessRequest, opts ...grpc.CallOption) (*UpdateProjectUgenAccessResponse, error)
 	AutoAssignUgenIfSingle(ctx context.Context, in *AutoAssignUgenIfSingleRequest, opts ...grpc.CallOption) (*AutoAssignUgenIfSingleResponse, error)
+	ListUgenProjects(ctx context.Context, in *ListUgenProjectsRequest, opts ...grpc.CallOption) (*ListUgenProjectsResponse, error)
 }
 
 type projectServiceClient struct {
@@ -263,6 +264,15 @@ func (c *projectServiceClient) AutoAssignUgenIfSingle(ctx context.Context, in *A
 	return out, nil
 }
 
+func (c *projectServiceClient) ListUgenProjects(ctx context.Context, in *ListUgenProjectsRequest, opts ...grpc.CallOption) (*ListUgenProjectsResponse, error) {
+	out := new(ListUgenProjectsResponse)
+	err := c.cc.Invoke(ctx, "/company_service.ProjectService/ListUgenProjects", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProjectServiceServer is the server API for ProjectService service.
 // All implementations must embed UnimplementedProjectServiceServer
 // for forward compatibility
@@ -290,6 +300,7 @@ type ProjectServiceServer interface {
 	GetProjectUgenStatus(context.Context, *GetProjectUgenStatusRequest) (*GetProjectUgenStatusResponse, error)
 	UpdateProjectUgenAccess(context.Context, *UpdateProjectUgenAccessRequest) (*UpdateProjectUgenAccessResponse, error)
 	AutoAssignUgenIfSingle(context.Context, *AutoAssignUgenIfSingleRequest) (*AutoAssignUgenIfSingleResponse, error)
+	ListUgenProjects(context.Context, *ListUgenProjectsRequest) (*ListUgenProjectsResponse, error)
 	mustEmbedUnimplementedProjectServiceServer()
 }
 
@@ -365,6 +376,9 @@ func (UnimplementedProjectServiceServer) UpdateProjectUgenAccess(context.Context
 }
 func (UnimplementedProjectServiceServer) AutoAssignUgenIfSingle(context.Context, *AutoAssignUgenIfSingleRequest) (*AutoAssignUgenIfSingleResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AutoAssignUgenIfSingle not implemented")
+}
+func (UnimplementedProjectServiceServer) ListUgenProjects(context.Context, *ListUgenProjectsRequest) (*ListUgenProjectsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListUgenProjects not implemented")
 }
 func (UnimplementedProjectServiceServer) mustEmbedUnimplementedProjectServiceServer() {}
 
@@ -793,6 +807,24 @@ func _ProjectService_AutoAssignUgenIfSingle_Handler(srv interface{}, ctx context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ProjectService_ListUgenProjects_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListUgenProjectsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).ListUgenProjects(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/company_service.ProjectService/ListUgenProjects",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).ListUgenProjects(ctx, req.(*ListUgenProjectsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ProjectService_ServiceDesc is the grpc.ServiceDesc for ProjectService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -891,6 +923,10 @@ var ProjectService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AutoAssignUgenIfSingle",
 			Handler:    _ProjectService_AutoAssignUgenIfSingle_Handler,
+		},
+		{
+			MethodName: "ListUgenProjects",
+			Handler:    _ProjectService_ListUgenProjects_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

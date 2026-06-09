@@ -953,7 +953,13 @@ func (h *Handler) PushMicrofrontendChanges(c *gin.Context) {
 // @Failure 400 {object} status.Response{data=string} "Bad Request"
 // @Failure 500 {object} status.Response{data=string} "Server Error"
 func (h *Handler) PromoteMicrofrontendToMaster(c *gin.Context) {
-	var req models.PushMicrofrontendChangesRequest
+	var (
+		req       models.PushMicrofrontendChangesRequest
+		ctx       = c.Request.Context()
+		projectId any
+		envId     any
+		ok        bool
+	)
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		h.handleResponse(c, status.BadRequest, err.Error())
@@ -963,6 +969,114 @@ func (h *Handler) PromoteMicrofrontendToMaster(c *gin.Context) {
 	if req.RepoID == 0 {
 		h.handleResponse(c, status.InvalidArgument, "repo_id is required")
 		return
+	}
+
+	projectId, ok = c.Get("project_id")
+	if !ok || !util.IsValidUUID(projectId.(string)) {
+		h.handleResponse(c, status.InvalidArgument, "invalid project_id")
+		return
+	}
+
+	envId, ok = c.Get("environment_id")
+	if !ok || !util.IsValidUUID(envId.(string)) {
+		h.handleResponse(c, status.InvalidArgument, "invalid environment_id")
+		return
+	}
+
+	resource, err := h.services.CompanyService().ServiceResource().GetSingle(
+		ctx,
+		&pb.GetSingleServiceResourceReq{
+			ProjectId:     projectId.(string),
+			EnvironmentId: envId.(string),
+			ServiceType:   pb.ServiceType_BUILDER_SERVICE,
+		},
+	)
+	if err != nil {
+		h.handleResponse(c, status.GRPCError, err.Error())
+		return
+	}
+
+	project, err := h.services.CompanyService().Project().GetById(ctx, &pb.GetProjectByIdRequest{ProjectId: projectId.(string)})
+	if err != nil {
+		h.handleResponse(c, status.GRPCError, err.Error())
+		return
+	}
+
+	funcRecord, funcErr := h.services.GoObjectBuilderService().Function().GetSingle(
+		ctx,
+		&nb.FunctionPrimaryKey{
+			ProjectId: resource.ResourceEnvironmentId,
+			RepoId:    cast.ToString(req.RepoID),
+		},
+	)
+	if funcErr != nil {
+		log.Printf("[PROMOTE] could not get function by repo_id=%d: %v", req.RepoID, funcErr)
+	}
+
+	var (
+		legacyMcpProject *nb.McpProject
+		mcpAlreadyPublished bool
+		hasMcpRef           bool
+	)
+
+	switch {
+	case funcErr == nil && funcRecord.GetMcpProjectId() != "" && funcRecord.GetMcpResourceEnvId() != "":
+		hasMcpRef = true
+		existing, err := h.services.GoObjectBuilderService().McpProject().GetMcpProjectFiles(
+			ctx, &nb.McpProjectId{
+				ResourceEnvId: funcRecord.GetMcpResourceEnvId(),
+				Id:            funcRecord.GetMcpProjectId(),
+				WithoutFiles:  true,
+			},
+		)
+		if err != nil {
+			log.Printf("[PROMOTE] could not load mcp_project %s for publish state: %v", funcRecord.GetMcpProjectId(), err)
+		} else {
+			mcpAlreadyPublished = existing.GetIsPublished()
+		}
+	case req.McpProjectId != "":
+		mcpProject, mcpErr := h.services.GoObjectBuilderService().McpProject().GetMcpProjectFiles(
+			ctx, &nb.McpProjectId{
+				ResourceEnvId: resource.ResourceEnvironmentId,
+				Id:            req.McpProjectId,
+			},
+		)
+		if mcpErr != nil {
+			log.Printf("[PROMOTE] function repo_id=%d has no MCP refs and legacy mcp_project_id %s was not found in child resource env: %v", req.RepoID, req.McpProjectId, mcpErr)
+		} else {
+			hasMcpRef = true
+			legacyMcpProject = mcpProject
+			mcpAlreadyPublished = mcpProject.GetIsPublished()
+		}
+	}
+
+	if hasMcpRef && !mcpAlreadyPublished && len(project.GetFareId()) != 0 {
+		countResp, err := h.services.GoObjectBuilderService().McpProject().GetPublishedMcpProjectCount(
+			ctx, &nb.GetPublishedMcpProjectCountReq{ResourceEnvId: resource.ResourceEnvironmentId},
+		)
+		if err != nil {
+			h.handleResponse(c, status.GRPCError, err.Error())
+			return
+		}
+
+		limitResp, err := h.services.CompanyService().Billing().CompareFunction(ctx, &pb.CompareFunctionRequest{
+			Type:   config.FARE_PROJECTS,
+			FareId: project.GetFareId(),
+			Count:  countResp.GetCount(),
+		})
+		if err != nil {
+			h.handleResponse(c, status.GRPCError, err.Error())
+			return
+		}
+
+		if !limitResp.GetHasAccess() {
+			h.handleResponse(c, status.PaymentRequired, models.PaymentRequiredData{
+				Type: "payment_required",
+				Code: "project_limit",
+				Unit: "projects",
+			})
+			return
+		}
 	}
 
 	gitlabCfg := gitlab.IntegrationData{
@@ -983,43 +1097,9 @@ func (h *Handler) PromoteMicrofrontendToMaster(c *gin.Context) {
 
 	log.Printf("[PROMOTE] repo_id=%d successfully promoted to %s, pipeline_id=%d", req.RepoID, config.DefaultBranch, pipelineID)
 
-	projectId, ok := c.Get("project_id")
-	if !ok || !util.IsValidUUID(projectId.(string)) {
-		h.handleResponse(c, status.InvalidArgument, "invalid project_id")
-		return
-	}
-
-	environmentId, ok := c.Get("environment_id")
-	if !ok || !util.IsValidUUID(environmentId.(string)) {
-		h.handleResponse(c, status.InvalidArgument, "invalid environment_id")
-		return
-	}
-
-	resource, err := h.services.CompanyService().ServiceResource().GetSingle(
-		c.Request.Context(),
-		&pb.GetSingleServiceResourceReq{
-			ProjectId:     projectId.(string),
-			EnvironmentId: environmentId.(string),
-			ServiceType:   pb.ServiceType_BUILDER_SERVICE,
-		},
-	)
-	if err != nil {
-		h.handleResponse(c, status.GRPCError, err.Error())
-		return
-	}
-
-	funcRecord, funcErr := h.services.GoObjectBuilderService().Function().GetSingle(
-		c.Request.Context(),
-		&nb.FunctionPrimaryKey{
-			ProjectId: resource.ResourceEnvironmentId,
-			RepoId:    cast.ToString(req.RepoID),
-		},
-	)
-	if funcErr != nil {
-		log.Printf("[PROMOTE] could not get function by repo_id=%d: %v", req.RepoID, funcErr)
-	} else if funcRecord.GetMcpProjectId() != "" && funcRecord.GetMcpResourceEnvId() != "" {
+	if funcErr == nil && funcRecord.GetMcpProjectId() != "" && funcRecord.GetMcpResourceEnvId() != "" {
 		_, updateErr := h.services.GoObjectBuilderService().McpProject().UpdateMcpProject(
-			c.Request.Context(),
+			ctx,
 			&nb.McpProject{
 				ResourceEnvId:       funcRecord.GetMcpResourceEnvId(),
 				Id:                  funcRecord.GetMcpProjectId(),
@@ -1033,25 +1113,15 @@ func (h *Handler) PromoteMicrofrontendToMaster(c *gin.Context) {
 		if updateErr != nil {
 			log.Printf("[PROMOTE] could not mark head mcp_project %s published: %v", funcRecord.GetMcpProjectId(), updateErr)
 		}
-	} else if req.McpProjectId != "" {
-		mcpProject, mcpErr := h.services.GoObjectBuilderService().McpProject().GetMcpProjectFiles(
-			c.Request.Context(), &nb.McpProjectId{
-				ResourceEnvId: resource.ResourceEnvironmentId,
-				Id:            req.McpProjectId,
-			},
-		)
-		if mcpErr != nil {
-			log.Printf("[PROMOTE] function repo_id=%d has no MCP refs and legacy mcp_project_id %s was not found in child resource env: %v", req.RepoID, req.McpProjectId, mcpErr)
-		} else {
-			mcpProject.IsPublished = true
-			if _, updateErr := h.services.GoObjectBuilderService().McpProject().UpdateMcpProject(c.Request.Context(), mcpProject); updateErr != nil {
-				log.Printf("[PROMOTE] could not update is_published for mcp_project %s: %v", req.McpProjectId, updateErr)
-			}
+	} else if legacyMcpProject != nil {
+		legacyMcpProject.IsPublished = true
+		if _, updateErr := h.services.GoObjectBuilderService().McpProject().UpdateMcpProject(ctx, legacyMcpProject); updateErr != nil {
+			log.Printf("[PROMOTE] could not update is_published for mcp_project %s: %v", legacyMcpProject.GetId(), updateErr)
 		}
 	}
 
 	if funcRecord != nil {
-		go h.syncAllMicrofrontendMirrors(context.Background(), funcRecord, projectId.(string), environmentId.(string))
+		go h.syncAllMicrofrontendMirrors(context.Background(), funcRecord, projectId.(string), envId.(string))
 	}
 
 	h.handleResponse(c, status.OK, gin.H{"status": "pending", "pipeline_id": pipelineID})

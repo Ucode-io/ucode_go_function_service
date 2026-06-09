@@ -40,6 +40,7 @@ service UserService {
     rpc GetUserProjects(UserPrimaryKey) returns (GetUserProjectsRes) {}
     rpc GetUserProjectClientTypes(UserInfoPrimaryKey) returns (GetUserProjectClientTypesResponse) {}
     rpc GetProjectUsersCount(GetProjectUsersCountRequest) returns (GetProjectUsersCountResponse) {}
+    rpc GetCompanyUsersCount(GetCompanyUsersCountRequest) returns (GetCompanyUsersCountResponse) {}
 }
 
 message GetProjectUsersCountRequest {
@@ -47,6 +48,14 @@ message GetProjectUsersCountRequest {
 }
 
 message GetProjectUsersCountResponse {
+    int32 count = 1;
+}
+
+message GetCompanyUsersCountRequest {
+    string company_id = 1;
+}
+
+message GetCompanyUsersCountResponse {
     int32 count = 1;
 }
 

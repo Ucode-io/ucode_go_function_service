@@ -27,6 +27,7 @@ type McpProjectServiceClient interface {
 	GetAllMcpProject(ctx context.Context, in *GetMcpProjectListReq, opts ...grpc.CallOption) (*McpProjectList, error)
 	GetMcpProjectFiles(ctx context.Context, in *McpProjectId, opts ...grpc.CallOption) (*McpProject, error)
 	DeleteMcpProject(ctx context.Context, in *McpProjectId, opts ...grpc.CallOption) (*McpProject, error)
+	GetPublishedMcpProjectCount(ctx context.Context, in *GetPublishedMcpProjectCountReq, opts ...grpc.CallOption) (*GetPublishedMcpProjectCountResp, error)
 }
 
 type mcpProjectServiceClient struct {
@@ -82,6 +83,15 @@ func (c *mcpProjectServiceClient) DeleteMcpProject(ctx context.Context, in *McpP
 	return out, nil
 }
 
+func (c *mcpProjectServiceClient) GetPublishedMcpProjectCount(ctx context.Context, in *GetPublishedMcpProjectCountReq, opts ...grpc.CallOption) (*GetPublishedMcpProjectCountResp, error) {
+	out := new(GetPublishedMcpProjectCountResp)
+	err := c.cc.Invoke(ctx, "/new_object_builder_service.McpProjectService/GetPublishedMcpProjectCount", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // McpProjectServiceServer is the server API for McpProjectService service.
 // All implementations must embed UnimplementedMcpProjectServiceServer
 // for forward compatibility
@@ -91,6 +101,7 @@ type McpProjectServiceServer interface {
 	GetAllMcpProject(context.Context, *GetMcpProjectListReq) (*McpProjectList, error)
 	GetMcpProjectFiles(context.Context, *McpProjectId) (*McpProject, error)
 	DeleteMcpProject(context.Context, *McpProjectId) (*McpProject, error)
+	GetPublishedMcpProjectCount(context.Context, *GetPublishedMcpProjectCountReq) (*GetPublishedMcpProjectCountResp, error)
 	mustEmbedUnimplementedMcpProjectServiceServer()
 }
 
@@ -112,6 +123,9 @@ func (UnimplementedMcpProjectServiceServer) GetMcpProjectFiles(context.Context, 
 }
 func (UnimplementedMcpProjectServiceServer) DeleteMcpProject(context.Context, *McpProjectId) (*McpProject, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteMcpProject not implemented")
+}
+func (UnimplementedMcpProjectServiceServer) GetPublishedMcpProjectCount(context.Context, *GetPublishedMcpProjectCountReq) (*GetPublishedMcpProjectCountResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPublishedMcpProjectCount not implemented")
 }
 func (UnimplementedMcpProjectServiceServer) mustEmbedUnimplementedMcpProjectServiceServer() {}
 
@@ -216,6 +230,24 @@ func _McpProjectService_DeleteMcpProject_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _McpProjectService_GetPublishedMcpProjectCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPublishedMcpProjectCountReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(McpProjectServiceServer).GetPublishedMcpProjectCount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/new_object_builder_service.McpProjectService/GetPublishedMcpProjectCount",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(McpProjectServiceServer).GetPublishedMcpProjectCount(ctx, req.(*GetPublishedMcpProjectCountReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // McpProjectService_ServiceDesc is the grpc.ServiceDesc for McpProjectService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -242,6 +274,10 @@ var McpProjectService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteMcpProject",
 			Handler:    _McpProjectService_DeleteMcpProject_Handler,
+		},
+		{
+			MethodName: "GetPublishedMcpProjectCount",
+			Handler:    _McpProjectService_GetPublishedMcpProjectCount_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -51,6 +51,7 @@ type UserServiceClient interface {
 	GetUserProjects(ctx context.Context, in *UserPrimaryKey, opts ...grpc.CallOption) (*GetUserProjectsRes, error)
 	GetUserProjectClientTypes(ctx context.Context, in *UserInfoPrimaryKey, opts ...grpc.CallOption) (*GetUserProjectClientTypesResponse, error)
 	GetProjectUsersCount(ctx context.Context, in *GetProjectUsersCountRequest, opts ...grpc.CallOption) (*GetProjectUsersCountResponse, error)
+	GetCompanyUsersCount(ctx context.Context, in *GetCompanyUsersCountRequest, opts ...grpc.CallOption) (*GetCompanyUsersCountResponse, error)
 }
 
 type userServiceClient struct {
@@ -313,6 +314,15 @@ func (c *userServiceClient) GetProjectUsersCount(ctx context.Context, in *GetPro
 	return out, nil
 }
 
+func (c *userServiceClient) GetCompanyUsersCount(ctx context.Context, in *GetCompanyUsersCountRequest, opts ...grpc.CallOption) (*GetCompanyUsersCountResponse, error) {
+	out := new(GetCompanyUsersCountResponse)
+	err := c.cc.Invoke(ctx, "/auth_service.UserService/GetCompanyUsersCount", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility
@@ -345,6 +355,7 @@ type UserServiceServer interface {
 	GetUserProjects(context.Context, *UserPrimaryKey) (*GetUserProjectsRes, error)
 	GetUserProjectClientTypes(context.Context, *UserInfoPrimaryKey) (*GetUserProjectClientTypesResponse, error)
 	GetProjectUsersCount(context.Context, *GetProjectUsersCountRequest) (*GetProjectUsersCountResponse, error)
+	GetCompanyUsersCount(context.Context, *GetCompanyUsersCountRequest) (*GetCompanyUsersCountResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -435,6 +446,9 @@ func (UnimplementedUserServiceServer) GetUserProjectClientTypes(context.Context,
 }
 func (UnimplementedUserServiceServer) GetProjectUsersCount(context.Context, *GetProjectUsersCountRequest) (*GetProjectUsersCountResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetProjectUsersCount not implemented")
+}
+func (UnimplementedUserServiceServer) GetCompanyUsersCount(context.Context, *GetCompanyUsersCountRequest) (*GetCompanyUsersCountResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCompanyUsersCount not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 
@@ -953,6 +967,24 @@ func _UserService_GetProjectUsersCount_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_GetCompanyUsersCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCompanyUsersCountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetCompanyUsersCount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth_service.UserService/GetCompanyUsersCount",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetCompanyUsersCount(ctx, req.(*GetCompanyUsersCountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1071,6 +1103,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetProjectUsersCount",
 			Handler:    _UserService_GetProjectUsersCount_Handler,
+		},
+		{
+			MethodName: "GetCompanyUsersCount",
+			Handler:    _UserService_GetCompanyUsersCount_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

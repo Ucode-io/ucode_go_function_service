@@ -45,9 +45,11 @@ service BillingService {
   // Subscription
   rpc GetSubscription(PrimaryKey) returns (Subscription);
   rpc UpdateSubscription(Subscription) returns (Subscription);
+  rpc CancelSubscription(CancelSubscriptionRequest) returns (Subscription);
 
   //Discount
   rpc ListDiscounts(ListRequest) returns (ListDiscountsResponse);
+  rpc ListBillingPeriods(ListBillingPeriodsRequest) returns (ListBillingPeriodsResponse);
 
   rpc UpdateSubscriptionEndDate(UpdateSubscriptionEndDateReq) returns (UpdateSubscriptionEndDateResp);
 
@@ -128,6 +130,13 @@ message Fare {
   bool is_public = 11;
   Currency currency = 14;
   Subscription subscription = 15;
+  string product_type = 16;
+}
+
+// FareItemGroup
+message FareItemGroup {
+  string id = 1;
+  string name = 2;
 }
 
 // FareItem
@@ -137,6 +146,7 @@ message FareItem {
   string parent_id = 3;
   string info = 4;
   string type = 5;
+  FareItemGroup group = 6;
 }
 
 // FareItemPrice
@@ -202,6 +212,7 @@ message ListRequest {
   int32 offset = 2;
   string search = 3;
   string project_id = 4;
+  string product_type = 5;
 }
 
 message ListFareResponse {
@@ -332,6 +343,33 @@ message Subscription {
   string renewal_date = 7;
   string type = 8;
   string discount_id = 9;
+  string pending_fare_id = 10;
+  string billing_period_code = 11;
+  int32 billing_period_months = 12;
+  double billing_period_discount_percent = 13;
+  bool cancel_at_period_end = 14;
+  string canceled_at = 15;
+}
+
+message CancelSubscriptionRequest {
+  string project_id = 1;
+}
+
+message BillingPeriod {
+  string code = 1;
+  string name = 2;
+  int32 months = 3;
+  double discount_percent = 4;
+  bool is_active = 5;
+  int32 sort_order = 6;
+}
+
+message ListBillingPeriodsRequest {
+  string product_type = 1;
+}
+
+message ListBillingPeriodsResponse {
+  repeated BillingPeriod billing_periods = 1;
 }
 
 message CalculatePriceRequest {
@@ -369,10 +407,12 @@ message RecordAiTokenUsageRequest {
   int32 output_tokens = 3;
   string model = 4;
   string description = 5;
+  string company_id = 6;
 }
 
 message GetAiTokenUsageMetricsRequest {
   string project_id = 1;
+  string company_id = 2;
 }
 
 message GetAiTokenUsageMetricsResponse {
