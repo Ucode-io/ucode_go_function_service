@@ -966,8 +966,8 @@ func (h *Handler) PromoteMicrofrontendToMaster(c *gin.Context) {
 		return
 	}
 
-	if req.RepoID == 0 {
-		h.handleResponse(c, status.InvalidArgument, "repo_id is required")
+	if req.RepoID == 0 || len(req.McpProjectId) == 0 {
+		h.handleResponse(c, status.InvalidArgument, "repo_id and mcp_project_id are required")
 		return
 	}
 
@@ -1002,79 +1002,50 @@ func (h *Handler) PromoteMicrofrontendToMaster(c *gin.Context) {
 		return
 	}
 
-	funcRecord, funcErr := h.services.GoObjectBuilderService().Function().GetSingle(
-		ctx,
-		&nb.FunctionPrimaryKey{
-			ProjectId: resource.ResourceEnvironmentId,
-			RepoId:    cast.ToString(req.RepoID),
+	publishedProjectsCount, err := h.services.GoObjectBuilderService().McpProject().GetPublishedMcpProjectCount(
+		ctx, &nb.GetPublishedMcpProjectCountReq{
+			ResourceEnvId: resource.ResourceEnvironmentId,
 		},
 	)
-	if funcErr != nil {
-		log.Printf("[PROMOTE] could not get function by repo_id=%d: %v", req.RepoID, funcErr)
+	if err != nil {
+		h.handleResponse(c, status.GRPCError, err.Error())
+		return
 	}
 
-	var (
-		legacyMcpProject *nb.McpProject
-		mcpAlreadyPublished bool
-		hasMcpRef           bool
+	mcpProject, err := h.services.GoObjectBuilderService().McpProject().GetMcpProjectFiles(
+		ctx, &nb.McpProjectId{
+			ResourceEnvId: resource.ResourceEnvironmentId,
+			Id:            req.McpProjectId,
+			WithoutFiles:  true,
+		},
 	)
-
-	switch {
-	case funcErr == nil && funcRecord.GetMcpProjectId() != "" && funcRecord.GetMcpResourceEnvId() != "":
-		hasMcpRef = true
-		existing, err := h.services.GoObjectBuilderService().McpProject().GetMcpProjectFiles(
-			ctx, &nb.McpProjectId{
-				ResourceEnvId: funcRecord.GetMcpResourceEnvId(),
-				Id:            funcRecord.GetMcpProjectId(),
-				WithoutFiles:  true,
-			},
-		)
-		if err != nil {
-			log.Printf("[PROMOTE] could not load mcp_project %s for publish state: %v", funcRecord.GetMcpProjectId(), err)
-		} else {
-			mcpAlreadyPublished = existing.GetIsPublished()
-		}
-	case req.McpProjectId != "":
-		mcpProject, mcpErr := h.services.GoObjectBuilderService().McpProject().GetMcpProjectFiles(
-			ctx, &nb.McpProjectId{
-				ResourceEnvId: resource.ResourceEnvironmentId,
-				Id:            req.McpProjectId,
-			},
-		)
-		if mcpErr != nil {
-			log.Printf("[PROMOTE] function repo_id=%d has no MCP refs and legacy mcp_project_id %s was not found in child resource env: %v", req.RepoID, req.McpProjectId, mcpErr)
-		} else {
-			hasMcpRef = true
-			legacyMcpProject = mcpProject
-			mcpAlreadyPublished = mcpProject.GetIsPublished()
-		}
+	if err != nil {
+		h.handleResponse(c, status.GRPCError, err.Error())
+		return
 	}
 
-	if hasMcpRef && !mcpAlreadyPublished && len(project.GetFareId()) != 0 {
-		countResp, err := h.services.GoObjectBuilderService().McpProject().GetPublishedMcpProjectCount(
-			ctx, &nb.GetPublishedMcpProjectCountReq{ResourceEnvId: resource.ResourceEnvironmentId},
+	if !mcpProject.IsPublished {
+		limitResp, err := h.services.CompanyService().Billing().CompareFunction(
+			ctx, &pb.CompareFunctionRequest{
+				Type:   config.FARE_PROJECTS,
+				FareId: project.GetFareId(),
+				Count:  publishedProjectsCount.GetCount(),
+			},
 		)
-		if err != nil {
-			h.handleResponse(c, status.GRPCError, err.Error())
-			return
-		}
 
-		limitResp, err := h.services.CompanyService().Billing().CompareFunction(ctx, &pb.CompareFunctionRequest{
-			Type:   config.FARE_PROJECTS,
-			FareId: project.GetFareId(),
-			Count:  countResp.GetCount(),
-		})
 		if err != nil {
 			h.handleResponse(c, status.GRPCError, err.Error())
 			return
 		}
 
 		if !limitResp.GetHasAccess() {
-			h.handleResponse(c, status.PaymentRequired, models.PaymentRequiredData{
-				Type: "payment_required",
-				Code: "project_limit",
-				Unit: "projects",
-			})
+			h.handleResponse(
+				c, status.PaymentRequired, models.PaymentRequiredData{
+					Type: "payment_required",
+					Code: "project_limit",
+					Unit: "projects",
+				},
+			)
 			return
 		}
 	}
@@ -1097,27 +1068,29 @@ func (h *Handler) PromoteMicrofrontendToMaster(c *gin.Context) {
 
 	log.Printf("[PROMOTE] repo_id=%d successfully promoted to %s, pipeline_id=%d", req.RepoID, config.DefaultBranch, pipelineID)
 
-	if funcErr == nil && funcRecord.GetMcpProjectId() != "" && funcRecord.GetMcpResourceEnvId() != "" {
-		_, updateErr := h.services.GoObjectBuilderService().McpProject().UpdateMcpProject(
-			ctx,
-			&nb.McpProject{
-				ResourceEnvId:       funcRecord.GetMcpResourceEnvId(),
-				Id:                  funcRecord.GetMcpProjectId(),
-				IsPublished:         true,
-				MicrofrontendId:     funcRecord.GetId(),
-				MicrofrontendRepoId: funcRecord.GetRepoId(),
-				MicrofrontendBranch: funcRecord.GetBranch(),
-				MicrofrontendUrl:    funcRecord.GetUrl(),
-			},
-		)
-		if updateErr != nil {
-			log.Printf("[PROMOTE] could not mark head mcp_project %s published: %v", funcRecord.GetMcpProjectId(), updateErr)
-		}
-	} else if legacyMcpProject != nil {
-		legacyMcpProject.IsPublished = true
-		if _, updateErr := h.services.GoObjectBuilderService().McpProject().UpdateMcpProject(ctx, legacyMcpProject); updateErr != nil {
-			log.Printf("[PROMOTE] could not update is_published for mcp_project %s: %v", legacyMcpProject.GetId(), updateErr)
-		}
+	if _, err := h.services.GoObjectBuilderService().McpProject().UpdateMcpProject(
+		ctx, &nb.McpProject{
+			ResourceEnvId:       resource.ResourceEnvironmentId,
+			Id:                  req.McpProjectId,
+			IsPublished:         true,
+			MicrofrontendRepoId: strconv.Itoa(req.RepoID),
+		},
+	); err != nil {
+		h.handleResponse(c, status.GRPCError, err.Error())
+		log.Printf("[PROMOTE] could not mark mcp_project %s as published: %v", req.McpProjectId, err)
+		return
+	}
+
+	funcRecord, funcErr := h.services.GoObjectBuilderService().Function().GetSingle(
+		ctx, &nb.FunctionPrimaryKey{
+			ProjectId: resource.ResourceEnvironmentId,
+			RepoId:    strconv.Itoa(req.RepoID),
+		},
+	)
+	if funcErr != nil {
+		h.handleResponse(c, status.GRPCError, err.Error())
+		log.Printf("[PROMOTE] could not load function for repo_id=%d, skipping mirror sync: %v", req.RepoID, funcErr)
+		return
 	}
 
 	if funcRecord != nil {
