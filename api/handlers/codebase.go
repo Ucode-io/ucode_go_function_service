@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"context"
+	"log"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
@@ -30,7 +32,12 @@ import (
 // @Response 400 {object} status.Response{data=string} "Bad Request"
 // @Failure 500 {object} status.Response{data=string} "Server Error"
 func (h *Handler) GetFunctionCodebase(c *gin.Context) {
+	start := time.Now()
 	var functionID = c.Param("function_id")
+	log.Printf("[CODEBASE] start function_id=%s", functionID)
+	defer func() {
+		log.Printf("[CODEBASE] done function_id=%s total=%s", functionID, time.Since(start))
+	}()
 
 	ctx, cancel := context.WithCancel(c.Request.Context())
 	defer cancel()
@@ -52,6 +59,7 @@ func (h *Handler) GetFunctionCodebase(c *gin.Context) {
 		return
 	}
 
+	resourceStart := time.Now()
 	resource, err := h.services.CompanyService().ServiceResource().GetSingle(
 		ctx, &pb.GetSingleServiceResourceReq{
 			ProjectId:     projectId.(string),
@@ -59,6 +67,7 @@ func (h *Handler) GetFunctionCodebase(c *gin.Context) {
 			ServiceType:   pb.ServiceType_BUILDER_SERVICE,
 		},
 	)
+	log.Printf("[CODEBASE] resource lookup function_id=%s duration=%s", functionID, time.Since(resourceStart))
 	if err != nil {
 		h.handleResponse(c, status.GRPCError, err.Error())
 		return
@@ -68,23 +77,27 @@ func (h *Handler) GetFunctionCodebase(c *gin.Context) {
 
 	switch resource.ResourceType {
 	case pb.ResourceType_MONGODB:
+		functionStart := time.Now()
 		function, err = h.services.GetBuilderServiceByType(resource.NodeType).Function().GetSingle(
 			ctx, &obs.FunctionPrimaryKey{
 				Id:        functionID,
 				ProjectId: resource.ResourceEnvironmentId,
 			},
 		)
+		log.Printf("[CODEBASE] function lookup function_id=%s resource_type=%s duration=%s", functionID, resource.ResourceType.String(), time.Since(functionStart))
 		if err != nil {
 			h.handleResponse(c, status.GRPCError, err.Error())
 			return
 		}
 	case pb.ResourceType_POSTGRESQL:
+		functionStart := time.Now()
 		resp, err := h.services.GoObjectBuilderService().Function().GetSingle(
 			ctx, &nb.FunctionPrimaryKey{
 				Id:        functionID,
 				ProjectId: resource.ResourceEnvironmentId,
 			},
 		)
+		log.Printf("[CODEBASE] function lookup function_id=%s resource_type=%s duration=%s", functionID, resource.ResourceType.String(), time.Since(functionStart))
 		if err != nil {
 			h.handleResponse(c, status.GRPCError, err.Error())
 			return
@@ -113,11 +126,19 @@ func (h *Handler) GetFunctionCodebase(c *gin.Context) {
 		token = h.cfg.GitlabKnativeToken
 	}
 
+	gitlabStart := time.Now()
 	files, err := gitlab.GetRepoCodebase(h.cfg.GitlabIntegrationURL, token, repoID)
+	var totalBytes int
+	for _, file := range files {
+		totalBytes += len(file.Content)
+	}
+	log.Printf("[CODEBASE] gitlab fetch function_id=%s repo_id=%d files=%d content_bytes=%d duration=%s", functionID, repoID, len(files), totalBytes, time.Since(gitlabStart))
 	if err != nil {
 		h.handleResponse(c, status.InternalServerError, err.Error())
 		return
 	}
 
+	responseStart := time.Now()
 	h.handleResponse(c, status.OK, gin.H{"files": files})
+	log.Printf("[CODEBASE] response write function_id=%s repo_id=%d duration=%s", functionID, repoID, time.Since(responseStart))
 }

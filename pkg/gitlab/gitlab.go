@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -348,8 +349,8 @@ func GetPipelineStatus(gitlabURL, token string, projectID, pipelineID int) (stri
 }
 
 type CompareResult struct {
-	HasChanges    bool `json:"hasChanges"`
-	EverPromoted  bool `json:"everPromoted"`
+	HasChanges   bool `json:"hasChanges"`
+	EverPromoted bool `json:"everPromoted"`
 }
 
 // CompareUGenToMaster checks whether u-gen has new commits since the last promote.
@@ -1129,25 +1130,41 @@ func ImportGitLabProject(token, url, namespace, path, filePath string) (github.I
 // it is created from DefaultBranch ("master") first.
 // Uses the GitLab archive API (single request) instead of per-file requests for speed.
 func GetRepoCodebase(gitlabURL, token string, projectID int) ([]RepoFile, error) {
+	start := time.Now()
+	log.Printf("[GITLAB-CODEBASE] start repo_id=%d branch=%s", projectID, config.UGenBranch)
+
+	clientStart := time.Now()
 	client, err := gitlab.NewClient(token, gitlab.WithBaseURL(gitlabURL+"/api/v4"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gitlab client: %w", err)
 	}
+	log.Printf("[GITLAB-CODEBASE] client init repo_id=%d duration=%s", projectID, time.Since(clientStart))
 
+	branchStart := time.Now()
 	if err = ensureUGenBranch(client, projectID); err != nil {
 		return nil, err
 	}
+	log.Printf("[GITLAB-CODEBASE] ensure branch repo_id=%d branch=%s duration=%s", projectID, config.UGenBranch, time.Since(branchStart))
 
-	return fetchArchiveFiles(gitlabURL, token, projectID, config.UGenBranch)
+	files, err := fetchArchiveFiles(gitlabURL, token, projectID, config.UGenBranch)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("[GITLAB-CODEBASE] done repo_id=%d files=%d total=%s", projectID, len(files), time.Since(start))
+	return files, nil
 }
 
 // ensureUGenBranch checks if UGenBranch exists; creates it from DefaultBranch if not.
 func ensureUGenBranch(client *gitlab.Client, projectID int) error {
+	getStart := time.Now()
 	_, _, err := client.Branches.GetBranch(projectID, config.UGenBranch)
 	if err == nil {
+		log.Printf("[GITLAB-CODEBASE] branch exists repo_id=%d branch=%s duration=%s", projectID, config.UGenBranch, time.Since(getStart))
 		return nil
 	}
 
+	log.Printf("[GITLAB-CODEBASE] branch missing repo_id=%d branch=%s get_duration=%s err=%v", projectID, config.UGenBranch, time.Since(getStart), err)
+	createStart := time.Now()
 	_, _, err = client.Branches.CreateBranch(projectID, &gitlab.CreateBranchOptions{
 		Branch: gitlab.Ptr(config.UGenBranch),
 		Ref:    gitlab.Ptr(config.DefaultBranch),
@@ -1155,11 +1172,13 @@ func ensureUGenBranch(client *gitlab.Client, projectID int) error {
 	if err != nil {
 		return fmt.Errorf("failed to create branch %q from %q: %w", config.UGenBranch, config.DefaultBranch, err)
 	}
+	log.Printf("[GITLAB-CODEBASE] branch created repo_id=%d branch=%s ref=%s duration=%s", projectID, config.UGenBranch, config.DefaultBranch, time.Since(createStart))
 
 	return nil
 }
 
 func fetchArchiveFiles(gitlabURL, token string, projectID int, branch string) ([]RepoFile, error) {
+	start := time.Now()
 	url := fmt.Sprintf("%s/api/v4/projects/%d/repository/archive.tar.gz?sha=%s", gitlabURL, projectID, branch)
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
@@ -1169,26 +1188,31 @@ func fetchArchiveFiles(gitlabURL, token string, projectID int, branch string) ([
 	req.Header.Set("PRIVATE-TOKEN", token)
 
 	httpClient := &http.Client{Timeout: 60 * time.Second}
+	requestStart := time.Now()
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
+	log.Printf("[GITLAB-CODEBASE] archive response repo_id=%d branch=%s status=%d content_length=%d header_duration=%s", projectID, branch, resp.StatusCode, resp.ContentLength, time.Since(requestStart))
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("gitlab archive request failed with status %d: %s", resp.StatusCode, string(body))
 	}
 
+	gzipStart := time.Now()
 	gzr, err := gzip.NewReader(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gzip reader: %w", err)
 	}
 	defer gzr.Close()
+	log.Printf("[GITLAB-CODEBASE] gzip reader repo_id=%d branch=%s duration=%s", projectID, branch, time.Since(gzipStart))
 
 	tr := tar.NewReader(gzr)
 
 	var files []RepoFile
+	var totalBytes int
 	for {
 		header, err := tr.Next()
 		if err == io.EOF {
@@ -1215,6 +1239,7 @@ func fetchArchiveFiles(gitlabURL, token string, projectID int, branch string) ([
 			fmt.Printf("[ARCHIVE] warning: could not read %s: %v\n", filePath, err)
 			continue
 		}
+		totalBytes += len(content)
 
 		files = append(files, RepoFile{
 			Path:    filePath,
@@ -1222,7 +1247,7 @@ func fetchArchiveFiles(gitlabURL, token string, projectID int, branch string) ([
 		})
 	}
 
-	fmt.Printf("[ARCHIVE] extracted %d files from branch %q\n", len(files), branch)
+	log.Printf("[GITLAB-CODEBASE] archive extracted repo_id=%d branch=%s files=%d content_bytes=%d duration=%s", projectID, branch, len(files), totalBytes, time.Since(start))
 	return files, nil
 }
 
