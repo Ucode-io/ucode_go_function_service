@@ -14,6 +14,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 	status "ucode/ucode_go_function_service/api/status_http"
 	"ucode/ucode_go_function_service/config"
@@ -22,6 +23,23 @@ import (
 
 	"github.com/xanzy/go-gitlab"
 )
+
+const (
+	repoCodebaseCacheTTL        = 30 * time.Minute
+	repoCodebaseCacheMaxEntries = 64
+)
+
+type repoCodebaseCacheEntry struct {
+	files     []RepoFile
+	expiresAt time.Time
+}
+
+var repoCodebaseCache = struct {
+	sync.RWMutex
+	entries map[string]repoCodebaseCacheEntry
+}{
+	entries: make(map[string]repoCodebaseCacheEntry),
+}
 
 func WaitForImport(cfg IntegrationData, maxWait time.Duration) error {
 	deadline := time.Now().Add(maxWait)
@@ -1141,40 +1159,117 @@ func GetRepoCodebase(gitlabURL, token string, projectID int) ([]RepoFile, error)
 	log.Printf("[GITLAB-CODEBASE] client init repo_id=%d duration=%s", projectID, time.Since(clientStart))
 
 	branchStart := time.Now()
-	if err = ensureUGenBranch(client, projectID); err != nil {
+	branchSHA, err := ensureUGenBranch(client, projectID)
+	if err != nil {
 		return nil, err
 	}
-	log.Printf("[GITLAB-CODEBASE] ensure branch repo_id=%d branch=%s duration=%s", projectID, config.UGenBranch, time.Since(branchStart))
+	log.Printf("[GITLAB-CODEBASE] ensure branch repo_id=%d branch=%s sha=%s duration=%s", projectID, config.UGenBranch, branchSHA, time.Since(branchStart))
+
+	cacheKey := repoCodebaseCacheKey(projectID, config.UGenBranch, branchSHA)
+	if branchSHA != "" {
+		if files, ok := getRepoCodebaseCache(cacheKey); ok {
+			log.Printf("[GITLAB-CODEBASE] cache hit repo_id=%d branch=%s sha=%s files=%d total=%s", projectID, config.UGenBranch, branchSHA, len(files), time.Since(start))
+			return files, nil
+		}
+		log.Printf("[GITLAB-CODEBASE] cache miss repo_id=%d branch=%s sha=%s", projectID, config.UGenBranch, branchSHA)
+	}
 
 	files, err := fetchArchiveFiles(gitlabURL, token, projectID, config.UGenBranch)
 	if err != nil {
 		return nil, err
+	}
+	if branchSHA != "" {
+		setRepoCodebaseCache(cacheKey, files, repoCodebaseCacheTTL)
+		log.Printf("[GITLAB-CODEBASE] cache store repo_id=%d branch=%s sha=%s files=%d ttl=%s", projectID, config.UGenBranch, branchSHA, len(files), repoCodebaseCacheTTL)
 	}
 	log.Printf("[GITLAB-CODEBASE] done repo_id=%d files=%d total=%s", projectID, len(files), time.Since(start))
 	return files, nil
 }
 
 // ensureUGenBranch checks if UGenBranch exists; creates it from DefaultBranch if not.
-func ensureUGenBranch(client *gitlab.Client, projectID int) error {
+func ensureUGenBranch(client *gitlab.Client, projectID int) (string, error) {
 	getStart := time.Now()
-	_, _, err := client.Branches.GetBranch(projectID, config.UGenBranch)
+	branch, _, err := client.Branches.GetBranch(projectID, config.UGenBranch)
 	if err == nil {
 		log.Printf("[GITLAB-CODEBASE] branch exists repo_id=%d branch=%s duration=%s", projectID, config.UGenBranch, time.Since(getStart))
-		return nil
+		return gitlabBranchSHA(branch), nil
 	}
 
 	log.Printf("[GITLAB-CODEBASE] branch missing repo_id=%d branch=%s get_duration=%s err=%v", projectID, config.UGenBranch, time.Since(getStart), err)
 	createStart := time.Now()
-	_, _, err = client.Branches.CreateBranch(projectID, &gitlab.CreateBranchOptions{
+	branch, _, err = client.Branches.CreateBranch(projectID, &gitlab.CreateBranchOptions{
 		Branch: gitlab.Ptr(config.UGenBranch),
 		Ref:    gitlab.Ptr(config.DefaultBranch),
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create branch %q from %q: %w", config.UGenBranch, config.DefaultBranch, err)
+		return "", fmt.Errorf("failed to create branch %q from %q: %w", config.UGenBranch, config.DefaultBranch, err)
 	}
 	log.Printf("[GITLAB-CODEBASE] branch created repo_id=%d branch=%s ref=%s duration=%s", projectID, config.UGenBranch, config.DefaultBranch, time.Since(createStart))
 
-	return nil
+	return gitlabBranchSHA(branch), nil
+}
+
+func gitlabBranchSHA(branch *gitlab.Branch) string {
+	if branch == nil || branch.Commit == nil {
+		return ""
+	}
+	return branch.Commit.ID
+}
+
+func repoCodebaseCacheKey(projectID int, branch, sha string) string {
+	return fmt.Sprintf("%d:%s:%s", projectID, branch, sha)
+}
+
+func getRepoCodebaseCache(key string) ([]RepoFile, bool) {
+	repoCodebaseCache.RLock()
+	entry, ok := repoCodebaseCache.entries[key]
+	repoCodebaseCache.RUnlock()
+	if !ok {
+		return nil, false
+	}
+
+	if time.Now().After(entry.expiresAt) {
+		repoCodebaseCache.Lock()
+		delete(repoCodebaseCache.entries, key)
+		repoCodebaseCache.Unlock()
+		return nil, false
+	}
+
+	return cloneRepoFiles(entry.files), true
+}
+
+func setRepoCodebaseCache(key string, files []RepoFile, ttl time.Duration) {
+	repoCodebaseCache.Lock()
+	pruneRepoCodebaseCacheLocked()
+	repoCodebaseCache.entries[key] = repoCodebaseCacheEntry{
+		files:     cloneRepoFiles(files),
+		expiresAt: time.Now().Add(ttl),
+	}
+	for len(repoCodebaseCache.entries) > repoCodebaseCacheMaxEntries {
+		for staleKey := range repoCodebaseCache.entries {
+			delete(repoCodebaseCache.entries, staleKey)
+			break
+		}
+	}
+	repoCodebaseCache.Unlock()
+}
+
+func pruneRepoCodebaseCacheLocked() {
+	now := time.Now()
+	for key, entry := range repoCodebaseCache.entries {
+		if now.After(entry.expiresAt) {
+			delete(repoCodebaseCache.entries, key)
+		}
+	}
+}
+
+func cloneRepoFiles(files []RepoFile) []RepoFile {
+	if len(files) == 0 {
+		return nil
+	}
+	cloned := make([]RepoFile, len(files))
+	copy(cloned, files)
+	return cloned
 }
 
 func fetchArchiveFiles(gitlabURL, token string, projectID int, branch string) ([]RepoFile, error) {
