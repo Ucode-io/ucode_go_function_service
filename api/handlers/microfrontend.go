@@ -1082,9 +1082,22 @@ func (h *Handler) PromoteMicrofrontendToMaster(c *gin.Context) {
 		return
 	}
 
+	mcpProjectResource, err := h.services.CompanyService().ServiceResource().GetSingle(
+		ctx,
+		&pb.GetSingleServiceResourceReq{
+			ProjectId:     mcpProject.GetUcodeProjectId(),
+			EnvironmentId: mcpProject.GetEnvironmentId(),
+			ServiceType:   pb.ServiceType_BUILDER_SERVICE,
+		},
+	)
+	if err != nil {
+		h.handleResponse(c, status.GRPCError, err.Error())
+		return
+	}
+
 	funcRecord, err := h.services.GoObjectBuilderService().Function().GetSingle(
 		ctx, &nb.FunctionPrimaryKey{
-			ProjectId: mcpProject.ResourceEnvId,
+			ProjectId: mcpProjectResource.GetResourceEnvironmentId(),
 			RepoId:    strconv.Itoa(req.RepoID),
 		},
 	)
