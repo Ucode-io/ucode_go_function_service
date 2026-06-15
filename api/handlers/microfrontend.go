@@ -996,22 +996,6 @@ func (h *Handler) PromoteMicrofrontendToMaster(c *gin.Context) {
 		return
 	}
 
-	project, err := h.services.CompanyService().Project().GetById(ctx, &pb.GetProjectByIdRequest{ProjectId: projectId.(string)})
-	if err != nil {
-		h.handleResponse(c, status.GRPCError, err.Error())
-		return
-	}
-
-	publishedProjectsCount, err := h.services.GoObjectBuilderService().McpProject().GetPublishedMcpProjectCount(
-		ctx, &nb.GetPublishedMcpProjectCountReq{
-			ResourceEnvId: resource.ResourceEnvironmentId,
-		},
-	)
-	if err != nil {
-		h.handleResponse(c, status.GRPCError, err.Error())
-		return
-	}
-
 	mcpProject, err := h.services.GoObjectBuilderService().McpProject().GetMcpProjectFiles(
 		ctx, &nb.McpProjectId{
 			ResourceEnvId: resource.ResourceEnvironmentId,
@@ -1025,6 +1009,23 @@ func (h *Handler) PromoteMicrofrontendToMaster(c *gin.Context) {
 	}
 
 	if !mcpProject.IsPublished {
+
+		project, err := h.services.CompanyService().Project().GetById(ctx, &pb.GetProjectByIdRequest{ProjectId: projectId.(string)})
+		if err != nil {
+			h.handleResponse(c, status.GRPCError, err.Error())
+			return
+		}
+
+		publishedProjectsCount, err := h.services.GoObjectBuilderService().McpProject().GetPublishedMcpProjectCount(
+			ctx, &nb.GetPublishedMcpProjectCountReq{
+				ResourceEnvId: resource.ResourceEnvironmentId,
+			},
+		)
+		if err != nil {
+			h.handleResponse(c, status.GRPCError, err.Error())
+			return
+		}
+
 		limitResp, err := h.services.CompanyService().Billing().CompareFunction(
 			ctx, &pb.CompareFunctionRequest{
 				Type:   config.FARE_PROJECTS,
@@ -1081,15 +1082,15 @@ func (h *Handler) PromoteMicrofrontendToMaster(c *gin.Context) {
 		return
 	}
 
-	funcRecord, funcErr := h.services.GoObjectBuilderService().Function().GetSingle(
+	funcRecord, err := h.services.GoObjectBuilderService().Function().GetSingle(
 		ctx, &nb.FunctionPrimaryKey{
-			ProjectId: resource.ResourceEnvironmentId,
+			ProjectId: mcpProject.ResourceEnvId,
 			RepoId:    strconv.Itoa(req.RepoID),
 		},
 	)
-	if funcErr != nil {
+	if err != nil {
 		h.handleResponse(c, status.GRPCError, err.Error())
-		log.Printf("[PROMOTE] could not load function for repo_id=%d, skipping mirror sync: %v", req.RepoID, funcErr)
+		log.Printf("[PROMOTE] could not load function for repo_id=%d, skipping mirror sync: %v", req.RepoID, err)
 		return
 	}
 
