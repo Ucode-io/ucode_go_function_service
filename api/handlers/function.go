@@ -1612,7 +1612,7 @@ func (h *Handler) ExecKnative(path string, req models.NewInvokeFunctionRequest) 
 		fmt.Println("!!!!!!!!! hello !!!!!!!!!!")
 	}
 	//HISOBIM project
-	if cast.ToString(req.Data["project_id"]) == "b744d518-5f66-4818-bfd7-9f3f44ce3379" || path == "centraltour-orders" || path == "orbito-taxi-iam" {
+	if cast.ToString(req.Data["project_id"]) == "b744d518-5f66-4818-bfd7-9f3f44ce3379" || path == "centraltour-orders" {
 		url := fmt.Sprintf("http://%s.%s", path, h.cfg.KnativeBaseUrlUz)
 		resp, err := util.DoRequest(url, http.MethodPost, req)
 		if err != nil {
