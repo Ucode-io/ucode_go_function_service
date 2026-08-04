@@ -40,6 +40,8 @@ func main() {
 		}
 	}()
 
+	log.Info("🚀 DEBUG: ucode_go_function_service booted — deploy check #1")
+
 	grpcSvcs, err := services.NewGrpcClients(context.Background(), cfg)
 	if err != nil {
 		log.Error("Error adding grpc client with base config. NewGrpcClients", logger.Error(err))

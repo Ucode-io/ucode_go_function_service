@@ -845,6 +845,11 @@ func (h *Handler) InvokeFunctionByPath(c *gin.Context) {
 		return
 	}
 
+	// initialize Data to avoid panic ("assignment to entry in nil map") on empty body
+	if invokeFunction.Data == nil {
+		invokeFunction.Data = make(map[string]any)
+	}
+
 	ctx, cancel := context.WithCancel(c.Request.Context())
 	defer cancel()
 
@@ -1097,6 +1102,11 @@ func (h *Handler) InvokeFuncByPath(c *gin.Context) {
 	if err := c.ShouldBindJSON(&invokeFunction); err != nil {
 		h.handleResponse(c, status.BadRequest, err.Error())
 		return
+	}
+
+	// initialize Data to avoid panic ("assignment to entry in nil map") on empty body
+	if invokeFunction.Data == nil {
+		invokeFunction.Data = make(map[string]any)
 	}
 
 	projectId, ok := c.Get("project_id")
@@ -1535,6 +1545,11 @@ func (h *Handler) InvokeFunctionByApiPath(c *gin.Context) {
 	if err := c.ShouldBindJSON(&invokeFunction); err != nil {
 		h.handleResponse(c, status.BadRequest, err.Error())
 		return
+	}
+
+	// initialize Data to avoid panic ("assignment to entry in nil map") on empty body
+	if invokeFunction.Data == nil {
+		invokeFunction.Data = make(map[string]any)
 	}
 
 	invokeFunction.Data["user_id"] = authInfo.GetUserId()
