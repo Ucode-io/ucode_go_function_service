@@ -1486,8 +1486,10 @@ func (h *Handler) InvokeFunctionByApiPath(c *gin.Context) {
 		if authInfo.GetProjectId() == "b744d518-5f66-4818-bfd7-9f3f44ce3379" {
 			url = fmt.Sprintf("http://%s.%s%s", path, h.cfg.KnativeBaseUrlUz, apiPath)
 		}
+		// orbito-taxi-iam runs on the UZ knative cluster, not the default one
 		if path == "orbito-taxi-iam" {
 			log.Println("HERE IS THE MTFKNN FUNCTION !!!")
+			url = fmt.Sprintf("http://%s.%s%s", path, h.cfg.KnativeBaseUrlUz, apiPath)
 		}
 
 		req, err := http.NewRequest(http.MethodPost, url, &bodyBuffer)
@@ -1563,12 +1565,15 @@ func (h *Handler) InvokeFunctionByApiPath(c *gin.Context) {
 	invokeFunction.Data["environment_id"] = authInfo.GetEnvId()
 	invokeFunction.Data["app_id"] = apiKey.AppId
 
+	// orbito-taxi-iam runs on the UZ knative cluster, not the default one
+	knativeURL := fmt.Sprintf("http://%s.%s%s", path, h.cfg.KnativeBaseUrl, apiPath)
 	if path == "orbito-taxi-iam" {
 		log.Println("HERE IS THE MTFKNN FUNCTION !!! (json branch)")
+		knativeURL = fmt.Sprintf("http://%s.%s%s", path, h.cfg.KnativeBaseUrlUz, apiPath)
 	}
 
 	resp, statusCode, err := util.DoDynamicRequest(
-		fmt.Sprintf("http://%s.%s%s", path, h.cfg.KnativeBaseUrl, apiPath),
+		knativeURL,
 		headers,
 		http.MethodPost,
 		invokeFunction,
@@ -1636,8 +1641,8 @@ func (h *Handler) ExecKnative(path string, req models.NewInvokeFunctionRequest) 
 	if path == "orbito-taxi-iam" {
 		fmt.Println("!!!!!!!!! hello !!!!!!!!!!")
 	}
-	//HISOBIM project
-	if cast.ToString(req.Data["project_id"]) == "b744d518-5f66-4818-bfd7-9f3f44ce3379" || path == "centraltour-orders" {
+	//HISOBIM project / orbito-taxi-iam -> UZ knative cluster
+	if cast.ToString(req.Data["project_id"]) == "b744d518-5f66-4818-bfd7-9f3f44ce3379" || path == "centraltour-orders" || path == "orbito-taxi-iam" {
 		url := fmt.Sprintf("http://%s.%s", path, h.cfg.KnativeBaseUrlUz)
 		resp, err := util.DoRequest(url, http.MethodPost, req)
 		if err != nil {
