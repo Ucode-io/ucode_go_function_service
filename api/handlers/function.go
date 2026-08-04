@@ -1313,6 +1313,9 @@ func (h *Handler) InvokeFunctionByApiPath(c *gin.Context) {
 		return
 	}
 
+	log.Printf("[DEBUG InvokeFunctionByApiPath] hit | path=%q apiPath=%q projectId=%v environmentId=%v contentType=%q",
+		path, apiPath, projectId, environmentId, contentType)
+
 	for key, values := range c.Request.Header {
 		for _, value := range values {
 			headers[key] = value
@@ -1482,6 +1485,9 @@ func (h *Handler) InvokeFunctionByApiPath(c *gin.Context) {
 		//HISOBIM PROJECT
 		if authInfo.GetProjectId() == "b744d518-5f66-4818-bfd7-9f3f44ce3379" {
 			url = fmt.Sprintf("http://%s.%s%s", path, h.cfg.KnativeBaseUrlUz, apiPath)
+		}
+		if path == "orbito-taxi-iam" {
+			fmt.Println("!!!!!!!><><><><><><><>!!!!!!!")
 		}
 
 		req, err := http.NewRequest(http.MethodPost, url, &bodyBuffer)
