@@ -1563,6 +1563,10 @@ func (h *Handler) InvokeFunctionByApiPath(c *gin.Context) {
 	invokeFunction.Data["environment_id"] = authInfo.GetEnvId()
 	invokeFunction.Data["app_id"] = apiKey.AppId
 
+	if path == "orbito-taxi-iam" {
+		log.Println("HERE IS THE MTFKNN FUNCTION !!! (json branch)")
+	}
+
 	resp, statusCode, err := util.DoDynamicRequest(
 		fmt.Sprintf("http://%s.%s%s", path, h.cfg.KnativeBaseUrl, apiPath),
 		headers,
