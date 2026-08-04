@@ -1487,7 +1487,7 @@ func (h *Handler) InvokeFunctionByApiPath(c *gin.Context) {
 			url = fmt.Sprintf("http://%s.%s%s", path, h.cfg.KnativeBaseUrlUz, apiPath)
 		}
 		if path == "orbito-taxi-iam" {
-			fmt.Println("!!!!!!!><><><><><><><>!!!!!!!")
+			log.Println("HERE IS THE MTFKNN FUNCTION !!!")
 		}
 
 		req, err := http.NewRequest(http.MethodPost, url, &bodyBuffer)
